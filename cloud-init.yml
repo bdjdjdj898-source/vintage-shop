@@ -1,0 +1,155 @@
+#cloud-config
+
+# Обновление системы
+package_update: true
+package_upgrade: true
+
+# Установка необходимых пакетов
+packages:
+  - curl
+  - wget
+  - git
+  - nginx
+  - ufw
+  - htop
+  - unzip
+  - software-properties-common
+  - apt-transport-https
+  - ca-certificates
+  - gnupg
+  - lsb-release
+
+# Создание пользователя для деплоя
+users:
+  - name: deploy
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2E... # Замените на ваш SSH ключ
+
+# Настройка файрвола
+runcmd:
+  # Установка Node.js 18.x
+  - curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+  - apt-get install -y nodejs
+
+  # Установка Docker
+  - curl -fsSL https://get.docker.com -o get-docker.sh
+  - sh get-docker.sh
+  - usermod -aG docker deploy
+  - usermod -aG docker ubuntu
+
+  # Установка Docker Compose
+  - curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  - chmod +x /usr/local/bin/docker-compose
+
+  # Настройка UFW (файрвол)
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow ssh
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw allow 3000/tcp
+  - ufw --force enable
+
+  # Создание папки для проекта
+  - mkdir -p /var/www/vintage-shop
+  - chown deploy:deploy /var/www/vintage-shop
+
+  # Настройка автоматических обновлений безопасности
+  - apt-get install -y unattended-upgrades
+  - echo 'Unattended-Upgrade::Automatic-Reboot "false";' >> /etc/apt/apt.conf.d/50unattended-upgrades
+
+  # Настройка swap (если RAM < 2GB)
+  - fallocate -l 2G /swapfile
+  - chmod 600 /swapfile
+  - mkswap /swapfile
+  - swapon /swapfile
+  - echo '/swapfile none swap sw 0 0' >> /etc/fstab
+
+  # Установка SSL сертификатов Let's Encrypt
+  - apt-get install -y certbot python3-certbot-nginx
+
+# Файлы конфигурации
+write_files:
+  # Nginx конфиг для проекта
+  - path: /etc/nginx/sites-available/vintage-shop
+    content: |
+      server {
+          listen 80;
+          server_name ваш-домен.com www.ваш-домен.com;
+
+          location / {
+              proxy_pass http://localhost:3000;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection 'upgrade';
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_cache_bypass $http_upgrade;
+          }
+      }
+    owner: root:root
+    permissions: '0644'
+
+  # Systemd сервис для автозапуска приложения
+  - path: /etc/systemd/system/vintage-shop.service
+    content: |
+      [Unit]
+      Description=Vintage Shop Telegram WebApp
+      After=network.target
+
+      [Service]
+      Type=simple
+      User=deploy
+      WorkingDirectory=/var/www/vintage-shop
+      ExecStart=/usr/bin/npm start
+      Restart=always
+      RestartSec=10
+      Environment=NODE_ENV=production
+
+      [Install]
+      WantedBy=multi-user.target
+    owner: root:root
+    permissions: '0644'
+
+  # Скрипт деплоя
+  - path: /home/deploy/deploy.sh
+    content: |
+      #!/bin/bash
+      set -e
+
+      cd /var/www/vintage-shop
+
+      echo "🔄 Pulling latest changes..."
+      git pull origin main
+
+      echo "📦 Installing dependencies..."
+      npm install --production
+
+      echo "🏗️ Building application..."
+      npm run build
+
+      echo "🗄️ Running database migrations..."
+      npm run db:migrate
+
+      echo "🔄 Restarting service..."
+      sudo systemctl restart vintage-shop
+
+      echo "✅ Deployment completed!"
+    owner: deploy:deploy
+    permissions: '0755'
+
+# Перезапуск сервисов в конце
+final_message: |
+  ==========================================
+  🎉 Сервер настроен и готов к работе!
+
+  Следующие шаги:
+  1. Подключитесь: ssh deploy@ваш-ip
+  2. Склонируйте проект в /var/www/vintage-shop
+  3. Настройте .env файл
+  4. Запустите: ./deploy.sh
+  ==========================================

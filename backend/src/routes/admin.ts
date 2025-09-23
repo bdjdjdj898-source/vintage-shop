@@ -19,7 +19,9 @@ router.get('/users', [
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 20, search } = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const search = req.query.search as string;
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -80,7 +82,10 @@ router.get('/orders', [
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
-    const { status, userId, page = 1, limit = 20 } = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const status = req.query.status as string;
+    const userId = req.query.userId as string;
     const skip = (page - 1) * limit;
 
     const where: any = {};
