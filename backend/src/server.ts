@@ -68,14 +68,34 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/me', meRouter);
 
-// Fallback для неизвестных роутов
-app.use('*', (req, res) => {
-  res.status(404).json({ 
-    error: 'Роут не найден',
-    path: req.originalUrl,
-    method: req.method 
+// Serve static files from frontend build
+if (process.env.NODE_ENV === 'production') {
+  const frontendPath = path.join(__dirname, '../../frontend/dist');
+  app.use(express.static(frontendPath));
+
+  // Fallback для SPA - все неизвестные роуты отправляем на index.html
+  app.get('*', (req, res) => {
+    // Исключаем API роуты
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({
+        error: 'API роут не найден',
+        path: req.originalUrl,
+        method: req.method
+      });
+    }
+
+    res.sendFile(path.join(frontendPath, 'index.html'));
   });
-});
+} else {
+  // Development fallback
+  app.use('*', (req, res) => {
+    res.status(404).json({
+      error: 'Роут не найден',
+      path: req.originalUrl,
+      method: req.method
+    });
+  });
+}
 
 // Error handler должен быть последним
 app.use(errorHandler);
