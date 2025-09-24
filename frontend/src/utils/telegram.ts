@@ -1,16 +1,27 @@
 export function initTelegramWebApp() {
-  console.log('Initializing Telegram WebApp...');
+  console.log('🔄 Initializing Telegram WebApp...');
 
   // Проверяем что Telegram WebApp SDK загружен
   const tg = (window as any).Telegram?.WebApp;
-  console.log('Telegram WebApp object:', tg);
-  console.log('window.Telegram:', (window as any).Telegram);
+  console.log('📱 Telegram WebApp object:', tg);
+  console.log('🌍 window.Telegram:', (window as any).Telegram);
+  console.log('📄 document.readyState:', document.readyState);
+
+  // Проверяем все возможные варианты Telegram объектов
+  console.log('🔍 window.TelegramWebviewProxy:', (window as any).TelegramWebviewProxy);
+  console.log('🔍 window.external:', (window as any).external);
 
   if (!tg) {
-    console.error('Telegram WebApp SDK не найден');
+    console.error('❌ Telegram WebApp SDK не найден');
+
+    // Проверяем загружен ли скрипт
+    const scripts = Array.from(document.scripts);
+    const telegramScript = scripts.find(script => script.src.includes('telegram-web-app.js'));
+    console.log('📜 Telegram script найден:', !!telegramScript);
+    console.log('📜 Все скрипты:', scripts.map(s => s.src));
 
     // ВРЕМЕННЫЙ FALLBACK для тестирования
-    console.log('Используем тестовый режим');
+    console.log('🧪 Используем тестовый режим');
     return {
       initData: 'test_init_data=test_user',
       user: {
