@@ -71,14 +71,27 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/me', meRouter);
 
-// Serve static files from frontend build
+// В production режиме Nginx сам обслуживает статику
+// Express обрабатывает ТОЛЬКО API роуты
 if (process.env.NODE_ENV === 'production') {
+  // Только 404 для неизвестных API роутов
+  app.get('/api/*', (req, res) => {
+    res.status(404).json({
+      error: 'API роут не найден',
+      path: req.originalUrl,
+      method: req.method
+    });
+  });
+
+  // Все остальное (включая статику и SPA роуты) обрабатывает Nginx
+  // Express в production НЕ должен обрабатывать статические файлы
+} else {
+  // Development - обслуживаем статику для локальной разработки
   const frontendPath = path.join(__dirname, '../../frontend/dist');
   app.use(express.static(frontendPath));
 
-  // Fallback для SPA - все неизвестные роуты отправляем на index.html
+  // Development fallback для SPA
   app.get('*', (req, res) => {
-    // Исключаем API роуты
     if (req.path.startsWith('/api/')) {
       return res.status(404).json({
         error: 'API роут не найден',
@@ -86,17 +99,7 @@ if (process.env.NODE_ENV === 'production') {
         method: req.method
       });
     }
-
     res.sendFile(path.join(frontendPath, 'index.html'));
-  });
-} else {
-  // Development fallback
-  app.use('*', (req, res) => {
-    res.status(404).json({
-      error: 'Роут не найден',
-      path: req.originalUrl,
-      method: req.method
-    });
   });
 }
 
