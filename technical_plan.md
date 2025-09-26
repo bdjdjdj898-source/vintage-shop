@@ -334,7 +334,9 @@ TELEGRAM_WEBHOOK_SECRET=your_webhook_secret
 JWT_SECRET=your_jwt_secret_key
 NODE_ENV=production
 PORT=3000
-ADMIN_TELEGRAM_ID=your_admin_telegram_id
+ADMIN_TELEGRAM_IDS=123456789,987654321  # Comma-separated, entries trimmed automatically
+
+# Important: In production, an empty list disables admin notifications and admin role matching
 CI/CD и мониторинг
 
 GitHub Actions: автоматическая сборка и деплой

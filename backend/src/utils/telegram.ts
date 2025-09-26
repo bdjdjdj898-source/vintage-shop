@@ -82,7 +82,18 @@ export function parseTelegramInitData(initData: string): TelegramUser | null {
  * Проверка, что пользователь является админом по Telegram ID
  */
 export function isAdminTelegramId(telegramId: string): boolean {
-  const adminIds = process.env.ADMIN_TELEGRAM_IDS?.split(',') || [];
+  const adminIds = (process.env.ADMIN_TELEGRAM_IDS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  if (adminIds.length === 0) {
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('WARNING: No admin Telegram IDs configured in production');
+    }
+    return false;
+  }
+
   return adminIds.includes(telegramId);
 }
 

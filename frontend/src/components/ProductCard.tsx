@@ -1,7 +1,6 @@
 import React from 'react';
 import { formatCurrency } from '../utils/format';
-// ВАЖНО: импортируем тип из data/products.ts, а не дублируем
-import type { Product } from '../data/products';
+import type { Product } from '../types/api';
 
 interface ProductCardProps {
   product: Product;

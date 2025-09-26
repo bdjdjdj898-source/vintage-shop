@@ -1,12 +1,21 @@
 import { Router, Request, Response } from 'express';
-import { query } from 'express-validator';
+import { query, param, body } from 'express-validator';
 import { validateRequest } from '../middleware/validateRequest';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { prisma } from '../lib/prisma';
 import { ApiResponse } from '../utils/responses';
 import { parseJsonArray } from '../utils/json';
+import crypto from 'crypto';
+import { v2 as cloudinary } from 'cloudinary';
 
 const router = Router();
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Все админ роуты требуют админ права
 router.use(requireAdmin);
@@ -45,6 +54,7 @@ router.get('/users', [
         lastName: true,
         avatarUrl: true,
         role: true,
+        isBanned: true,
         createdAt: true,
         _count: {
           select: {
@@ -76,7 +86,7 @@ router.get('/users', [
 // GET /api/admin/orders - все заказы
 router.get('/orders', [
   query('status').optional().isString(),
-  query('userId').optional().isInt({ min: 1 }),
+  query('userId').optional().isInt({ min: 1 }).toInt(),
   query('page').optional().isInt({ min: 1 }).toInt(),
   query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
   validateRequest
@@ -85,7 +95,7 @@ router.get('/orders', [
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const status = req.query.status as string;
-    const userId = req.query.userId as string;
+    const userId = Number(req.query.userId);
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -94,7 +104,7 @@ router.get('/orders', [
       where.status = status;
     }
 
-    if (userId) {
+    if (!isNaN(userId)) {
       where.userId = userId;
     }
 
@@ -212,9 +222,15 @@ router.get('/analytics', async (req: Request, res: Response) => {
     const topProductsWithDetails = topProducts.map(item => {
       const product = productDetails.find(p => p.id === item.productId);
       return {
-        product: {
+        product: product ? {
           ...product,
-          images: parseJsonArray(product?.images)
+          images: parseJsonArray(product.images)
+        } : {
+          id: item.productId,
+          title: 'Удалённый товар',
+          brand: '',
+          price: 0,
+          images: []
         },
         totalSold: item._sum.quantity
       };
@@ -234,6 +250,156 @@ router.get('/analytics', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Ошибка получения аналитики:', error);
     return ApiResponse.internalError(res, 'Ошибка сервера при получении аналитики');
+  }
+});
+
+// PUT /api/admin/users/:id/ban - заблокировать пользователя
+router.put('/users/:id/ban', [
+  param('id').isInt({ min: 1 }),
+  validateRequest
+], async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!existingUser) {
+      return ApiResponse.notFound(res, 'Пользователь не найден');
+    }
+
+    // Prevent banning admin users
+    if (existingUser.role === 'admin') {
+      return ApiResponse.businessError(res, 'INVALID_OPERATION' as any, 'Нельзя заблокировать администратора');
+    }
+
+    // Ban user
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { isBanned: true }
+    });
+
+    return ApiResponse.success(res, {
+      id: updatedUser.id,
+      telegramId: updatedUser.telegramId,
+      username: updatedUser.username,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      role: updatedUser.role,
+      isBanned: updatedUser.isBanned
+    });
+  } catch (error) {
+    console.error('Ошибка блокировки пользователя:', error);
+    return ApiResponse.internalError(res, 'Ошибка сервера при блокировке пользователя');
+  }
+});
+
+// PUT /api/admin/users/:id/unban - разблокировать пользователя
+router.put('/users/:id/unban', [
+  param('id').isInt({ min: 1 }),
+  validateRequest
+], async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!existingUser) {
+      return ApiResponse.notFound(res, 'Пользователь не найден');
+    }
+
+    // Unban user
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { isBanned: false }
+    });
+
+    return ApiResponse.success(res, {
+      id: updatedUser.id,
+      telegramId: updatedUser.telegramId,
+      username: updatedUser.username,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      role: updatedUser.role,
+      isBanned: updatedUser.isBanned
+    });
+  } catch (error) {
+    console.error('Ошибка разблокировки пользователя:', error);
+    return ApiResponse.internalError(res, 'Ошибка сервера при разблокировке пользователя');
+  }
+});
+
+// POST /api/admin/uploads/sign - генерировать подпись для загрузки в Cloudinary
+router.post('/uploads/sign', [
+  body('filename').isString().isLength({ min: 1, max: 255 }),
+  body('contentType').isString().matches(/^image\/(jpeg|jpg|png|webp)$/),
+  body('size').isInt({ min: 1, max: 5 * 1024 * 1024 }), // Max 5MB
+  validateRequest
+], async (req: Request, res: Response) => {
+  try {
+    const { filename, contentType, size } = req.body;
+
+    // Validate file extension
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+    const fileExtension = filename.split('.').pop()?.toLowerCase();
+
+    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+      return ApiResponse.validationError(res, 'Недопустимый формат файла. Разрешены: JPG, PNG, WebP');
+    }
+
+    // Check if Cloudinary is configured
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      return ApiResponse.internalError(res, 'Cloudinary не настроен');
+    }
+
+    // Generate unique public_id for the image
+    const publicId = `products/${crypto.randomUUID()}`;
+    const timestamp = Math.round(new Date().getTime() / 1000);
+
+    // Create upload parameters
+    const uploadParams = {
+      timestamp: timestamp,
+      public_id: publicId,
+      folder: 'products',
+      resource_type: 'image' as const
+    };
+
+    // Generate signature for secure upload
+    const signature = cloudinary.utils.api_sign_request(uploadParams, process.env.CLOUDINARY_API_SECRET!);
+
+    return ApiResponse.success(res, {
+      signature,
+      timestamp,
+      public_id: publicId,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      folder: 'products',
+      resource_type: 'image'
+    });
+  } catch (error) {
+    console.error('Ошибка генерации подписи Cloudinary:', error);
+    return ApiResponse.internalError(res, 'Ошибка сервера при генерации подписи');
+  }
+});
+
+// POST /api/admin/uploads - генерировать подписанные URL для загрузки (deprecated)
+router.post('/uploads', [
+  body('filename').isString().isLength({ min: 1, max: 255 }),
+  body('contentType').isString().matches(/^image\/(jpeg|jpg|png|webp)$/),
+  body('size').isInt({ min: 1, max: 5 * 1024 * 1024 }), // Max 5MB
+  validateRequest
+], async (req: Request, res: Response) => {
+  try {
+    // Redirect to new signing endpoint
+    return ApiResponse.error(res, 'DEPRECATED' as any, 'Используйте /api/admin/uploads/sign для загрузки изображений', 410);
+  } catch (error) {
+    console.error('Ошибка генерации URL для загрузки:', error);
+    return ApiResponse.internalError(res, 'Ошибка сервера при генерации URL для загрузки');
   }
 });
 

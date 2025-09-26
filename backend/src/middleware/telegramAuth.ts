@@ -29,20 +29,27 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       });
     }
 
-    // ВРЕМЕННЫЙ РЕЖИМ - принимаем тестовые данные
-    if (initData.includes('test_init_data') || initData.includes('fallback_init_data')) {
+    // TEST MODE - only in non-production with explicit flags
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      process.env.ENABLE_TEST_AUTH === 'true' &&
+      req.headers['x-debug-auth'] === process.env.DEBUG_AUTH_SECRET
+    ) {
       console.log('🧪 Используется тестовый режим авторизации');
+
+      // Default to user role, allow admin only with explicit flag
+      const role = process.env.DEBUG_TEST_ADMIN === 'true' ? 'admin' : 'user';
 
       // Создаем тестового пользователя
       const testUser = await prisma.user.upsert({
         where: { telegramId: '12345' },
-        update: { updatedAt: new Date() },
+        update: { updatedAt: new Date(), role },
         create: {
           telegramId: '12345',
           username: 'testuser',
           firstName: 'Test',
           lastName: 'User',
-          role: 'admin' // Делаем тестового пользователя админом
+          role
         }
       });
 
@@ -70,6 +77,19 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     if (!isValid) {
       return res.status(401).json({
         error: 'Недействительные данные аутентификации Telegram'
+      });
+    }
+
+    // Check auth_date freshness
+    const params = new URLSearchParams(initData);
+    const authDateStr = params.get('auth_date');
+    const authDate = authDateStr ? parseInt(authDateStr, 10) : 0;
+    const now = Math.floor(Date.now() / 1000);
+    const TTL = parseInt(process.env.TELEGRAM_INITDATA_TTL || '86400', 10);
+
+    if (!authDate || now - authDate > TTL) {
+      return res.status(401).json({
+        error: 'Просроченные данные аутентификации Telegram'
       });
     }
 
@@ -105,6 +125,13 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
         role: role
       }
     });
+
+    // Check if user is banned
+    if (user.isBanned) {
+      return res.status(403).json({
+        error: 'Аккаунт заблокирован. Обратитесь к администрации.'
+      });
+    }
 
     // Добавляем пользователя в request
     req.user = {

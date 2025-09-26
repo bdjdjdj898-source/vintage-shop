@@ -55,16 +55,29 @@ const Admin: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Управление пользователями</h3>
+            <p className="text-gray-600 text-sm mb-4">
+              Просмотр пользователей, блокировка и разблокировка
+            </p>
+            <Link
+              to="/admin/users"
+              className="inline-block bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Открыть
+            </Link>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Аналитика</h3>
             <p className="text-gray-600 text-sm mb-4">
               Статистика продаж и пользователей
             </p>
-            <button
-              disabled
-              className="bg-gray-400 text-white px-4 py-2 rounded-lg cursor-not-allowed"
+            <Link
+              to="/admin/analytics"
+              className="inline-block bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
             >
-              Скоро
-            </button>
+              Открыть
+            </Link>
           </div>
         </div>
 

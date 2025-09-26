@@ -1,34 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
-
-interface Product {
-  id: number;
-  title: string;
-  brand: string;
-  category: string;
-  size: string;
-  color: string;
-  condition: number;
-  description: string;
-  price: number;
-  images: string[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface CreateProductData {
-  title: string;
-  brand: string;
-  category: string;
-  size: string;
-  color: string;
-  condition: number;
-  description: string;
-  price: number;
-  images: string[];
-}
+import { Product, CreateProductData, UploadProgress, CloudinarySignature } from '../types/api';
 
 const AdminProducts: React.FC = () => {
   const { user } = useAuth();
@@ -38,6 +11,8 @@ const AdminProducts: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [newProduct, setNewProduct] = useState<CreateProductData>({
     title: '',
@@ -48,7 +23,7 @@ const AdminProducts: React.FC = () => {
     condition: 8,
     description: '',
     price: 0,
-    images: ['']
+    images: []
   });
 
   const categories = ['Куртки', 'Толстовки', 'Джинсы', 'Аксессуары', 'Обувь', 'Свитеры'];
@@ -61,7 +36,7 @@ const AdminProducts: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await apiFetch('/api/products?limit=50');
+      const response = await apiFetch('/api/products?limit=50&includeInactive=true');
       if (response.success) {
         setProducts(response.data);
       }
@@ -126,6 +101,137 @@ const AdminProducts: React.FC = () => {
     }));
   };
 
+  const validateFile = (file: File): string | null => {
+    // Check file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      return 'Недопустимый формат файла. Разрешены: JPG, PNG, WebP';
+    }
+
+    // Check file size (5MB max)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return 'Размер файла не должен превышать 5 МБ';
+    }
+
+    return null;
+  };
+
+  const uploadToCloudinary = async (file: File, signatureData: CloudinarySignature): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('api_key', signatureData.api_key);
+    formData.append('timestamp', signatureData.timestamp.toString());
+    formData.append('signature', signatureData.signature);
+    formData.append('public_id', signatureData.public_id);
+    formData.append('folder', signatureData.folder);
+
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${signatureData.cloud_name}/image/upload`;
+
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Ошибка загрузки в Cloudinary');
+    }
+
+    const result = await response.json();
+    return result.secure_url;
+  };
+
+  const handleFileUpload = async (files: FileList) => {
+    setIsUploading(true);
+    const uploadPromises: Promise<void>[] = [];
+
+    Array.from(files).forEach((file, index) => {
+      const validationError = validateFile(file);
+      if (validationError) {
+        setUploadProgress(prev => [
+          ...prev,
+          {
+            fileName: file.name,
+            progress: 100,
+            status: 'error',
+            error: validationError
+          }
+        ]);
+        return;
+      }
+
+      const uploadPromise = (async () => {
+        try {
+          // Add to upload progress
+          setUploadProgress(prev => [
+            ...prev,
+            {
+              fileName: file.name,
+              progress: 0,
+              status: 'uploading'
+            }
+          ]);
+
+          // Get signature from backend
+          const signResponse = await apiFetch('/api/admin/uploads/sign', {
+            method: 'POST',
+            body: JSON.stringify({
+              filename: file.name,
+              contentType: file.type,
+              size: file.size
+            })
+          });
+
+          if (!signResponse.success) {
+            throw new Error(signResponse.error || 'Ошибка получения подписи');
+          }
+
+          // Update progress
+          setUploadProgress(prev => prev.map(p =>
+            p.fileName === file.name
+              ? { ...p, progress: 25 }
+              : p
+          ));
+
+          // Upload to Cloudinary
+          const imageUrl = await uploadToCloudinary(file, signResponse.data);
+
+          // Update progress to completed
+          setUploadProgress(prev => prev.map(p =>
+            p.fileName === file.name
+              ? { ...p, progress: 100, status: 'completed', url: imageUrl }
+              : p
+          ));
+
+          // Add to images array
+          setNewProduct(prev => ({
+            ...prev,
+            images: [...prev.images.filter(img => img.trim() !== ''), imageUrl]
+          }));
+
+        } catch (error: any) {
+          console.error('Upload error:', error);
+          setUploadProgress(prev => prev.map(p =>
+            p.fileName === file.name
+              ? { ...p, status: 'error', error: error.message }
+              : p
+          ));
+        }
+      })();
+
+      uploadPromises.push(uploadPromise);
+    });
+
+    await Promise.all(uploadPromises);
+    setIsUploading(false);
+
+    // Clear upload progress after a delay
+    setTimeout(() => {
+      setUploadProgress([]);
+    }, 3000);
+  };
+
   const handleImageChange = (index: number, value: string) => {
     setNewProduct(prev => ({
       ...prev,
@@ -177,8 +283,9 @@ const AdminProducts: React.FC = () => {
           condition: 8,
           description: '',
           price: 0,
-          images: ['']
+          images: []
         });
+        setUploadProgress([]);
         setIsModalOpen(false);
       }
     } catch (err: any) {
@@ -341,7 +448,11 @@ const AdminProducts: React.FC = () => {
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold">Добавить товар</h2>
                   <button
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setUploadProgress([]);
+                      setCreateError(null);
+                    }}
                     className="text-gray-500 hover:text-gray-700"
                   >
                     ✕
@@ -470,36 +581,131 @@ const AdminProducts: React.FC = () => {
 
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Изображения (URL)
+                        Изображения
                       </label>
-                      <div className="space-y-2">
-                        {newProduct.images.map((image, index) => (
-                          <div key={index} className="flex gap-2">
-                            <input
-                              type="url"
-                              value={image}
-                              onChange={(e) => handleImageChange(index, e.target.value)}
-                              placeholder="https://example.com/image.jpg"
-                              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                            {newProduct.images.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeImageField(index)}
-                                className="px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
-                              >
-                                Удалить
-                              </button>
-                            )}
+
+                      {/* File Upload */}
+                      <div className="space-y-4">
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                            className="hidden"
+                            id="file-upload"
+                            disabled={isUploading}
+                          />
+                          <label
+                            htmlFor="file-upload"
+                            className={`cursor-pointer ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            <div className="space-y-2">
+                              <div className="text-4xl text-gray-400">📷</div>
+                              <div className="text-sm text-gray-600">
+                                {isUploading ? 'Загрузка...' : 'Нажмите для выбора файлов или перетащите их сюда'}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Поддерживаются: JPG, PNG, WebP (до 5 МБ каждый)
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+
+                        {/* Upload Progress */}
+                        {uploadProgress.length > 0 && (
+                          <div className="space-y-2">
+                            {uploadProgress.map((upload, index) => (
+                              <div key={index} className="bg-gray-50 rounded-lg p-3">
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="text-sm font-medium text-gray-700 truncate">
+                                    {upload.fileName}
+                                  </span>
+                                  <span className={`text-xs px-2 py-1 rounded-full ${
+                                    upload.status === 'completed'
+                                      ? 'bg-green-100 text-green-800'
+                                      : upload.status === 'error'
+                                      ? 'bg-red-100 text-red-800'
+                                      : 'bg-blue-100 text-blue-800'
+                                  }`}>
+                                    {upload.status === 'completed' ? 'Готово'
+                                      : upload.status === 'error' ? 'Ошибка'
+                                      : 'Загрузка...'}
+                                  </span>
+                                </div>
+                                {upload.status === 'uploading' && (
+                                  <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div
+                                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                      style={{ width: `${upload.progress}%` }}
+                                    ></div>
+                                  </div>
+                                )}
+                                {upload.error && (
+                                  <div className="text-red-600 text-xs mt-1">{upload.error}</div>
+                                )}
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={addImageField}
-                          className="text-blue-600 hover:text-blue-700 text-sm"
-                        >
-                          + Добавить изображение
-                        </button>
+                        )}
+
+                        {/* Current Images */}
+                        {newProduct.images.filter(img => img.trim()).length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">Загруженные изображения:</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                              {newProduct.images
+                                .filter(img => img.trim())
+                                .map((image, index) => (
+                                  <div key={index} className="relative group">
+                                    <img
+                                      src={image}
+                                      alt={`Product ${index + 1}`}
+                                      className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setNewProduct(prev => ({
+                                          ...prev,
+                                          images: prev.images.filter(u => u.trim() && u !== image)
+                                        }));
+                                      }}
+                                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Manual URL Input (fallback) */}
+                        <details className="mt-4">
+                          <summary className="text-sm text-gray-600 cursor-pointer hover:text-blue-600">
+                            Добавить изображение по URL (дополнительно)
+                          </summary>
+                          <div className="mt-2 space-y-2">
+                            <div className="flex gap-2">
+                              <input
+                                type="url"
+                                placeholder="https://example.com/image.jpg"
+                                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                    const url = e.currentTarget.value.trim();
+                                    setNewProduct(prev => ({
+                                      ...prev,
+                                      images: [...prev.images.filter(img => img.trim()), url]
+                                    }));
+                                    e.currentTarget.value = '';
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </details>
                       </div>
                     </div>
                   </div>
@@ -511,7 +717,11 @@ const AdminProducts: React.FC = () => {
                   <div className="flex justify-end space-x-3 pt-4">
                     <button
                       type="button"
-                      onClick={() => setIsModalOpen(false)}
+                      onClick={() => {
+                        setIsModalOpen(false);
+                        setUploadProgress([]);
+                        setCreateError(null);
+                      }}
                       className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                     >
                       Отмена

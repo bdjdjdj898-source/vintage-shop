@@ -20,18 +20,23 @@ export function initTelegramWebApp() {
     console.log('📜 Telegram script найден:', !!telegramScript);
     console.log('📜 Все скрипты:', scripts.map(s => s.src));
 
-    // ВРЕМЕННЫЙ FALLBACK для тестирования
-    console.log('🧪 Используем тестовый режим');
-    return {
-      initData: 'test_init_data=test_user',
-      user: {
-        id: 12345,
-        first_name: 'Test',
-        last_name: 'User',
-        username: 'testuser'
-      },
-      colorScheme: 'light'
-    };
+    // FALLBACK для тестирования - только в DEV режиме
+    if (import.meta.env.DEV) {
+      console.log('🧪 Используем тестовый режим (DEV only)');
+      return {
+        initData: 'test_init_data=test_user',
+        user: {
+          id: 12345,
+          first_name: 'Test',
+          last_name: 'User',
+          username: 'testuser'
+        },
+        colorScheme: 'light'
+      };
+    }
+
+    // В продакшене без Telegram SDK - ошибка
+    throw new Error('Приложение должно быть открыто в Telegram');
   }
 
   // Инициализируем WebApp
@@ -47,18 +52,23 @@ export function initTelegramWebApp() {
   if (!tg.initData || !tg.initDataUnsafe?.user) {
     console.error('Telegram WebApp: нет данных пользователя');
 
-    // ВРЕМЕННЫЙ FALLBACK
-    console.log('Используем тестовые данные пользователя');
-    return {
-      initData: tg.initData || 'fallback_init_data',
-      user: {
-        id: 67890,
-        first_name: 'Fallback',
-        last_name: 'User',
-        username: 'fallbackuser'
-      },
-      colorScheme: tg.colorScheme || 'light'
-    };
+    // FALLBACK только в DEV режиме
+    if (import.meta.env.DEV) {
+      console.log('Используем тестовые данные пользователя (DEV only)');
+      return {
+        initData: tg.initData || 'fallback_init_data',
+        user: {
+          id: 67890,
+          first_name: 'Fallback',
+          last_name: 'User',
+          username: 'fallbackuser'
+        },
+        colorScheme: tg.colorScheme || 'light'
+      };
+    }
+
+    // В продакшене без данных пользователя - ошибка
+    throw new Error('Нет данных пользователя от Telegram');
   }
 
   return {

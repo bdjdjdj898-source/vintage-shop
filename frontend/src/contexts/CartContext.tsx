@@ -1,38 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { apiFetch } from '../api/client';
-
-interface Product {
-  id: number;
-  title: string;
-  brand: string;
-  category: string;
-  size: string;
-  color: string;
-  condition: number;
-  description: string;
-  price: number;
-  images: string[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface CartItem {
-  id: number;
-  cartId: number;
-  productId: number;
-  quantity: number;
-  createdAt: string;
-  product: Product;
-}
-
-interface Cart {
-  id: number;
-  userId: number;
-  createdAt: string;
-  updatedAt: string;
-  items: CartItem[];
-}
+import { Cart, CartItem } from '../types/api';
 
 interface CartContextType {
   cart: Cart | null;

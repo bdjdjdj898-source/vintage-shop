@@ -106,6 +106,12 @@ router.post('/', [
         throw new Error('CART_EMPTY');
       }
 
+      // Проверяем доступность всех товаров в корзине
+      const unavailableProducts = cart.items.filter(item => !item.product.isActive);
+      if (unavailableProducts.length > 0) {
+        throw new Error('PRODUCT_UNAVAILABLE');
+      }
+
       // Вычисляем общую сумму заказа
       const totalAmount = cart.items.reduce((sum, item) => {
         return sum + (item.product.price * item.quantity);
@@ -194,6 +200,9 @@ router.post('/', [
     console.error('Ошибка создания заказа:', error);
     if (error instanceof Error && error.message === 'CART_EMPTY') {
       return ApiResponse.businessError(res, ErrorCode.CART_EMPTY, 'Корзина пуста');
+    }
+    if (error instanceof Error && error.message === 'PRODUCT_UNAVAILABLE') {
+      return ApiResponse.businessError(res, ErrorCode.PRODUCT_UNAVAILABLE, 'Товар больше недоступен');
     }
     return ApiResponse.internalError(res, 'Ошибка сервера при создании заказа');
   }

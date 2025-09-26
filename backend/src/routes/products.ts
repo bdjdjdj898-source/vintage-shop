@@ -5,6 +5,7 @@ import { requireAdmin } from '../middleware/requireAdmin';
 import { validateRequest } from '../middleware/validateRequest';
 import { ApiResponse } from '../utils/responses';
 import { parseJsonArray } from '../utils/json';
+import logger from '../lib/logger';
 
 const router = Router();
 
@@ -20,6 +21,8 @@ router.get('/', [
   query('maxPrice').optional().isFloat({ min: 0 }),
   query('page').optional().isInt({ min: 1 }).toInt(),
   query('limit').optional().isInt({ min: 1, max: 50 }).toInt(),
+  query('includeInactive').optional().isBoolean(),
+  query('search').optional().isString(),
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
@@ -33,20 +36,36 @@ router.get('/', [
       minPrice,
       maxPrice,
       page = 1,
-      limit = 20
+      limit = 20,
+      includeInactive,
+      search
     } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
 
     // Построение фильтров
-    const where: any = {
-      isActive: true
-    };
+    const where: any = {};
+
+    // Only show active products by default, unless includeInactive is true and user is admin
+    const shouldIncludeInactive = includeInactive === 'true' && req.user?.role === 'admin';
+    if (!shouldIncludeInactive) {
+      where.isActive = true;
+    }
 
     if (category) where.category = category;
     if (brand) where.brand = brand;
     if (size) where.size = size;
     if (color) where.color = color;
+
+    // Search functionality
+    if (search) {
+      where.OR = [
+        { title: { contains: search as string, mode: 'insensitive' } },
+        { brand: { contains: search as string, mode: 'insensitive' } },
+        { description: { contains: search as string, mode: 'insensitive' } },
+        { category: { contains: search as string, mode: 'insensitive' } }
+      ];
+    }
     
     if (minCondition || maxCondition) {
       where.condition = {};
@@ -78,7 +97,9 @@ router.get('/', [
           description: true,
           price: true,
           images: true,
-          createdAt: true
+          isActive: true,
+          createdAt: true,
+          updatedAt: true
         }
       }),
       prisma.product.count({ where })
@@ -97,7 +118,11 @@ router.get('/', [
       pages: Math.ceil(totalCount / Number(limit))
     });
   } catch (error) {
-    console.error('Error fetching products:', error);
+    logger.error('Error fetching products', {
+      reqId: req.requestId,
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return ApiResponse.internalError(res, 'Ошибка при получении товаров');
   }
 });
@@ -110,10 +135,11 @@ router.get('/:id', [
   try {
     const { id } = req.params;
 
+    const isAdmin = req.user?.role === 'admin';
     const product = await prisma.product.findFirst({
       where: {
         id: Number(id),
-        isActive: true
+        ...(isAdmin ? {} : { isActive: true })
       }
     });
 
@@ -129,7 +155,12 @@ router.get('/:id', [
 
     return ApiResponse.success(res, productWithImages);
   } catch (error) {
-    console.error('Error fetching product:', error);
+    logger.error('Error fetching product', {
+      reqId: req.requestId,
+      productId: req.params.id,
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return ApiResponse.internalError(res, 'Ошибка при получении товара');
   }
 });

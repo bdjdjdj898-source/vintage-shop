@@ -159,6 +159,11 @@ router.put('/items/:id', [
       return ApiResponse.notFound(res, 'Элемент корзины не найден');
     }
 
+    // Проверяем, активен ли товар
+    if (!cartItem.product.isActive) {
+      return ApiResponse.businessError(res, ErrorCode.PRODUCT_UNAVAILABLE, 'Товар больше недоступен');
+    }
+
     // Обновляем количество
     const updatedItem = await prisma.cartItem.update({
       where: { id: cartItemId },

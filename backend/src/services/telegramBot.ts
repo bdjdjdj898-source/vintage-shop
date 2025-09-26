@@ -9,7 +9,10 @@ export class TelegramBotService {
 
   constructor() {
     this.botToken = process.env.TELEGRAM_BOT_TOKEN || '';
-    this.adminIds = process.env.ADMIN_TELEGRAM_IDS?.split(',') || [];
+    this.adminIds = (process.env.ADMIN_TELEGRAM_IDS || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
 
     if (!this.botToken) {
       console.warn('TELEGRAM_BOT_TOKEN не задан, уведомления отключены');

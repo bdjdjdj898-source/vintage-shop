@@ -1,43 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
-
-interface Product {
-  id: number;
-  title: string;
-  brand: string;
-  category: string;
-  size: string;
-  color: string;
-  condition: number;
-  description: string;
-  price: number;
-  images: string[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface OrderItem {
-  id: number;
-  orderId: number;
-  productId: number;
-  quantity: number;
-  price: number;
-  product: Product;
-}
-
-interface Order {
-  id: number;
-  userId: number;
-  status: string;
-  totalAmount: number;
-  shippingInfo: string;
-  telegramData?: string;
-  createdAt: string;
-  updatedAt: string;
-  items: OrderItem[];
-}
+import { Order } from '../types/api';
 
 const Orders: React.FC = () => {
   const { user } = useAuth();

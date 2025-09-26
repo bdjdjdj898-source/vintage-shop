@@ -4,7 +4,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import path from 'path';
 
 // Роутеры
 import productsRouter from './routes/products';
@@ -15,6 +14,8 @@ import meRouter from './routes/me';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler';
+import { requestIdMiddleware } from './middleware/requestId';
+import logger, { loggerStream } from './lib/logger';
 
 dotenv.config();
 
@@ -27,7 +28,7 @@ app.set('trust proxy', true);
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 минут
-  max: 100, // максимум 100 запросов на IP за окно
+  max: 500, // Higher limit to be more lenient for admin usage
   message: {
     error: 'Слишком много запросов с этого IP, попробуйте позже.'
   }
@@ -39,30 +40,36 @@ app.use(helmet({
 }));
 
 // CORS конфигурация
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:3000')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-domain.com'] 
-    : ['http://localhost:5173', 'http://localhost:3000'],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-telegram-init-data']
 }));
 
 // Общие middleware
-app.use(morgan('combined'));
+app.use(requestIdMiddleware);
+app.use(morgan('combined', { stream: loggerStream }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(limiter);
 
-// Health check endpoint
+// Health check endpoint (before rate limiter to avoid any limits)
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development'
   });
 });
+
+// Apply rate limiter to API routes only (after health check)
+app.use('/api', limiter);
 
 // API routes
 app.use('/api/products', productsRouter);
@@ -71,56 +78,34 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/me', meRouter);
 
-// В production режиме Nginx сам обслуживает статику
 // Express обрабатывает ТОЛЬКО API роуты
-if (process.env.NODE_ENV === 'production') {
-  // Только 404 для неизвестных API роутов
-  app.get('/api/*', (req, res) => {
-    res.status(404).json({
-      error: 'API роут не найден',
-      path: req.originalUrl,
-      method: req.method
-    });
+// Статические файлы обслуживаются Nginx в production и Vite dev server в development
+app.get('/api/*', (req, res) => {
+  res.status(404).json({
+    error: 'API роут не найден',
+    path: req.originalUrl,
+    method: req.method
   });
-
-  // Все остальное (включая статику и SPA роуты) обрабатывает Nginx
-  // Express в production НЕ должен обрабатывать статические файлы
-} else {
-  // Development - обслуживаем статику для локальной разработки
-  const frontendPath = path.join(__dirname, '../../frontend/dist');
-  app.use(express.static(frontendPath));
-
-  // Development fallback для SPA
-  app.get('*', (req, res) => {
-    if (req.path.startsWith('/api/')) {
-      return res.status(404).json({
-        error: 'API роут не найден',
-        path: req.originalUrl,
-        method: req.method
-      });
-    }
-    res.sendFile(path.join(frontendPath, 'index.html'));
-  });
-}
+});
 
 // Error handler должен быть последним
 app.use(errorHandler);
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('🔴 SIGTERM received, shutting down gracefully');
+  logger.info('SIGTERM received, shutting down gracefully');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('🔴 SIGINT received, shutting down gracefully');
+  logger.info('SIGINT received, shutting down gracefully');
   process.exit(0);
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`Server running on port ${PORT}`);
+  logger.info(`Health check: http://localhost:${PORT}/health`);
+  logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 export default app;
