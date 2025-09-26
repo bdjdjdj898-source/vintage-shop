@@ -3,6 +3,7 @@ import { param, query, body } from 'express-validator';
 import { prisma } from '../lib/prisma';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { validateRequest } from '../middleware/validateRequest';
+import { optionalAuth } from '../middleware/optionalAuth';
 import { ApiResponse } from '../utils/responses';
 import { parseJsonArray } from '../utils/json';
 import logger from '../lib/logger';
@@ -10,7 +11,7 @@ import logger from '../lib/logger';
 const router = Router();
 
 // GET /api/products - получить список товаров с фильтрацией
-router.get('/', [
+router.get('/', optionalAuth, [
   query('category').optional().isString(),
   query('brand').optional().isString(),
   query('size').optional().isString(),
@@ -128,7 +129,7 @@ router.get('/', [
 });
 
 // GET /api/products/:id - получить товар по ID
-router.get('/:id', [
+router.get('/:id', optionalAuth, [
   param('id').isInt({ min: 1 }).toInt(),
   validateRequest
 ], async (req: Request, res: Response) => {

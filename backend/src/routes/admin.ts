@@ -403,4 +403,113 @@ router.post('/uploads', [
   }
 });
 
+// GET /api/admin/products - список товаров для админа
+router.get('/products', [
+  query('category').optional().isString(),
+  query('brand').optional().isString(),
+  query('size').optional().isString(),
+  query('color').optional().isString(),
+  query('minCondition').optional().isInt({ min: 1, max: 10 }),
+  query('maxCondition').optional().isInt({ min: 1, max: 10 }),
+  query('minPrice').optional().isFloat({ min: 0 }),
+  query('maxPrice').optional().isFloat({ min: 0 }),
+  query('page').optional().isInt({ min: 1 }).toInt(),
+  query('limit').optional().isInt({ min: 1, max: 50 }).toInt(),
+  query('search').optional().isString(),
+  validateRequest
+], async (req: Request, res: Response) => {
+  try {
+    const {
+      category,
+      brand,
+      size,
+      color,
+      minCondition,
+      maxCondition,
+      minPrice,
+      maxPrice,
+      page = 1,
+      limit = 20,
+      search
+    } = req.query;
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    // Построение фильтров
+    const where: any = {};
+
+    // Admin can see all products including inactive by default
+    // No isActive filter for admin
+
+    if (category) where.category = category;
+    if (brand) where.brand = brand;
+    if (size) where.size = size;
+    if (color) where.color = color;
+
+    // Search functionality
+    if (search) {
+      where.OR = [
+        { title: { contains: search as string, mode: 'insensitive' } },
+        { brand: { contains: search as string, mode: 'insensitive' } },
+        { description: { contains: search as string, mode: 'insensitive' } },
+        { category: { contains: search as string, mode: 'insensitive' } }
+      ];
+    }
+
+    if (minCondition || maxCondition) {
+      where.condition = {};
+      if (minCondition) where.condition.gte = Number(minCondition);
+      if (maxCondition) where.condition.lte = Number(maxCondition);
+    }
+
+    if (minPrice || maxPrice) {
+      where.price = {};
+      if (minPrice) where.price.gte = Number(minPrice);
+      if (maxPrice) where.price.lte = Number(maxPrice);
+    }
+
+    // Запросы к БД
+    const [products, totalCount] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: Number(limit),
+        select: {
+          id: true,
+          title: true,
+          brand: true,
+          category: true,
+          size: true,
+          color: true,
+          condition: true,
+          description: true,
+          price: true,
+          images: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      }),
+      prisma.product.count({ where })
+    ]);
+
+    // Парсим JSON images для каждого продукта
+    const productsWithImages = products.map(product => ({
+      ...product,
+      images: parseJsonArray(product.images)
+    }));
+
+    return ApiResponse.paginated(res, productsWithImages, {
+      page: Number(page),
+      limit: Number(limit),
+      total: totalCount,
+      pages: Math.ceil(totalCount / Number(limit))
+    });
+  } catch (error) {
+    console.error('Ошибка получения товаров админом:', error);
+    return ApiResponse.internalError(res, 'Ошибка при получении товаров');
+  }
+});
+
 export default router;

@@ -116,7 +116,7 @@ model OrderItem {
   @@map("order_items")
 }
 3. Дизайн REST API
-Аутентификация через Telegram
+Аутентификация через Telegram (Header-based)
 typescript// backend/src/utils/telegramAuth.ts
 import crypto from 'crypto';
 
@@ -135,6 +135,11 @@ export function validateTelegramInitData(initData: string, botToken: string): bo
   
   return calculatedHash === hash;
 }
+
+// Аутентификация реализована через x-telegram-init-data header
+// Каждый запрос содержит initData, которые валидируются на сервере
+// JWT токены не используются - аутентификация проверяется на каждом запросе
+
 API эндпоинты
 typescript// Товары
 GET    /api/products              # Список товаров с фильтрами
@@ -323,7 +328,7 @@ services:
     environment:
       - DATABASE_URL=file:./database.db
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_TELEGRAM_IDS=${ADMIN_TELEGRAM_IDS}
     volumes:
       - ./database.db:/app/database.db
 Переменные окружения
@@ -331,10 +336,10 @@ env# .env.production
 DATABASE_URL="file:./production.db"
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_WEBHOOK_SECRET=your_webhook_secret
-JWT_SECRET=your_jwt_secret_key
 NODE_ENV=production
 PORT=3000
 ADMIN_TELEGRAM_IDS=123456789,987654321  # Comma-separated, entries trimmed automatically
+TELEGRAM_INITDATA_TTL=86400  # Telegram auth data TTL in seconds
 
 # Important: In production, an empty list disables admin notifications and admin role matching
 CI/CD и мониторинг

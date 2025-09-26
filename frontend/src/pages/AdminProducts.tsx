@@ -36,7 +36,7 @@ const AdminProducts: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await apiFetch('/api/products?limit=50&includeInactive=true');
+      const response = await apiFetch('/api/admin/products?limit=50');
       if (response.success) {
         setProducts(response.data);
       }

@@ -2,31 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { validateTelegramInitData, parseTelegramInitData, isAdminTelegramId } from '../utils/telegram';
 import { prisma } from '../lib/prisma';
 
-// Расширяем Request интерфейс для добавления user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: number;
-        telegramId: string;
-        username?: string;
-        firstName?: string;
-        lastName?: string;
-        avatarUrl?: string;
-        role: string;
-      };
-    }
-  }
-}
-
-export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
+export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const initData = req.headers['x-telegram-init-data'] as string;
 
     if (!initData) {
-      return res.status(401).json({
-        error: 'Требуется аутентификация через Telegram WebApp'
-      });
+      // No auth header, continue without user
+      return next();
     }
 
     // TEST MODE - only in non-production with explicit flags
@@ -36,7 +18,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       process.env.ENABLE_TEST_AUTH === 'true' &&
       req.headers['x-debug-auth'] === debugSecret
     ) {
-      console.log('🧪 Используется тестовый режим авторизации');
+      console.log('🧪 Используется тестовый режим авторизации (optional)');
 
       // Default to user role, allow admin only with explicit flag
       const role = process.env.DEBUG_TEST_ADMIN === 'true' ? 'admin' : 'user';
@@ -71,14 +53,14 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     if (!botToken) {
       console.error('TELEGRAM_BOT_TOKEN не установлен');
-      return res.status(500).json({ error: 'Ошибка конфигурации сервера' });
+      // Continue without user instead of failing
+      return next();
     }
 
     const isValid = validateTelegramInitData(initData, botToken);
     if (!isValid) {
-      return res.status(401).json({
-        error: 'Недействительные данные аутентификации Telegram'
-      });
+      // Invalid signature, continue without user
+      return next();
     }
 
     // Check auth_date freshness
@@ -89,17 +71,15 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     const TTL = parseInt(process.env.TELEGRAM_INITDATA_TTL || '86400', 10);
 
     if (!authDate || now - authDate > TTL) {
-      return res.status(401).json({
-        error: 'Просроченные данные аутентификации Telegram'
-      });
+      // Expired auth data, continue without user
+      return next();
     }
 
     // Парсим данные пользователя из initData
     const telegramUser = parseTelegramInitData(initData);
     if (!telegramUser) {
-      return res.status(401).json({
-        error: 'Не удалось получить данные пользователя из Telegram'
-      });
+      // Can't parse user data, continue without user
+      return next();
     }
 
     // Определяем роль пользователя на основе ADMIN_TELEGRAM_IDS
@@ -129,9 +109,8 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
     // Check if user is banned
     if (user.isBanned) {
-      return res.status(403).json({
-        error: 'Аккаунт заблокирован. Обратитесь к администрации.'
-      });
+      // Banned user, continue without user
+      return next();
     }
 
     // Добавляем пользователя в request
@@ -147,7 +126,8 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
     next();
   } catch (error) {
-    console.error('Ошибка аутентификации:', error);
-    res.status(500).json({ error: 'Ошибка сервера при аутентификации' });
+    console.error('Ошибка опциональной аутентификации:', error);
+    // On error, continue without user instead of failing
+    next();
   }
 };
