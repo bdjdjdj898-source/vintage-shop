@@ -4,7 +4,7 @@ import { validateRequest } from '../middleware/validateRequest';
 import { requireAuth } from '../middleware/telegramAuth';
 import { prisma } from '../lib/prisma';
 import { ApiResponse, ErrorCode } from '../utils/responses';
-import { parseJsonArray } from '../utils/json';
+import { toStringArray } from '../utils/normalize';
 
 const router = Router();
 
@@ -47,7 +47,7 @@ router.get('/', async (req: Request, res: Response) => {
         ...item,
         product: {
           ...item.product,
-          images: parseJsonArray(item.product.images)
+          images: toStringArray(item.product.images)
         }
       }))
     };
@@ -123,7 +123,7 @@ router.post('/items', [
       ...cartItem,
       product: {
         ...cartItem.product,
-        images: parseJsonArray(cartItem.product.images)
+        images: toStringArray(cartItem.product.images)
       }
     };
 
@@ -176,7 +176,7 @@ router.put('/items/:id', [
       ...updatedItem,
       product: {
         ...updatedItem.product,
-        images: parseJsonArray(updatedItem.product.images)
+        images: toStringArray(updatedItem.product.images)
       }
     };
 

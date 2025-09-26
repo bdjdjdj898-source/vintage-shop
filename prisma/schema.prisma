@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -36,15 +36,21 @@ model Product {
   condition   Int      // 1-10 шкала состояния
   description String
   price       Float
-  images      String   // JSON массив URL изображений
+  images      Json     // JSON массив URL изображений
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   // Relations
   cartItems   CartItem[]
   orderItems  OrderItem[]
-  
+
+  // Indexes for scalability
+  @@index([category])
+  @@index([brand])
+  @@index([price])
+  @@index([createdAt])
+
   @@map("products")
 }
 
@@ -85,11 +91,16 @@ model Order {
   telegramData  String?  // Дополнительные данные из Telegram WebApp
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  
+
   // Relations
   user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items         OrderItem[]
-  
+
+  // Indexes for scalability
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+
   @@map("orders")
 }
 

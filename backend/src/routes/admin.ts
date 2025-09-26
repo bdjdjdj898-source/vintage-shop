@@ -4,7 +4,7 @@ import { validateRequest } from '../middleware/validateRequest';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { prisma } from '../lib/prisma';
 import { ApiResponse } from '../utils/responses';
-import { parseJsonArray } from '../utils/json';
+import { toStringArray } from '../utils/normalize';
 import crypto from 'crypto';
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -142,7 +142,7 @@ router.get('/orders', [
         ...item,
         product: {
           ...item.product,
-          images: parseJsonArray(item.product.images)
+          images: toStringArray(item.product.images)
         }
       }))
     }));
@@ -224,7 +224,7 @@ router.get('/analytics', async (req: Request, res: Response) => {
       return {
         product: product ? {
           ...product,
-          images: parseJsonArray(product.images)
+          images: toStringArray(product.images)
         } : {
           id: item.productId,
           title: 'Удалённый товар',
@@ -497,7 +497,7 @@ router.get('/products', [
     // Парсим JSON images для каждого продукта
     const productsWithImages = products.map(product => ({
       ...product,
-      images: parseJsonArray(product.images)
+      images: toStringArray(product.images)
     }));
 
     return ApiResponse.paginated(res, productsWithImages, {

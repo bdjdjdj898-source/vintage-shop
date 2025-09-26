@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { validateTelegramInitData, parseTelegramInitData, isAdminTelegramId } from '../utils/telegram';
-import { prisma } from '../lib/prisma';
 
 export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -23,27 +22,15 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
       // Default to user role, allow admin only with explicit flag
       const role = process.env.DEBUG_TEST_ADMIN === 'true' ? 'admin' : 'user';
 
-      // Создаем тестового пользователя
-      const testUser = await prisma.user.upsert({
-        where: { telegramId: '12345' },
-        update: { updatedAt: new Date(), role },
-        create: {
-          telegramId: '12345',
-          username: 'testuser',
-          firstName: 'Test',
-          lastName: 'User',
-          role
-        }
-      });
-
+      // Create minimal test user without DB write
       req.user = {
-        id: testUser.id,
-        telegramId: testUser.telegramId,
-        username: testUser.username || undefined,
-        firstName: testUser.firstName || undefined,
-        lastName: testUser.lastName || undefined,
-        avatarUrl: testUser.avatarUrl || undefined,
-        role: testUser.role
+        id: 12345, // Static ID for test mode
+        telegramId: '12345',
+        username: 'testuser',
+        firstName: 'Test',
+        lastName: 'User',
+        avatarUrl: undefined,
+        role: role
       };
 
       return next();
@@ -86,42 +73,15 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
     const isAdmin = isAdminTelegramId(telegramUser.id.toString());
     const role = isAdmin ? 'admin' : 'user';
 
-    // Находим или создаём пользователя в БД используя upsert
-    const user = await prisma.user.upsert({
-      where: { telegramId: telegramUser.id.toString() },
-      update: {
-        username: telegramUser.username,
-        firstName: telegramUser.first_name,
-        lastName: telegramUser.last_name,
-        avatarUrl: telegramUser.photo_url,
-        role: role, // Обновляем роль при каждом входе
-        updatedAt: new Date()
-      },
-      create: {
-        telegramId: telegramUser.id.toString(),
-        username: telegramUser.username,
-        firstName: telegramUser.first_name,
-        lastName: telegramUser.last_name,
-        avatarUrl: telegramUser.photo_url,
-        role: role
-      }
-    });
-
-    // Check if user is banned
-    if (user.isBanned) {
-      // Banned user, continue without user
-      return next();
-    }
-
-    // Добавляем пользователя в request
+    // Create minimal user from initData without DB write
     req.user = {
-      id: user.id,
-      telegramId: user.telegramId,
-      username: user.username || undefined,
-      firstName: user.firstName || undefined,
-      lastName: user.lastName || undefined,
-      avatarUrl: user.avatarUrl || undefined,
-      role: user.role
+      id: telegramUser.id, // Use Telegram ID as temporary ID
+      telegramId: telegramUser.id.toString(),
+      username: telegramUser.username || undefined,
+      firstName: telegramUser.first_name || undefined,
+      lastName: telegramUser.last_name || undefined,
+      avatarUrl: telegramUser.photo_url || undefined,
+      role: role
     };
 
     next();

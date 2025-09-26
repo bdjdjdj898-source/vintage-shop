@@ -1,0 +1,1 @@
+export const toStringArray = (v: unknown): string[] => Array.isArray(v) ? v.filter(x => typeof x === 'string') : [];

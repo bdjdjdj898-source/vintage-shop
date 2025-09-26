@@ -40,7 +40,8 @@ app.use(helmet({
 }));
 
 // CORS конфигурация
-const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:3000')
+const defaultCorsOrigins = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5173,http://localhost:3000';
+const allowedOrigins = (process.env.CORS_ORIGINS || defaultCorsOrigins)
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);

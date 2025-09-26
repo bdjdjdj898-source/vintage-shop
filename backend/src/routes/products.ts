@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { param, query, body } from 'express-validator';
 import { prisma } from '../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { validateRequest } from '../middleware/validateRequest';
 import { optionalAuth } from '../middleware/optionalAuth';
 import { ApiResponse } from '../utils/responses';
-import { parseJsonArray } from '../utils/json';
 import logger from '../lib/logger';
 
 const router = Router();
@@ -106,11 +106,8 @@ router.get('/', optionalAuth, [
       prisma.product.count({ where })
     ]);
 
-    // Парсим JSON images для каждого продукта
-    const productsWithImages = products.map(product => ({
-      ...product,
-      images: parseJsonArray(product.images)
-    }));
+    // Images are already in the correct format with Json type
+    const productsWithImages = products;
 
     return ApiResponse.paginated(res, productsWithImages, {
       page: Number(page),
@@ -148,13 +145,8 @@ router.get('/:id', optionalAuth, [
       return ApiResponse.notFound(res, 'Товар не найден');
     }
 
-    // Парсим JSON images
-    const productWithImages = {
-      ...product,
-      images: parseJsonArray(product.images)
-    };
-
-    return ApiResponse.success(res, productWithImages);
+    // Images are already in the correct format with Json type
+    return ApiResponse.success(res, product);
   } catch (error) {
     logger.error('Error fetching product', {
       reqId: req.requestId,
@@ -176,7 +168,7 @@ router.post('/', requireAdmin, [
   body('condition').isInt({ min: 1, max: 10 }),
   body('description').isString().isLength({ min: 1, max: 2000 }),
   body('price').isFloat({ min: 0 }),
-  body('images').isArray(),
+  body('images').isArray({ min: 1, max: 10 }).withMessage('Количество изображений должно быть от 1 до 10'),
   body('images.*').isURL(),
   validateRequest
 ], async (req: Request, res: Response) => {
@@ -193,6 +185,9 @@ router.post('/', requireAdmin, [
       images
     } = req.body;
 
+    // Deduplicate image URLs
+    const uniqueImages: Prisma.JsonArray = [...new Set(images as string[])];
+
     const product = await prisma.product.create({
       data: {
         title,
@@ -203,17 +198,12 @@ router.post('/', requireAdmin, [
         condition,
         description,
         price,
-        images: JSON.stringify(images),
+        images: uniqueImages,
         isActive: true
       }
     });
 
-    const productWithParsedImages = {
-      ...product,
-      images: parseJsonArray(product.images)
-    };
-
-    return ApiResponse.success(res, productWithParsedImages, 201);
+    return ApiResponse.success(res, product, 201);
   } catch (error) {
     console.error('Error creating product:', error);
     return ApiResponse.internalError(res, 'Ошибка при создании товара');
@@ -231,7 +221,7 @@ router.put('/:id', requireAdmin, [
   body('condition').optional().isInt({ min: 1, max: 10 }),
   body('description').optional().isString().isLength({ min: 1, max: 2000 }),
   body('price').optional().isFloat({ min: 0 }),
-  body('images').optional().isArray(),
+  body('images').optional().isArray({ min: 1, max: 10 }).withMessage('Количество изображений должно быть от 1 до 10'),
   body('images.*').optional().isURL(),
   body('isActive').optional().isBoolean(),
   validateRequest
@@ -261,9 +251,10 @@ router.put('/:id', requireAdmin, [
       }
     }
 
-    // Handle images array separately
+    // Handle images array separately with deduplication
     if (req.body.images !== undefined) {
-      updateData.images = JSON.stringify(req.body.images);
+      const uniqueImages: Prisma.JsonArray = [...new Set(req.body.images as string[])];
+      updateData.images = uniqueImages;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -275,12 +266,7 @@ router.put('/:id', requireAdmin, [
       data: updateData
     });
 
-    const productWithParsedImages = {
-      ...updatedProduct,
-      images: parseJsonArray(updatedProduct.images)
-    };
-
-    return ApiResponse.success(res, productWithParsedImages);
+    return ApiResponse.success(res, updatedProduct);
   } catch (error) {
     console.error('Error updating product:', error);
     return ApiResponse.internalError(res, 'Ошибка при обновлении товара');
@@ -310,12 +296,7 @@ router.delete('/:id', requireAdmin, [
       data: { isActive: false }
     });
 
-    const productWithParsedImages = {
-      ...updatedProduct,
-      images: parseJsonArray(updatedProduct.images)
-    };
-
-    return ApiResponse.success(res, productWithParsedImages);
+    return ApiResponse.success(res, updatedProduct);
   } catch (error) {
     console.error('Error deleting product:', error);
     return ApiResponse.internalError(res, 'Ошибка при удалении товара');

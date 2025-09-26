@@ -6,7 +6,7 @@ import { requireAdmin } from '../middleware/requireAdmin';
 import { prisma } from '../lib/prisma';
 import { ApiResponse, ErrorCode } from '../utils/responses';
 import { telegramBot } from '../services/telegramBot';
-import { parseJsonArray } from '../utils/json';
+import { toStringArray } from '../utils/normalize';
 
 const router = Router();
 
@@ -59,7 +59,7 @@ router.get('/', [
         ...item,
         product: {
           ...item.product,
-          images: parseJsonArray(item.product.images)
+          images: toStringArray(item.product.images)
         }
       }))
     }));
@@ -117,12 +117,21 @@ router.post('/', [
         return sum + (item.product.price * item.quantity);
       }, 0);
 
+      // Prepare minimal Telegram data
+      const telegramData = {
+        telegramId: req.user!.telegramId,
+        username: req.user!.username,
+        first_name: req.user!.firstName,
+        last_name: req.user!.lastName
+      };
+
       // Создаем заказ
       const order = await prisma.order.create({
         data: {
           userId: req.user!.id,
           totalAmount,
           shippingInfo: JSON.stringify(shippingInfo),
+          telegramData: JSON.stringify(telegramData),
           status: 'pending'
         }
       });
@@ -166,7 +175,7 @@ router.post('/', [
         ...item,
         product: {
           ...item.product,
-          images: parseJsonArray(item.product.images)
+          images: toStringArray(item.product.images)
         }
       }))
     };
@@ -241,7 +250,7 @@ router.get('/:id', [
         ...item,
         product: {
           ...item.product,
-          images: parseJsonArray(item.product.images)
+          images: toStringArray(item.product.images)
         }
       }))
     };
@@ -292,7 +301,7 @@ router.put('/:id/status', requireAdmin, [
         ...item,
         product: {
           ...item.product,
-          images: parseJsonArray(item.product.images)
+          images: toStringArray(item.product.images)
         }
       }))
     };
