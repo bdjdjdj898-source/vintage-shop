@@ -5,6 +5,7 @@ import { requireAdmin } from '../middleware/requireAdmin';
 import { prisma } from '../lib/prisma';
 import { ApiResponse } from '../utils/responses';
 import { toStringArray } from '../utils/normalize';
+import { buildProductWhere } from '../utils/products';
 import crypto from 'crypto';
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -232,7 +233,7 @@ router.get('/analytics', async (req: Request, res: Response) => {
           price: 0,
           images: []
         },
-        totalSold: item._sum.quantity
+        totalSold: item._sum.quantity ?? 0
       };
     });
 
@@ -435,38 +436,20 @@ router.get('/products', [
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    // Построение фильтров
-    const where: any = {};
-
-    // Admin can see all products including inactive by default
-    // No isActive filter for admin
-
-    if (category) where.category = category;
-    if (brand) where.brand = brand;
-    if (size) where.size = size;
-    if (color) where.color = color;
-
-    // Search functionality
-    if (search) {
-      where.OR = [
-        { title: { contains: search as string, mode: 'insensitive' } },
-        { brand: { contains: search as string, mode: 'insensitive' } },
-        { description: { contains: search as string, mode: 'insensitive' } },
-        { category: { contains: search as string, mode: 'insensitive' } }
-      ];
-    }
-
-    if (minCondition || maxCondition) {
-      where.condition = {};
-      if (minCondition) where.condition.gte = Number(minCondition);
-      if (maxCondition) where.condition.lte = Number(maxCondition);
-    }
-
-    if (minPrice || maxPrice) {
-      where.price = {};
-      if (minPrice) where.price.gte = Number(minPrice);
-      if (maxPrice) where.price.lte = Number(maxPrice);
-    }
+    // Build where clause using shared utility
+    const where = buildProductWhere({
+      category,
+      brand,
+      size,
+      color,
+      minCondition,
+      maxCondition,
+      minPrice,
+      maxPrice,
+      search
+    }, {
+      isAdmin: true
+    });
 
     // Запросы к БД
     const [products, totalCount] = await Promise.all([

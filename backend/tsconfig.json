@@ -23,12 +23,12 @@
     }
   },
   "include": [
-    "src/**/*",
-    "prisma/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "prisma"
   ],
   "ts-node": {
     "esm": false

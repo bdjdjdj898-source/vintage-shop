@@ -7,6 +7,7 @@ import { validateRequest } from '../middleware/validateRequest';
 import { optionalAuth } from '../middleware/optionalAuth';
 import { ApiResponse } from '../utils/responses';
 import { toStringArray } from '../utils/normalize';
+import { buildProductWhere } from '../utils/products';
 import logger from '../lib/logger';
 
 const router = Router();
@@ -45,41 +46,21 @@ router.get('/', optionalAuth, [
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    // Построение фильтров
-    const where: any = {};
-
-    // Only show active products by default, unless includeInactive is true and user is admin
-    const shouldIncludeInactive = includeInactive === 'true' && req.user?.role === 'admin';
-    if (!shouldIncludeInactive) {
-      where.isActive = true;
-    }
-
-    if (category) where.category = category;
-    if (brand) where.brand = brand;
-    if (size) where.size = size;
-    if (color) where.color = color;
-
-    // Search functionality
-    if (search) {
-      where.OR = [
-        { title: { contains: search as string, mode: 'insensitive' } },
-        { brand: { contains: search as string, mode: 'insensitive' } },
-        { description: { contains: search as string, mode: 'insensitive' } },
-        { category: { contains: search as string, mode: 'insensitive' } }
-      ];
-    }
-    
-    if (minCondition || maxCondition) {
-      where.condition = {};
-      if (minCondition) where.condition.gte = Number(minCondition);
-      if (maxCondition) where.condition.lte = Number(maxCondition);
-    }
-
-    if (minPrice || maxPrice) {
-      where.price = {};
-      if (minPrice) where.price.gte = Number(minPrice);
-      if (maxPrice) where.price.lte = Number(maxPrice);
-    }
+    // Build where clause using shared utility
+    const where = buildProductWhere({
+      category,
+      brand,
+      size,
+      color,
+      minCondition,
+      maxCondition,
+      minPrice,
+      maxPrice,
+      search,
+      includeInactive
+    }, {
+      isAdmin: req.user?.role === 'admin'
+    });
 
     // Запросы к БД
     const [products, totalCount] = await Promise.all([
