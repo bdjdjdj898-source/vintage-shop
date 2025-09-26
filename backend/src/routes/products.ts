@@ -6,6 +6,7 @@ import { requireAdmin } from '../middleware/requireAdmin';
 import { validateRequest } from '../middleware/validateRequest';
 import { optionalAuth } from '../middleware/optionalAuth';
 import { ApiResponse } from '../utils/responses';
+import { toStringArray } from '../utils/normalize';
 import logger from '../lib/logger';
 
 const router = Router();
@@ -106,8 +107,11 @@ router.get('/', optionalAuth, [
       prisma.product.count({ where })
     ]);
 
-    // Images are already in the correct format with Json type
-    const productsWithImages = products;
+    // Normalize images to string array for API response
+    const productsWithImages = products.map(product => ({
+      ...product,
+      images: toStringArray(product.images)
+    }));
 
     return ApiResponse.paginated(res, productsWithImages, {
       page: Number(page),
@@ -145,8 +149,13 @@ router.get('/:id', optionalAuth, [
       return ApiResponse.notFound(res, 'Товар не найден');
     }
 
-    // Images are already in the correct format with Json type
-    return ApiResponse.success(res, product);
+    // Normalize images to string array for API response
+    const productWithImages = {
+      ...product,
+      images: toStringArray(product.images)
+    };
+
+    return ApiResponse.success(res, productWithImages);
   } catch (error) {
     logger.error('Error fetching product', {
       reqId: req.requestId,

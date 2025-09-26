@@ -16,6 +16,7 @@ import meRouter from './routes/me';
 import { errorHandler } from './middleware/errorHandler';
 import { requestIdMiddleware } from './middleware/requestId';
 import logger, { loggerStream } from './lib/logger';
+import { prisma } from './lib/prisma';
 
 dotenv.config();
 
@@ -46,11 +47,17 @@ const allowedOrigins = (process.env.CORS_ORIGINS || defaultCorsOrigins)
   .map(s => s.trim())
   .filter(Boolean);
 
+// CORS headers configuration
+const baseHeaders = ['Content-Type', 'Authorization', 'x-telegram-init-data'];
+const allowedHeaders = process.env.NODE_ENV !== 'production'
+  ? [...baseHeaders, 'x-debug-auth']
+  : baseHeaders;
+
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-telegram-init-data']
+  allowedHeaders
 }));
 
 // Общие middleware
@@ -60,13 +67,31 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Health check endpoint (before rate limiter to avoid any limits)
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
+app.get('/health', async (req, res) => {
+  let dbStatus: 'up' | 'down' = 'down';
+  let overallStatus: 'ok' | 'degraded' = 'degraded';
+
+  try {
+    // Simple DB ping with raw query
+    await prisma.$queryRaw`SELECT 1`;
+    dbStatus = 'up';
+    overallStatus = 'ok';
+  } catch (error) {
+    logger.error('Health check DB ping failed', { error: error instanceof Error ? error.message : error });
+    dbStatus = 'down';
+    overallStatus = 'degraded';
+  }
+
+  const response = {
+    status: overallStatus,
+    db: dbStatus,
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development'
-  });
+  };
+
+  const statusCode = overallStatus === 'ok' ? 200 : 503;
+  res.status(statusCode).json(response);
 });
 
 // Apply rate limiter to API routes only (after health check)

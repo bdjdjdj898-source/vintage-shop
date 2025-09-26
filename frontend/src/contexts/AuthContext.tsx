@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { initTelegramWebApp } from '../utils/telegram';
 import { setTelegramInitData, apiFetch } from '../api/client';
+import { User } from '../types/api';
 
 interface TelegramUser {
   id: number;
@@ -9,16 +10,6 @@ interface TelegramUser {
   username?: string;
   language_code?: string;
   is_premium?: boolean;
-}
-
-interface User {
-  id: number;
-  telegramId: string;
-  username?: string;
-  firstName?: string;
-  lastName?: string;
-  avatarUrl?: string;
-  role: string;
 }
 
 interface AuthContextType {

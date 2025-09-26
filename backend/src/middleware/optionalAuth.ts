@@ -24,7 +24,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
 
       // Create minimal test user without DB write
       req.user = {
-        id: 12345, // Static ID for test mode
+        id: 0, // Not a database ID - temporary user
         telegramId: '12345',
         username: 'testuser',
         firstName: 'Test',
@@ -75,7 +75,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
 
     // Create minimal user from initData without DB write
     req.user = {
-      id: telegramUser.id, // Use Telegram ID as temporary ID
+      id: 0, // Not a database ID - temporary user
       telegramId: telegramUser.id.toString(),
       username: telegramUser.username || undefined,
       firstName: telegramUser.first_name || undefined,

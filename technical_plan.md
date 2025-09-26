@@ -10,7 +10,7 @@ my-vintage-shop/
 
 Фронтенд: React + Vite + TypeScript + Tailwind CSS
 Бэкенд: Node.js + Express.js + TypeScript
-База данных: SQLite + Prisma ORM
+База данных: PostgreSQL + Prisma ORM
 Интеграция: Telegram WebApp + Bot API
 Деплой: Docker + Docker Compose
 Разработка: Hot reload, TypeScript для типобезопасности
@@ -21,7 +21,7 @@ prismagenerator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -228,7 +228,7 @@ export const initTelegramWebApp = () => {
  Функционал корзины (добавление/удаление товаров)
  Интеграция с Telegram WebApp и аутентификация
  Создание заказов с базовой информацией
- База данных SQLite с настроенным Prisma
+ База данных PostgreSQL с настроенным Prisma
  Адаптивный дизайн для мобильных устройств
  Базовое API для товаров, корзины и заказов
 
@@ -326,14 +326,23 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=file:./database.db
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/vintage_shop?schema=public
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - ADMIN_TELEGRAM_IDS=${ADMIN_TELEGRAM_IDS}
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=vintage_shop
     volumes:
-      - ./database.db:/app/database.db
+      - postgres_data:/var/lib/postgresql/data
 Переменные окружения
 env# .env.production
-DATABASE_URL="file:./production.db"
+DATABASE_URL="postgresql://user:password@localhost:5432/vintage_shop?schema=public"
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_WEBHOOK_SECRET=your_webhook_secret
 NODE_ENV=production
@@ -355,10 +364,10 @@ GitHub Actions: автоматическая сборка и деплой
 Воздействие: Rate limiting может повлиять на пользовательский опыт
 Митигация: Клиентское кеширование, оптимизация API вызовов, graceful handling ошибок rate limit
 
-Риск: Производительность SQLite
+Риск: Производительность PostgreSQL
 
-Воздействие: Возможна деградация при больших объемах данных
-Митигация: Индексация БД, возможная миграция на PostgreSQL, оптимизация запросов
+Воздействие: Неправильно настроенная БД может привести к медленным запросам
+Митигация: Правильная индексация, оптимизация запросов, регулярный мониторинг производительности
 
 Риск: Безопасность доступа админа
 
