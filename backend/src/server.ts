@@ -53,8 +53,13 @@ const allowedHeaders = process.env.NODE_ENV !== 'production'
   ? [...baseHeaders, 'x-debug-auth']
   : baseHeaders;
 
+// CORS origin configuration: if allowedOrigins is empty (no CORS_ORIGINS in production),
+// default to 'true' to allow same-origin requests and avoid hard blocking.
+// When CORS_ORIGINS is explicitly set, enforce strict whitelist.
+const corsOrigin = allowedOrigins.length > 0 ? allowedOrigins : true;
+
 app.use(cors({
-  origin: allowedOrigins,
+  origin: corsOrigin,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders

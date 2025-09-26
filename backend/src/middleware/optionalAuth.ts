@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { validateTelegramInitData, parseTelegramInitData, isAdminTelegramId } from '../utils/telegram';
+import { TelegramUserIdentity } from '../types/auth';
 
 export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -24,14 +25,14 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
 
       // Create minimal test user without DB write
       req.user = {
-        id: 0, // Not a database ID - temporary user
         telegramId: '12345',
         username: 'testuser',
         firstName: 'Test',
         lastName: 'User',
         avatarUrl: undefined,
-        role: role
-      };
+        role: role,
+        isFromInitData: true
+      } as TelegramUserIdentity;
 
       return next();
     }
@@ -75,14 +76,14 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
 
     // Create minimal user from initData without DB write
     req.user = {
-      id: 0, // Not a database ID - temporary user
       telegramId: telegramUser.id.toString(),
       username: telegramUser.username || undefined,
       firstName: telegramUser.first_name || undefined,
       lastName: telegramUser.last_name || undefined,
       avatarUrl: telegramUser.photo_url || undefined,
-      role: role
-    };
+      role: role,
+      isFromInitData: true
+    } as TelegramUserIdentity;
 
     next();
   } catch (error) {
