@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
-import { apiFetch } from '../api/client';
+import { apiFetch, ApiError } from '../api/client';
 import { useNavigate } from 'react-router-dom';
 
 interface ShippingInfo {
@@ -27,6 +27,7 @@ const Checkout: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -62,6 +63,26 @@ const Checkout: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error creating order:', err);
+
+      if (err instanceof ApiError) {
+        if (err.code === 'CART_EMPTY') {
+          setNotification('Корзина пуста');
+          setTimeout(() => {
+            navigate('/');
+          }, 2000);
+          return;
+        }
+
+        if (err.code === 'PRODUCT_UNAVAILABLE') {
+          setNotification('Некоторые товары больше недоступны. Обновляем корзину...');
+          await getCart();
+          setTimeout(() => {
+            navigate('/cart');
+          }, 2000);
+          return;
+        }
+      }
+
       setError('Ошибка при создании заказа. Попробуйте еще раз.');
     } finally {
       setIsSubmitting(false);
@@ -161,6 +182,10 @@ const Checkout: React.FC = () => {
 
               {error && (
                 <div className="text-red-600 text-sm">{error}</div>
+              )}
+
+              {notification && (
+                <div className="text-blue-600 text-sm bg-blue-50 p-3 rounded-md">{notification}</div>
               )}
 
               <button

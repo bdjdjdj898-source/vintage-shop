@@ -40,6 +40,20 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
+// Optional CSP configuration (commented out by default)
+// Enable if you need custom CSP headers beyond what's configured in nginx/reverse proxy
+// app.use(helmet.contentSecurityPolicy({
+//   directives: {
+//     defaultSrc: ["'self'"],
+//     scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://telegram.org"],
+//     styleSrc: ["'self'", "'unsafe-inline'"],
+//     imgSrc: ["'self'", "data:", "https:", "blob:"],
+//     connectSrc: ["'self'", "https://api.telegram.org"],
+//     fontSrc: ["'self'", "data:"],
+//     frameSrc: ["https://telegram.org"],
+//   },
+// }));
+
 // CORS конфигурация
 const defaultCorsOrigins = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5173,http://localhost:3000';
 const allowedOrigins = (process.env.CORS_ORIGINS || defaultCorsOrigins)
@@ -53,10 +67,12 @@ const allowedHeaders = process.env.NODE_ENV !== 'production'
   ? [...baseHeaders, 'x-debug-auth']
   : baseHeaders;
 
-// CORS origin configuration: if allowedOrigins is empty (no CORS_ORIGINS in production),
-// default to 'true' to allow same-origin requests and avoid hard blocking.
-// When CORS_ORIGINS is explicitly set, enforce strict whitelist.
-const corsOrigin = allowedOrigins.length > 0 ? allowedOrigins : true;
+// CORS origin configuration
+const corsOrigin = allowedOrigins.length > 0
+  ? allowedOrigins
+  : process.env.NODE_ENV === 'production'
+    ? false
+    : true;
 
 app.use(cors({
   origin: corsOrigin,

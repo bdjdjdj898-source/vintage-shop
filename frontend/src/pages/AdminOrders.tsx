@@ -1,43 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
-
-interface Product {
-  id: number;
-  title: string;
-  brand: string;
-  category: string;
-  size: string;
-  color: string;
-  condition: number;
-  description: string;
-  price: number;
-  images: string[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface OrderItem {
-  id: number;
-  orderId: number;
-  productId: number;
-  quantity: number;
-  price: number;
-  product: Product;
-}
-
-interface Order {
-  id: number;
-  userId: number;
-  status: string;
-  totalAmount: number;
-  shippingInfo: string;
-  telegramData?: string;
-  createdAt: string;
-  updatedAt: string;
-  items: OrderItem[];
-}
+import { Order, OrderStatus, ORDER_STATUS_META } from '../types/api';
 
 const AdminOrders: React.FC = () => {
   const { user } = useAuth();
@@ -45,13 +9,6 @@ const AdminOrders: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const statuses = [
-    { value: 'pending', label: 'Ожидает', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'confirmed', label: 'Подтвержден', color: 'bg-blue-100 text-blue-800' },
-    { value: 'shipped', label: 'Отправлен', color: 'bg-purple-100 text-purple-800' },
-    { value: 'delivered', label: 'Доставлен', color: 'bg-green-100 text-green-800' },
-    { value: 'cancelled', label: 'Отменен', color: 'bg-red-100 text-red-800' }
-  ];
 
   useEffect(() => {
     fetchOrders();
@@ -94,8 +51,8 @@ const AdminOrders: React.FC = () => {
     }
   };
 
-  const getStatusInfo = (status: string) => {
-    return statuses.find(s => s.value === status) || statuses[0];
+  const getStatusInfo = (status: OrderStatus) => {
+    return ORDER_STATUS_META[status] || ORDER_STATUS_META.pending;
   };
 
   const parseShippingInfo = (shippingInfoStr: string) => {
@@ -214,9 +171,9 @@ const AdminOrders: React.FC = () => {
                         onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        {statuses.map((status) => (
-                          <option key={status.value} value={status.value}>
-                            {status.label}
+                        {Object.entries(ORDER_STATUS_META).map(([value, meta]) => (
+                          <option key={value} value={value}>
+                            {meta.label}
                           </option>
                         ))}
                       </select>

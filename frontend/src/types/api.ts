@@ -55,10 +55,20 @@ export interface OrderItem {
   product: Product;
 }
 
+export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+
+export const ORDER_STATUS_META: Record<OrderStatus, { label: string; color: string }> = {
+  pending: { label: 'Ожидает', color: 'bg-yellow-100 text-yellow-800' },
+  confirmed: { label: 'Подтвержден', color: 'bg-blue-100 text-blue-800' },
+  shipped: { label: 'Отправлен', color: 'bg-purple-100 text-purple-800' },
+  delivered: { label: 'Доставлен', color: 'bg-green-100 text-green-800' },
+  cancelled: { label: 'Отменен', color: 'bg-red-100 text-red-800' }
+};
+
 export interface Order {
   id: number;
   userId: number;
-  status: string;
+  status: OrderStatus;
   totalAmount: number;
   shippingInfo: string;
   telegramData?: string;

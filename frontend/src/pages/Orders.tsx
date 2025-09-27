@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
-import { Order } from '../types/api';
+import { Order, OrderStatus, ORDER_STATUS_META } from '../types/api';
 
 const Orders: React.FC = () => {
   const { user } = useAuth();
@@ -9,13 +9,6 @@ const Orders: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const statuses = [
-    { value: 'pending', label: 'Ожидает', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'confirmed', label: 'Подтвержден', color: 'bg-blue-100 text-blue-800' },
-    { value: 'shipped', label: 'Отправлен', color: 'bg-purple-100 text-purple-800' },
-    { value: 'delivered', label: 'Доставлен', color: 'bg-green-100 text-green-800' },
-    { value: 'cancelled', label: 'Отменен', color: 'bg-red-100 text-red-800' }
-  ];
 
   useEffect(() => {
     fetchOrders();
@@ -37,8 +30,8 @@ const Orders: React.FC = () => {
     }
   };
 
-  const getStatusInfo = (status: string) => {
-    return statuses.find(s => s.value === status) || statuses[0];
+  const getStatusInfo = (status: OrderStatus) => {
+    return ORDER_STATUS_META[status] || ORDER_STATUS_META.pending;
   };
 
   const parseShippingInfo = (shippingInfoStr: string) => {

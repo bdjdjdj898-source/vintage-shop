@@ -155,6 +155,29 @@ docker-compose -f docker-compose.yml up -d
 
 3. The application includes health checks and proper container orchestration
 
+### TLS/CORS in Production
+
+In production, TLS is terminated at a reverse proxy (e.g., Nginx/Traefik/Caddy) and the backend is not exposed publicly. If `CORS_ORIGINS` is omitted, CORS is disabled and the app must be served same-origin via reverse proxy.
+
+#### HTTPS Configuration
+
+For production deployment with HTTPS:
+
+1. **Reverse Proxy Setup**: Use nginx, Traefik, or Caddy to handle TLS termination
+2. **SSL Certificates**: Obtain certificates via Let's Encrypt or your certificate provider
+3. **Sample Configuration**: See `docs/deploy/nginx-https.conf` for a complete nginx HTTPS setup
+4. **Security Headers**: The reverse proxy should handle security headers including CSP
+
+#### Content Security Policy (CSP)
+
+CSP can be configured at the reverse proxy level or optionally in the backend:
+
+- **Reverse Proxy (Recommended)**: Add CSP headers in nginx/apache config
+- **Backend Option**: Uncomment the CSP configuration in `backend/src/server.ts`
+- **Telegram Compatibility**: Ensure CSP allows necessary Telegram domains
+
+The provided CSP configuration is compatible with Telegram WebApp requirements.
+
 ## 🤝 Contributing
 
 1. Fork the repository

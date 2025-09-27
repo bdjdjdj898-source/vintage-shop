@@ -26,6 +26,7 @@ router.get('/', optionalAuth, [
   query('limit').optional().isInt({ min: 1, max: 50 }).toInt(),
   query('includeInactive').optional().isBoolean(),
   query('search').optional().isString(),
+  query('sort').optional().isIn(['newest', 'price_asc', 'price_desc', 'brand_asc']),
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
@@ -41,7 +42,8 @@ router.get('/', optionalAuth, [
       page = 1,
       limit = 20,
       includeInactive,
-      search
+      search,
+      sort
     } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -62,11 +64,24 @@ router.get('/', optionalAuth, [
       isAdmin: req.user?.role === 'admin'
     });
 
+    // Compute orderBy based on sort parameter
+    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' }; // default
+
+    if (sort === 'newest') {
+      orderBy = { createdAt: 'desc' };
+    } else if (sort === 'price_asc') {
+      orderBy = { price: 'asc' };
+    } else if (sort === 'price_desc') {
+      orderBy = { price: 'desc' };
+    } else if (sort === 'brand_asc') {
+      orderBy = { brand: 'asc' };
+    }
+
     // Запросы к БД
     const [products, totalCount] = await Promise.all([
       prisma.product.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take: Number(limit),
         select: {
