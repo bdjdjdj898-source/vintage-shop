@@ -70,8 +70,18 @@ export interface Order {
   userId: number;
   status: OrderStatus;
   totalAmount: number;
-  shippingInfo: string;
-  telegramData?: string;
+  shippingInfo: {
+    name: string;
+    phone: string;
+    address: string;
+    email?: string;
+  };
+  telegramData?: {
+    telegramId: string;
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+  };
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];

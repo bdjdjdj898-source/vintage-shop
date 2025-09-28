@@ -1,15 +1,19 @@
 export function initTelegramWebApp() {
-  console.log('🔄 Initializing Telegram WebApp...');
+  if (import.meta.env.DEV) {
+    console.log('🔄 Initializing Telegram WebApp...');
+  }
 
   // Проверяем что Telegram WebApp SDK загружен
   const tg = (window as any).Telegram?.WebApp;
-  console.log('📱 Telegram WebApp object:', tg);
-  console.log('🌍 window.Telegram:', (window as any).Telegram);
-  console.log('📄 document.readyState:', document.readyState);
+  if (import.meta.env.DEV) {
+    console.log('📱 Telegram WebApp object:', tg);
+    console.log('🌍 window.Telegram:', (window as any).Telegram);
+    console.log('📄 document.readyState:', document.readyState);
 
-  // Проверяем все возможные варианты Telegram объектов
-  console.log('🔍 window.TelegramWebviewProxy:', (window as any).TelegramWebviewProxy);
-  console.log('🔍 window.external:', (window as any).external);
+    // Проверяем все возможные варианты Telegram объектов
+    console.log('🔍 window.TelegramWebviewProxy:', (window as any).TelegramWebviewProxy);
+    console.log('🔍 window.external:', (window as any).external);
+  }
 
   if (!tg) {
     console.error('❌ Telegram WebApp SDK не найден');
@@ -17,8 +21,10 @@ export function initTelegramWebApp() {
     // Проверяем загружен ли скрипт
     const scripts = Array.from(document.scripts);
     const telegramScript = scripts.find(script => script.src.includes('telegram-web-app.js'));
-    console.log('📜 Telegram script найден:', !!telegramScript);
-    console.log('📜 Все скрипты:', scripts.map(s => s.src));
+    if (import.meta.env.DEV) {
+      console.log('📜 Telegram script найден:', !!telegramScript);
+      console.log('📜 Все скрипты:', scripts.map(s => s.src));
+    }
 
     // FALLBACK для тестирования - только в DEV режиме
     if (import.meta.env.DEV) {
@@ -43,10 +49,12 @@ export function initTelegramWebApp() {
   tg.ready();
   tg.expand();
 
-  console.log('Telegram WebApp initialized');
-  console.log('initData:', tg.initData);
-  console.log('initDataUnsafe:', tg.initDataUnsafe);
-  console.log('user:', tg.initDataUnsafe?.user);
+  if (import.meta.env.DEV) {
+    console.log('Telegram WebApp initialized');
+    console.log('initData:', tg.initData);
+    console.log('initDataUnsafe:', tg.initDataUnsafe);
+    console.log('user:', tg.initDataUnsafe?.user);
+  }
 
   // Проверяем что есть данные пользователя
   if (!tg.initData || !tg.initDataUnsafe?.user) {

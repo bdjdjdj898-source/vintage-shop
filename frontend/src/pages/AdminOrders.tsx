@@ -55,13 +55,6 @@ const AdminOrders: React.FC = () => {
     return ORDER_STATUS_META[status] || ORDER_STATUS_META.pending;
   };
 
-  const parseShippingInfo = (shippingInfoStr: string) => {
-    try {
-      return JSON.parse(shippingInfoStr);
-    } catch {
-      return {};
-    }
-  };
 
   if (user?.role !== 'admin') {
     return (
@@ -106,7 +99,7 @@ const AdminOrders: React.FC = () => {
         <div className="space-y-4">
           {orders.map((order) => {
             const statusInfo = getStatusInfo(order.status);
-            const shippingInfo = parseShippingInfo(order.shippingInfo);
+            const shippingInfo = order.shippingInfo;
 
             return (
               <div key={order.id} className="bg-white rounded-lg shadow p-6">

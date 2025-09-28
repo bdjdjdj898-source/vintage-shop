@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Order, OrderStatus, ORDER_STATUS_META } from '../types/api';
+import { Link } from 'react-router-dom';
 
 const Orders: React.FC = () => {
   const { user } = useAuth();
@@ -34,13 +35,6 @@ const Orders: React.FC = () => {
     return ORDER_STATUS_META[status] || ORDER_STATUS_META.pending;
   };
 
-  const parseShippingInfo = (shippingInfoStr: string) => {
-    try {
-      return JSON.parse(shippingInfoStr);
-    } catch {
-      return {};
-    }
-  };
 
   if (isLoading) {
     return (
@@ -74,7 +68,7 @@ const Orders: React.FC = () => {
         <div className="space-y-4">
           {orders.map((order) => {
             const statusInfo = getStatusInfo(order.status);
-            const shippingInfo = parseShippingInfo(order.shippingInfo);
+            const shippingInfo = order.shippingInfo;
 
             return (
               <div key={order.id} className="bg-white rounded-lg shadow p-6">

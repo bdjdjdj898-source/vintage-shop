@@ -10,6 +10,7 @@ const Cart: React.FC = () => {
   const [unavailableProducts, setUnavailableProducts] = useState<number[]>([]);
   const [quantityError, setQuantityError] = useState<string | null>(null);
 
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">

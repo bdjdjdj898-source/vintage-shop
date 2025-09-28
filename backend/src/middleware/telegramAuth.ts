@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { validateTelegramInitData, parseTelegramInitData, isAdminTelegramId } from '../utils/telegram';
 import { prisma } from '../lib/prisma';
+import { ApiResponse } from '../utils/responses';
 
 // Расширяем Request интерфейс для добавления user
 declare global {
@@ -24,9 +25,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     const initData = req.headers['x-telegram-init-data'] as string;
 
     if (!initData) {
-      return res.status(401).json({
-        error: 'Требуется аутентификация через Telegram WebApp'
-      });
+      return ApiResponse.unauthorized(res, 'Требуется аутентификация через Telegram WebApp');
     }
 
     // TEST MODE - only in non-production with explicit flags
@@ -71,14 +70,12 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     if (!botToken) {
       console.error('TELEGRAM_BOT_TOKEN не установлен');
-      return res.status(500).json({ error: 'Ошибка конфигурации сервера' });
+      return ApiResponse.internalError(res, 'Ошибка конфигурации сервера');
     }
 
     const isValid = validateTelegramInitData(initData, botToken);
     if (!isValid) {
-      return res.status(401).json({
-        error: 'Недействительные данные аутентификации Telegram'
-      });
+      return ApiResponse.unauthorized(res, 'Недействительные данные аутентификации Telegram');
     }
 
     // Check auth_date freshness
@@ -89,17 +86,13 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     const TTL = parseInt(process.env.TELEGRAM_INITDATA_TTL || '86400', 10);
 
     if (!authDate || now - authDate > TTL) {
-      return res.status(401).json({
-        error: 'Просроченные данные аутентификации Telegram'
-      });
+      return ApiResponse.unauthorized(res, 'Просроченные данные аутентификации Telegram');
     }
 
     // Парсим данные пользователя из initData
     const telegramUser = parseTelegramInitData(initData);
     if (!telegramUser) {
-      return res.status(401).json({
-        error: 'Не удалось получить данные пользователя из Telegram'
-      });
+      return ApiResponse.unauthorized(res, 'Не удалось получить данные пользователя из Telegram');
     }
 
     // Определяем роль пользователя на основе ADMIN_TELEGRAM_IDS
@@ -129,9 +122,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
     // Check if user is banned
     if (user.isBanned) {
-      return res.status(403).json({
-        error: 'Аккаунт заблокирован. Обратитесь к администрации.'
-      });
+      return ApiResponse.forbidden(res, 'Аккаунт заблокирован. Обратитесь к администрации.');
     }
 
     // Добавляем пользователя в request
@@ -148,6 +139,6 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     next();
   } catch (error) {
     console.error('Ошибка аутентификации:', error);
-    res.status(500).json({ error: 'Ошибка сервера при аутентификации' });
+    return ApiResponse.internalError(res, 'Ошибка сервера при аутентификации');
   }
 };

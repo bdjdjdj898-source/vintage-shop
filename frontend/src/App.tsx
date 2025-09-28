@@ -11,9 +11,11 @@ import AdminProducts from "./pages/AdminProducts";
 import AdminOrders from "./pages/AdminOrders";
 import AdminUsers from "./pages/AdminUsers";
 import AdminAnalytics from "./pages/AdminAnalytics";
+import RequireAuth from "./components/guards/RequireAuth";
+import RequireAdmin from "./components/guards/RequireAdmin";
 
 function AppContent() {
-  const { user, isLoading, error } = useAuth();
+  const { user, telegramUser, isLoading, error } = useAuth();
 
   if (isLoading) {
     return (
@@ -41,7 +43,9 @@ function AppContent() {
     );
   }
 
-  if (!user) {
+  // Allow access to catalog even without full user profile
+  // Only require Telegram data for basic functionality
+  if (!telegramUser) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center p-6 max-w-md">
@@ -60,14 +64,14 @@ function AppContent() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/admin/products" element={<AdminProducts />} />
-          <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/analytics" element={<AdminAnalytics />} />
+          <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
+          <Route path="/checkout" element={<RequireAuth><Checkout /></RequireAuth>} />
+          <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
+          <Route path="/admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
+          <Route path="/admin/products" element={<RequireAdmin><AdminProducts /></RequireAdmin>} />
+          <Route path="/admin/orders" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />
+          <Route path="/admin/users" element={<RequireAdmin><AdminUsers /></RequireAdmin>} />
+          <Route path="/admin/analytics" element={<RequireAdmin><AdminAnalytics /></RequireAdmin>} />
         </Routes>
       </BrowserRouter>
     </CartProvider>

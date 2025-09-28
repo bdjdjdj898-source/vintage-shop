@@ -130,8 +130,8 @@ router.post('/', [
         data: {
           userId: req.user!.id,
           totalAmount,
-          shippingInfo: JSON.stringify(shippingInfo),
-          telegramData: JSON.stringify(telegramData),
+          shippingInfo: shippingInfo,
+          telegramData: telegramData,
           status: 'pending'
         }
       });
@@ -146,6 +146,16 @@ router.post('/', [
               quantity: item.quantity,
               price: item.product.price // Сохраняем цену на момент заказа
             }
+          })
+        )
+      );
+
+      // Помечаем товары как недоступные (inventory management)
+      await Promise.all(
+        cart.items.map(item =>
+          prisma.product.update({
+            where: { id: item.productId },
+            data: { isActive: false }
           })
         )
       );

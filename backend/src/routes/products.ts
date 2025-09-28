@@ -208,7 +208,13 @@ router.post('/', requireAdmin, [
       }
     });
 
-    return ApiResponse.success(res, product, 201);
+    // Normalize images before returning
+    const productWithImages = {
+      ...product,
+      images: toStringArray(product.images)
+    };
+
+    return ApiResponse.success(res, productWithImages, 201);
   } catch (error) {
     console.error('Error creating product:', error);
     return ApiResponse.internalError(res, 'Ошибка при создании товара');
@@ -271,7 +277,13 @@ router.put('/:id', requireAdmin, [
       data: updateData
     });
 
-    return ApiResponse.success(res, updatedProduct);
+    // Normalize images before returning
+    const productWithImages = {
+      ...updatedProduct,
+      images: toStringArray(updatedProduct.images)
+    };
+
+    return ApiResponse.success(res, productWithImages);
   } catch (error) {
     console.error('Error updating product:', error);
     return ApiResponse.internalError(res, 'Ошибка при обновлении товара');

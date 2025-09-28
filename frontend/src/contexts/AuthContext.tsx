@@ -40,31 +40,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        console.log('🚀 Начинаем инициализацию авторизации...');
+        if (import.meta.env.DEV) {
+          console.log('🚀 Начинаем инициализацию авторизации...');
+        }
 
         // Ждем немного чтобы Telegram SDK успел загрузиться
         await new Promise(resolve => setTimeout(resolve, 100));
 
         // Initialize Telegram WebApp
         const telegramData = initTelegramWebApp();
-        console.log('📱 Результат инициализации Telegram:', telegramData);
+        if (import.meta.env.DEV) {
+          console.log('📱 Результат инициализации Telegram:', telegramData);
+        }
 
         if (telegramData?.initData && telegramData?.user) {
-          console.log('✅ Telegram данные получены успешно');
+          if (import.meta.env.DEV) {
+            console.log('✅ Telegram данные получены успешно');
+          }
           setInitData(telegramData.initData);
           setTelegramUser(telegramData.user);
           setTelegramInitData(telegramData.initData);
-          console.log('👤 Telegram пользователь:', telegramData.user);
+          if (import.meta.env.DEV) {
+            console.log('👤 Telegram пользователь:', telegramData.user);
+          }
 
           // Fetch user profile from backend
           try {
-            console.log('🌐 Загружаем профиль пользователя с сервера...');
+            if (import.meta.env.DEV) {
+              console.log('🌐 Загружаем профиль пользователя с сервера...');
+            }
             const response = await apiFetch('/api/me');
-            console.log('📥 Ответ сервера:', response);
+            if (import.meta.env.DEV) {
+              console.log('📥 Ответ сервера:', response);
+            }
 
             if (response.success) {
               setUser(response.data);
-              console.log('✅ Профиль пользователя загружен:', response.data);
+              if (import.meta.env.DEV) {
+                console.log('✅ Профиль пользователя загружен:', response.data);
+              }
             } else {
               console.error('❌ Сервер вернул ошибку:', response);
               setError('Ошибка загрузки профиля пользователя');
@@ -75,15 +89,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } else {
           console.error('❌ Telegram данные недоступны:', telegramData);
-          console.log('🌍 window.Telegram:', (window as any).Telegram);
-          console.log('📱 window.Telegram?.WebApp:', (window as any).Telegram?.WebApp);
+          if (import.meta.env.DEV) {
+            console.log('🌍 window.Telegram:', (window as any).Telegram);
+            console.log('📱 window.Telegram?.WebApp:', (window as any).Telegram?.WebApp);
+          }
           setError('Telegram WebApp недоступен. Откройте приложение через Telegram.');
         }
       } catch (err) {
         console.error('💥 Критическая ошибка инициализации:', err);
         setError('Ошибка инициализации Telegram WebApp');
       } finally {
-        console.log('🏁 Инициализация завершена, isLoading = false');
+        if (import.meta.env.DEV) {
+          console.log('🏁 Инициализация завершена, isLoading = false');
+        }
         setIsLoading(false);
       }
     };
