@@ -10,6 +10,35 @@ export class ApiError extends Error {
   }
 }
 
+export interface ProductFilters {
+  category?: string;
+  brand?: string;
+  size?: string;
+  color?: string;
+  minCondition?: string;
+  maxCondition?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  search?: string;
+  sort?: string;
+}
+
+export function buildQueryString(params: Record<string, any>): string {
+  const queryParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== '') {
+      if (Array.isArray(value)) {
+        value.forEach(item => queryParams.append(key, item.toString()));
+      } else {
+        queryParams.append(key, value.toString());
+      }
+    }
+  });
+
+  return queryParams.toString();
+}
+
 let initData: string | null = null;
 export function setTelegramInitData(v: string | null) { initData = v; }
 

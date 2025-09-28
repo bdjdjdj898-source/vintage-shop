@@ -1,68 +1,125 @@
-I have created the following plan after thorough exploration and analysis of the codebase. Follow the below plan verbatim. Trust the files and references. Do not re-verify what's written in the plan. Explore only when absolutely necessary. First implement all the proposed file changes and then I'll review all the changes together at the end.
+# Technical Plan: Frontend Development Based on PRD Requirements
 
-### Observations
+## Overview
+Comprehensive technical plan for frontend development implementing all requirements from PRD-frontend.md. Focus on creating a mobile-first Telegram WebApp with modern UI/UX, optimal performance, and complete feature set.
 
-I analyzed the current codebase and found that there's no existing theme system in place. The project uses React with TypeScript, Tailwind CSS, and follows a context pattern for state management (as seen in CartContext.tsx and AuthContext.tsx). The PRD specifies detailed color palettes for both light and dark themes, with specific requirements for CSS variables, smooth transitions, and a theme switcher.
+## 1. Система тем и цветовая палитра
+### CSS переменные и Tailwind интеграция
+- Реализовать точные цвета из PRD: светлая тема (фон #fafafa, карточки #ffffff, акцент #5b8cc4) и темная тема (фон #121212, карточки #1e1e1e, акцент #8ab4f8)
+- Настроить CSS переменные в `frontend/src/index.css`
+- Обновить `frontend/tailwind.config.js` для использования переменных
+- Создать `frontend/src/contexts/ThemeContext.tsx` с переключением тем
+- Добавить плавные переходы (transition: all 0.3s)
+- Интегрировать ThemeProvider в `frontend/src/App.tsx`
 
-### Approach
+## 2. Детальная страница товара
+### Слайдер изображений и zoom функциональность
+- Создать `frontend/src/pages/ProductDetail.tsx` с полной информацией о товаре
+- Реализовать слайдер изображений с навигацией
+- Добавить zoom функциональность для изображений
+- Интегрировать кнопку "Добавить в корзину"
+- Обновить роутинг в `frontend/src/App.tsx`
+- Модифицировать `frontend/src/components/ProductCard.tsx` для навигации на детальную страницу
 
-I'll implement a comprehensive theme system by:
+## 3. Улучшенная система категорий
+### Horizontal scroll и dropdown
+- Создать `frontend/src/components/CategoryTabs.tsx` с horizontal scroll
+- Добавить dropdown для мобильных устройств
+- Интегрировать в `frontend/src/pages/Home.tsx`
+- Обновить API интеграцию для динамических категорий
 
-1. Creating CSS variables in index.css for both light and dark themes with the exact colors from PRD
-2. Building ThemeContext following the existing context pattern used in the codebase
-3. Updating Tailwind config to use CSS variables as custom colors, enabling seamless integration
-4. Adding smooth transitions with 0.3s duration as specified in PRD
+## 4. Telegram WebApp интеграция
+### SDK и мобильная оптимизация
+- Установить @twa-dev/sdk через npm
+- Создать `frontend/src/utils/telegram.ts` для WebApp инициализации
+- Добавить Telegram кнопки (MainButton, BackButton)
+- Реализовать haptic feedback
+- Интегрировать в `frontend/src/contexts/AuthContext.tsx`
+- Обновить `frontend/src/App.tsx` для WebApp инициализации
 
-This approach ensures the theme system is extensible, follows existing code patterns, and meets all PRD requirements including default light theme and smooth animations.
+## 5. Обновление компонентов под новую палитру
+### Адаптация существующих компонентов
+- Обновить `frontend/src/components/Header.tsx` с новыми цветами и кнопкой смены темы
+- Модифицировать `frontend/src/components/FilterPanel.tsx` под пастельную палитру
+- Обновить `frontend/src/pages/Cart.tsx` с новым дизайном
+- Адаптировать `frontend/src/pages/Checkout.tsx` под мобильные устройства
+- Обновить все admin страницы под новую палитру
 
-### Reasoning
+## 6. Мобильная оптимизация
+### Responsive design и touch interactions
+- Обновить все компоненты для mobile-first подхода
+- Добавить touch gestures для слайдера изображений
+- Оптимизировать размеры кнопок для touch устройств
+- Реализовать pull-to-refresh функциональность
 
-I explored the repository structure and examined the current frontend setup. I read the PRD to understand the exact color requirements and theme specifications. I analyzed the existing context pattern by reviewing CartContext.tsx to ensure consistency. I confirmed there's no existing theme system, so I need to build it from scratch while following established patterns.
+## 7. Дополнительные улучшения
+### Performance и UX
+- Добавить lazy loading для изображений
+- Реализовать skeleton loading states
+- Добавить error boundaries
+- Оптимизировать bundle size
+- Добавить PWA манифест
 
-## Mermaid Diagram
+## 8. Тестирование
+### Unit и integration тесты
+- Создать тесты для новых компонентов
+- Добавить тесты для Telegram WebApp интеграции
+- Тестирование на различных устройствах
 
-sequenceDiagram
-    participant User
-    participant ThemeContext
-    participant DOM
-    participant CSS
+## Этапы реализации:
+1. **Этап 1**: Система тем и базовые компоненты
+2. **Этап 2**: Детальная страница товара и категории
+3. **Этап 3**: Telegram WebApp интеграция
+4. **Этап 4**: Мобильная оптимизация и финальные улучшения
 
-    User->>ThemeContext: Toggle theme
-    ThemeContext->>ThemeContext: Update state (light/dark)
-    ThemeContext->>DOM: Set data-theme attribute
-    DOM->>CSS: Apply CSS variables for new theme
-    CSS->>User: Smooth transition (0.3s) to new colors
-    ThemeContext->>localStorage: Persist theme preference
+## Acceptance Criteria:
+- Соответствие всем требованиям PRD-frontend.md
+- Работа в Telegram WebApp на iOS/Android
+- Responsive design для всех экранов
+- Плавные анимации и переходы
+- Высокая производительность на мобильных устройствах
 
-## Proposed File Changes
+## Technical Architecture
 
-### frontend\src\index.css(MODIFY)
+### Component Structure
+```
+frontend/src/
+├── components/
+│   ├── ui/              # Base UI components
+│   ├── layout/          # Layout components
+│   └── features/        # Feature-specific components
+├── pages/               # Page components
+├── contexts/            # React contexts
+├── hooks/               # Custom hooks
+├── utils/               # Utility functions
+└── styles/              # Styling files
+```
 
-References: 
+### State Management
+- React Context for global state (theme, auth, cart)
+- Local state for component-specific data
+- Custom hooks for complex state logic
 
-- PRD-frontend.md
+### Styling Architecture
+- CSS variables for theme system
+- Tailwind CSS with custom configuration
+- Component-scoped styles where needed
+- Mobile-first responsive design
 
-Add CSS variables for the complete color palette as specified in PRD-frontend.md. Define :root with light theme colors as default, and [data-theme="dark"] selector for dark theme colors. Include all required colors: background, cards, text (primary and secondary), accent, and borders. Add smooth transition properties (transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease) to * selector for seamless theme switching animations. The CSS variables will follow the naming convention --color-bg, --color-card, --color-text, --color-text-secondary, --color-accent, --color-border to be easily referenced in Tailwind config.
+### Performance Optimization
+- Code splitting with React.lazy()
+- Image optimization and lazy loading
+- Bundle size optimization
+- Efficient re-rendering strategies
 
-### frontend\src\contexts\ThemeContext.tsx(NEW)
+### Testing Strategy
+- Unit tests with Vitest
+- Integration tests for key user flows
+- E2E tests for critical paths
+- Mobile device testing
 
-References: 
-
-- frontend\src\contexts\CartContext.tsx
-
-Create a new ThemeContext following the same pattern as CartContext.tsx. Define ThemeContextType interface with theme (light/dark), toggleTheme function, and setTheme function. Implement ThemeProvider component that manages theme state using useState with 'light' as default (as specified in PRD). Add useLocalStorage hook integration to persist theme preference. Include useEffect to apply the theme by setting data-theme attribute on document.documentElement. Export useTheme hook with proper error handling similar to useCart hook pattern. The context will handle all theme switching logic and DOM manipulation for CSS variable application.
-
-### frontend\tailwind.config.js(MODIFY)
-
-References: 
-
-- frontend\src\index.css(MODIFY)
-Extend the Tailwind theme configuration to include custom colors that reference the CSS variables defined in index.css. Add a colors object in the extend section with mappings like bg: 'var(--color-bg)', card: 'var(--color-card)', text: 'var(--color-text)', 'text-secondary': 'var(--color-text-secondary)', accent: 'var(--color-accent)', and border: 'var(--color-border)'. This will enable using classes like bg-bg, text-text, border-border throughout the application while automatically respecting the current theme through CSS variables.
-
-### frontend\src\App.tsx(MODIFY)
-
-References: 
-
-- frontend\src\contexts\ThemeContext.tsx(NEW)
-
-Wrap the existing application with the new ThemeProvider component. Import ThemeProvider from ./contexts/ThemeContext and ensure it wraps all other providers and components. This integration should follow the same pattern used for other context providers in the application. The ThemeProvider should be placed at the top level to ensure theme context is available throughout the entire application component tree.
+### Deployment Considerations
+- PWA configuration
+- Service worker for offline functionality
+- Build optimization for production
+- CDN integration for assets
