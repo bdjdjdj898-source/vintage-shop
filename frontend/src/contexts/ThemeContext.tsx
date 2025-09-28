@@ -54,6 +54,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const updateDocumentClass = (newTheme: Theme) => {
+    document.documentElement.dataset.theme = newTheme;
+
+    // Update Tailwind dark class
     if (newTheme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {

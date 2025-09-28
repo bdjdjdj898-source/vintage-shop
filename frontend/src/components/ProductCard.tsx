@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/format';
 import type { Product } from '../types/api';
 
@@ -8,6 +9,15 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick(product);
+    } else {
+      navigate(`/product/${product.id}`);
+    }
+  };
   const conditionText = (condition: number) => {
     if (condition >= 9) return 'Отличное';
     if (condition >= 7) return 'Хорошее';
@@ -23,9 +33,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
   };
 
   return (
-    <div 
+    <div
       className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transition-transform hover:scale-105 hover:shadow-lg"
-      onClick={() => onClick?.(product)}
+      onClick={handleClick}
     >
       {/* Product Image */}
       <div className="relative h-64 bg-gray-200">

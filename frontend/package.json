@@ -12,6 +12,7 @@
     "test:ci": "vitest --run"
   },
   "dependencies": {
+    "@twa-dev/sdk": "^8.0.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.1"

@@ -3,6 +3,7 @@ import { apiFetch } from '../api/client';
 import ProductCard from '../components/ProductCard';
 import Header from '../components/Header';
 import FilterPanel from '../components/FilterPanel';
+import CategoryTabs from '../components/CategoryTabs';
 import { Product } from '../types/api';
 
 const Home: React.FC = () => {
@@ -22,7 +23,7 @@ const Home: React.FC = () => {
     sort: 'newest'
   });
 
-  const categories = ['Куртки', 'Толстовки', 'Джинсы', 'Аксессуары', 'Обувь', 'Свитеры'];
+  const [categories, setCategories] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [sizes, setSizes] = useState<string[]>([]);
   const [colors, setColors] = useState<string[]>([]);
@@ -53,10 +54,12 @@ const Home: React.FC = () => {
         setProducts(response.data);
 
         // Extract unique options for filter dropdowns
+        const uniqueCategories = [...new Set(response.data.map((p: Product) => p.category))].sort();
         const uniqueBrands = [...new Set(response.data.map((p: Product) => p.brand))].sort();
         const uniqueSizes = [...new Set(response.data.map((p: Product) => p.size))].sort();
         const uniqueColors = [...new Set(response.data.map((p: Product) => p.color))].sort();
 
+        setCategories(uniqueCategories);
         setBrands(uniqueBrands);
         setSizes(uniqueSizes);
         setColors(uniqueColors);
@@ -73,10 +76,6 @@ const Home: React.FC = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  const handleProductClick = (product: Product) => {
-    console.log('Product clicked:', product);
-    // Здесь будет логика перехода на страницу товара
-  };
 
   const handleFilterChange = (field: keyof typeof filters, value: string) => {
     setFilters(prev => ({
@@ -134,6 +133,13 @@ const Home: React.FC = () => {
           Винтажная одежда
         </h1>
 
+        {/* Category Tabs */}
+        <CategoryTabs
+          categories={categories}
+          selectedCategory={filters.category}
+          onCategorySelect={(category) => handleFilterChange('category', category)}
+        />
+
         {/* Filters */}
         <FilterPanel
           filters={filters}
@@ -160,7 +166,6 @@ const Home: React.FC = () => {
               <ProductCard
                 key={product.id}
                 product={product}
-                onClick={handleProductClick}
               />
             ))}
           </div>

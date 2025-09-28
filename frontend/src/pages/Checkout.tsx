@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { apiFetch, ApiError } from '../api/client';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTelegram } from '../hooks/useTelegram';
 
 interface ShippingInfo {
   name: string;
@@ -15,6 +16,7 @@ const Checkout: React.FC = () => {
   const { user, telegramUser } = useAuth();
   const { cart, getTotalAmount, getCart } = useCart();
   const navigate = useNavigate();
+  const { showMainButton, hideMainButton, showBackButton, hideBackButton, hapticFeedback, setMainButtonLoading } = useTelegram();
 
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     name: telegramUser?.first_name && telegramUser?.last_name
@@ -28,6 +30,27 @@ const Checkout: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Show back button
+    showBackButton(() => {
+      hapticFeedback.impact('light');
+      navigate('/cart');
+    });
+
+    // Show main button for order placement
+    showMainButton('Разместить заказ', () => {
+      const form = document.getElementById('checkout-form') as HTMLFormElement;
+      if (form) {
+        form.requestSubmit();
+      }
+    });
+
+    return () => {
+      hideBackButton();
+      hideMainButton();
+    };
+  }, [showMainButton, hideMainButton, showBackButton, hideBackButton, hapticFeedback, navigate]);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -43,11 +66,14 @@ const Checkout: React.FC = () => {
 
     if (!cart || cart.items.length === 0) {
       setError('Корзина пуста');
+      hapticFeedback.notification('error');
       return;
     }
 
     setIsSubmitting(true);
+    setMainButtonLoading(true);
     setError(null);
+    hapticFeedback.impact('medium');
 
     try {
       const response = await apiFetch('/api/orders', {
@@ -59,11 +85,13 @@ const Checkout: React.FC = () => {
 
       if (response.success) {
         // Order created successfully
+        hapticFeedback.notification('success');
         await getCart(); // Refresh cart (should be empty now)
         navigate('/orders'); // Redirect to orders page
       }
     } catch (err: any) {
       console.error('Error creating order:', err);
+      hapticFeedback.notification('error');
 
       if (err instanceof ApiError) {
         if (err.code === 'CART_EMPTY') {
@@ -87,6 +115,7 @@ const Checkout: React.FC = () => {
       setError('Ошибка при создании заказа. Попробуйте еще раз.');
     } finally {
       setIsSubmitting(false);
+      setMainButtonLoading(false);
     }
   };
 
@@ -119,7 +148,7 @@ const Checkout: React.FC = () => {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-4">Информация для доставки</h2>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                   Имя получателя *

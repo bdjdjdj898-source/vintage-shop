@@ -1,14 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
+import { useTelegram } from '../hooks/useTelegram';
 
 const Cart: React.FC = () => {
   const { user } = useAuth();
   const { cart, isLoading, error, removeItem, updateQuantity, getTotalAmount } = useCart();
+  const navigate = useNavigate();
+  const { showMainButton, hideMainButton, showBackButton, hideBackButton, hapticFeedback } = useTelegram();
   const [unavailableProducts, setUnavailableProducts] = useState<number[]>([]);
   const [quantityError, setQuantityError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Show back button
+    showBackButton(() => {
+      hapticFeedback.impact('light');
+      navigate('/');
+    });
+
+    // Show main button if cart has items
+    if (cart && cart.items.length > 0) {
+      showMainButton('Оформить заказ', () => {
+        hapticFeedback.impact('medium');
+        navigate('/checkout');
+      });
+    } else {
+      hideMainButton();
+    }
+
+    return () => {
+      hideBackButton();
+      hideMainButton();
+    };
+  }, [cart, showMainButton, hideMainButton, showBackButton, hideBackButton, hapticFeedback, navigate]);
 
 
   if (isLoading) {
@@ -37,18 +63,24 @@ const Cart: React.FC = () => {
 
   const handleRemoveItem = async (itemId: number) => {
     try {
+      hapticFeedback.impact('light');
       await removeItem(itemId);
+      hapticFeedback.notification('success');
     } catch (err) {
       console.error('Error removing item:', err);
+      hapticFeedback.notification('error');
     }
   };
 
   const handleUpdateQuantity = async (itemId: number, quantity: number) => {
     try {
       setQuantityError(null);
+      hapticFeedback.selection();
       await updateQuantity(itemId, quantity);
+      hapticFeedback.notification('success');
     } catch (err: any) {
       console.error('Error updating quantity:', err);
+      hapticFeedback.notification('error');
 
       // Handle typed ApiError
       if (err instanceof ApiError) {

@@ -1,3 +1,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* CSS Variables for Theme System */
+:root {
+  /* Light Theme Colors (Default) */
+  --color-bg: #fafafa;
+  --color-card: #ffffff;
+  --color-text: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-accent: #5b8cc4;
+  --color-border: #e5e7eb;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+}
+
+[data-theme="dark"] {
+  /* Dark Theme Colors */
+  --color-bg: #121212;
+  --color-card: #1e1e1e;
+  --color-text: #ffffff;
+  --color-text-secondary: #a1a1aa;
+  --color-accent: #8ab4f8;
+  --color-border: #374151;
+  --color-success: #34d399;
+  --color-error: #f87171;
+  --color-warning: #fbbf24;
+}
+
+/* Smooth Transitions for Theme Switching */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
