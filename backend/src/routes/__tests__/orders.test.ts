@@ -4,6 +4,40 @@ import express from 'express';
 import { prisma } from '../../lib/prisma';
 import ordersRouter from '../orders';
 
+// Mock auth middleware at module level
+vi.mock('../../middleware/telegramAuth', () => ({
+  requireAuth: (req: any, res: any, next: any) => {
+    req.user = {
+      id: 1,
+      telegramId: '123',
+      username: 'testuser',
+      firstName: 'Test',
+      lastName: 'User',
+      role: 'user',
+      isBanned: false,
+    };
+    next();
+  },
+}));
+
+vi.mock('../../middleware/requireAdmin', () => ({
+  requireAdmin: [
+    (req: any, res: any, next: any) => {
+      req.user = {
+        id: 1,
+        telegramId: '123',
+        username: 'admin',
+        firstName: 'Admin',
+        lastName: 'User',
+        role: 'admin',
+        isBanned: false,
+      };
+      next();
+    },
+    (req: any, res: any, next: any) => next(),
+  ],
+}));
+
 // Mock dependencies
 vi.mock('../../lib/prisma', () => ({
   prisma: {
@@ -40,39 +74,13 @@ vi.mock('../../services/telegramBot', () => ({
 
 const mockPrisma = vi.mocked(prisma);
 
-// Mock auth middleware - inject before router to bypass internal requireAuth
-const mockAuthMiddleware = (req: any, res: any, next: any) => {
-  req.user = {
-    id: 1,
-    telegramId: '123',
-    username: 'testuser',
-    firstName: 'Test',
-    lastName: 'User',
-    role: 'user',
-    isBanned: false,
-  };
-  next();
-};
-
-const mockAdminMiddleware = (req: any, res: any, next: any) => {
-  req.user = {
-    id: 1,
-    telegramId: '123',
-    username: 'admin',
-    firstName: 'Admin',
-    lastName: 'User',
-    role: 'admin',
-    isBanned: false,
-  };
-  next();
-};
-
 describe('Orders Routes', () => {
   let app: express.Application;
 
   beforeEach(() => {
     app = express();
     app.use(express.json());
+    app.use('/api/orders', ordersRouter);
     vi.clearAllMocks();
   });
 
@@ -98,17 +106,13 @@ describe('Orders Routes', () => {
                 id: 1,
                 title: 'Test Product',
                 brand: 'Test Brand',
-                images: '["test.jpg"]',
+                images: ['test.jpg'], // Json column returns as array
                 isActive: true,
               },
             },
           ],
         },
       ];
-
-      // Inject auth middleware before mounting router
-      app.use('/api/orders', mockAuthMiddleware);
-      app.use('/api/orders', ordersRouter);
 
       mockPrisma.order.findMany.mockResolvedValue(mockOrders as any);
       mockPrisma.order.count.mockResolvedValue(1);
@@ -122,8 +126,6 @@ describe('Orders Routes', () => {
     });
 
     it('should filter orders by status when provided', async () => {
-      app.use('/api/orders', mockAuthMiddleware);
-      app.use('/api/orders', ordersRouter);
 
       mockPrisma.order.findMany.mockResolvedValue([]);
       mockPrisma.order.count.mockResolvedValue(0);
@@ -186,8 +188,6 @@ describe('Orders Routes', () => {
         ],
       };
 
-      app.use('/api/orders', mockAuthMiddleware);
-      app.use('/api/orders', ordersRouter);
 
       // Mock transaction
       mockPrisma.$transaction.mockImplementation(async (callback) => {
@@ -211,8 +211,6 @@ describe('Orders Routes', () => {
     });
 
     it('should return error when cart is empty', async () => {
-      app.use('/api/orders', mockAuthMiddleware);
-      app.use('/api/orders', ordersRouter);
 
       mockPrisma.$transaction.mockImplementation(async (callback) => {
         return await callback(mockPrisma);
@@ -243,8 +241,6 @@ describe('Orders Routes', () => {
         ],
       };
 
-      app.use('/api/orders', mockAuthMiddleware);
-      app.use('/api/orders', ordersRouter);
 
       mockPrisma.$transaction.mockImplementation(async (callback) => {
         return await callback(mockPrisma);
@@ -262,8 +258,6 @@ describe('Orders Routes', () => {
     });
 
     it('should validate shipping info', async () => {
-      app.use('/api/orders', mockAuthMiddleware);
-      app.use('/api/orders', ordersRouter);
 
       const invalidShippingInfo = {
         name: 'T', // Too short
@@ -301,8 +295,6 @@ describe('Orders Routes', () => {
         ],
       };
 
-      app.use('/api/orders', mockAuthMiddleware);
-      app.use('/api/orders', ordersRouter);
 
       mockPrisma.order.findFirst.mockResolvedValue(mockOrder as any);
 
@@ -314,8 +306,6 @@ describe('Orders Routes', () => {
     });
 
     it('should return 404 when order not found', async () => {
-      app.use('/api/orders', mockAuthMiddleware);
-      app.use('/api/orders', ordersRouter);
 
       mockPrisma.order.findFirst.mockResolvedValue(null);
 
@@ -345,8 +335,6 @@ describe('Orders Routes', () => {
         ],
       };
 
-      app.use('/api/orders', mockAdminMiddleware);
-      app.use('/api/orders', ordersRouter);
 
       mockPrisma.order.findUnique.mockResolvedValue({ id: 1 } as any);
       mockPrisma.order.update.mockResolvedValue(mockOrder as any);
@@ -361,8 +349,6 @@ describe('Orders Routes', () => {
     });
 
     it('should return 404 when order does not exist', async () => {
-      app.use('/api/orders', mockAdminMiddleware);
-      app.use('/api/orders', ordersRouter);
 
       mockPrisma.order.findUnique.mockResolvedValue(null);
 
@@ -375,8 +361,6 @@ describe('Orders Routes', () => {
     });
 
     it('should validate status values', async () => {
-      app.use('/api/orders', mockAdminMiddleware);
-      app.use('/api/orders', ordersRouter);
 
       const response = await request(app)
         .put('/api/orders/1/status')

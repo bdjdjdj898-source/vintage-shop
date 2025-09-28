@@ -63,7 +63,7 @@ describe('telegramAuth middleware', () => {
       expect(res.json).toHaveBeenCalledWith({
         success: false,
         error: {
-          code: 'AUTH_INVALID',
+          code: 'AUTH_REQUIRED',
           message: 'Недействительные данные аутентификации Telegram',
         },
         timestamp: expect.any(String),
@@ -81,7 +81,7 @@ describe('telegramAuth middleware', () => {
       expect(res.json).toHaveBeenCalledWith({
         success: false,
         error: {
-          code: 'AUTH_INVALID',
+          code: 'AUTH_REQUIRED',
           message: 'Просроченные данные аутентификации Telegram',
         },
         timestamp: expect.any(String),
