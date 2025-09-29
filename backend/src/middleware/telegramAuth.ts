@@ -3,22 +3,7 @@ import { validateTelegramInitData, parseTelegramInitData, isAdminTelegramId } fr
 import { prisma } from '../lib/prisma';
 import { ApiResponse } from '../utils/responses';
 
-// Расширяем Request интерфейс для добавления user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: number;
-        telegramId: string;
-        username?: string;
-        firstName?: string;
-        lastName?: string;
-        avatarUrl?: string;
-        role: string;
-      };
-    }
-  }
-}
+// Request interface extension is in types/express.d.ts
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {

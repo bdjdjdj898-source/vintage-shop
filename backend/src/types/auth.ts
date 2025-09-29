@@ -35,3 +35,14 @@ export function hasDbId(user: RequestUser): user is AuthenticatedUser {
 export function isInitDataOnly(user: RequestUser): user is TelegramUserIdentity {
   return user.isFromInitData === true;
 }
+
+// Helper function to get authenticated user (throws if not authenticated)
+export function getAuthenticatedUser(user: RequestUser | undefined): AuthenticatedUser {
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+  if (!hasDbId(user)) {
+    throw new Error('User not in database');
+  }
+  return user;
+}

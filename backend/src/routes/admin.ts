@@ -137,9 +137,9 @@ router.get('/orders', [
     const total = await prisma.order.count({ where });
 
     // Parse images field for all order items
-    const ordersWithParsedImages = orders.map(order => ({
+    const ordersWithParsedImages = orders.map((order: any) => ({
       ...order,
-      items: order.items.map(item => ({
+      items: order.items.map((item: any) => ({
         ...item,
         product: {
           ...item.product,
@@ -205,7 +205,7 @@ router.get('/analytics', async (req: Request, res: Response) => {
     ]);
 
     // Get product details for top products
-    const topProductIds = topProducts.map(item => item.productId);
+    const topProductIds = topProducts.map((item: any) => item.productId);
     const productDetails = await prisma.product.findMany({
       where: {
         id: { in: topProductIds }
@@ -220,8 +220,8 @@ router.get('/analytics', async (req: Request, res: Response) => {
     });
 
     // Combine top products with their details and sales data
-    const topProductsWithDetails = topProducts.map(item => {
-      const product = productDetails.find(p => p.id === item.productId);
+    const topProductsWithDetails = topProducts.map((item: any) => {
+      const product = productDetails.find((p: any) => p.id === item.productId);
       return {
         product: product ? {
           ...product,

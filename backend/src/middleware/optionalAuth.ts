@@ -32,7 +32,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
         avatarUrl: undefined,
         role: role,
         isFromInitData: true
-      } as TelegramUserIdentity;
+      };
 
       return next();
     }
@@ -83,7 +83,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
       avatarUrl: telegramUser.photo_url || undefined,
       role: role,
       isFromInitData: true
-    } as TelegramUserIdentity;
+    };
 
     next();
   } catch (error) {

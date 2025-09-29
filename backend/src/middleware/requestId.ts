@@ -2,14 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../lib/logger';
 
-// Extend Request interface to include requestId
-declare global {
-  namespace Express {
-    interface Request {
-      requestId?: string;
-    }
-  }
-}
+// Request interface extension is in types/express.d.ts
 
 export const requestIdMiddleware = (req: Request, res: Response, next: NextFunction) => {
   // Generate or use existing request ID from header
@@ -31,7 +24,7 @@ export const requestIdMiddleware = (req: Request, res: Response, next: NextFunct
 
   // Override res.end to log request completion
   const originalEnd = res.end;
-  res.end = function(chunk: any, encoding?: any) {
+  res.end = function(chunk: any, encoding?: any): any {
     const duration = Date.now() - startTime;
 
     logger.info('Request completed', {
@@ -43,7 +36,7 @@ export const requestIdMiddleware = (req: Request, res: Response, next: NextFunct
       contentLength: res.get('content-length')
     });
 
-    originalEnd.call(this, chunk, encoding);
+    return originalEnd.call(this, chunk, encoding);
   };
 
   next();

@@ -2,15 +2,18 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/telegramAuth';
 import { ApiResponse } from '../utils/responses';
 import { prisma } from '../lib/prisma';
+import { getAuthenticatedUser } from '../types/auth';
 
 const router = Router();
 
 // GET /api/me - получить профиль текущего пользователя
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
+    const authenticatedUser = getAuthenticatedUser(req.user);
+
     // Fetch full user data from database to match frontend User type
     const user = await prisma.user.findUnique({
-      where: { id: req.user!.id },
+      where: { id: authenticatedUser.id },
       select: {
         id: true,
         telegramId: true,

@@ -1,12 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { param, query, body } from 'express-validator';
 import { prisma } from '../lib/prisma';
-import { Prisma } from '@prisma/client';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { validateRequest } from '../middleware/validateRequest';
 import { optionalAuth } from '../middleware/optionalAuth';
 import { ApiResponse } from '../utils/responses';
-import { toStringArray } from '../utils/normalize';
+import { toStringArray, stringifyJson } from '../utils/normalize';
 import { buildProductWhere } from '../utils/products';
 import logger from '../lib/logger';
 
@@ -65,7 +64,7 @@ router.get('/', optionalAuth, [
     });
 
     // Compute orderBy based on sort parameter
-    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' }; // default
+    let orderBy: any = { createdAt: 'desc' }; // default
 
     if (sort === 'newest') {
       orderBy = { createdAt: 'desc' };
@@ -104,7 +103,7 @@ router.get('/', optionalAuth, [
     ]);
 
     // Normalize images to string array for API response
-    const productsWithImages = products.map(product => ({
+    const productsWithImages = products.map((product: any) => ({
       ...product,
       images: toStringArray(product.images)
     }));
@@ -190,8 +189,8 @@ router.post('/', requireAdmin, [
       images
     } = req.body;
 
-    // Deduplicate image URLs
-    const uniqueImages: Prisma.JsonArray = [...new Set(images as string[])];
+    // Deduplicate image URLs and stringify for database
+    const uniqueImages = [...new Set(images as string[])];
 
     const product = await prisma.product.create({
       data: {
@@ -203,7 +202,7 @@ router.post('/', requireAdmin, [
         condition,
         description,
         price,
-        images: uniqueImages,
+        images: stringifyJson(uniqueImages),
         isActive: true
       }
     });
@@ -264,8 +263,8 @@ router.put('/:id', requireAdmin, [
 
     // Handle images array separately with deduplication
     if (req.body.images !== undefined) {
-      const uniqueImages: Prisma.JsonArray = [...new Set(req.body.images as string[])];
-      updateData.images = uniqueImages;
+      const uniqueImages = [...new Set(req.body.images as string[])];
+      updateData.images = stringifyJson(uniqueImages);
     }
 
     if (Object.keys(updateData).length === 0) {

@@ -6,7 +6,8 @@ import { requireAdmin } from '../middleware/requireAdmin';
 import { prisma } from '../lib/prisma';
 import { ApiResponse, ErrorCode } from '../utils/responses';
 import { telegramBot } from '../services/telegramBot';
-import { toStringArray } from '../utils/normalize';
+import { toStringArray, stringifyJson } from '../utils/normalize';
+import { getAuthenticatedUser } from '../types/auth';
 
 const router = Router();
 
@@ -21,13 +22,14 @@ router.get('/', [
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
+    const user = getAuthenticatedUser(req.user);
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const status = req.query.status as string;
     const skip = (page - 1) * limit;
 
     const where: any = {
-      userId: req.user!.id
+      userId: user.id
     };
 
     if (status) {
@@ -53,9 +55,9 @@ router.get('/', [
     const total = await prisma.order.count({ where });
 
     // Parse images field for all order items
-    const ordersWithParsedImages = orders.map(order => ({
+    const ordersWithParsedImages = orders.map((order: any) => ({
       ...order,
-      items: order.items.map(item => ({
+      items: order.items.map((item: any) => ({
         ...item,
         product: {
           ...item.product,
@@ -86,13 +88,14 @@ router.post('/', [
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
+    const user = getAuthenticatedUser(req.user);
     const { shippingInfo } = req.body;
 
     // Используем транзакцию для создания заказа
-    const result = await prisma.$transaction(async (prisma) => {
+    const result = await prisma.$transaction(async (prisma: any) => {
       // Получаем корзину пользователя с товарами
       const cart = await prisma.cart.findUnique({
-        where: { userId: req.user!.id },
+        where: { userId: user.id },
         include: {
           items: {
             include: {
@@ -107,38 +110,38 @@ router.post('/', [
       }
 
       // Проверяем доступность всех товаров в корзине
-      const unavailableProducts = cart.items.filter(item => !item.product.isActive);
+      const unavailableProducts = cart.items.filter((item: any) => !item.product.isActive);
       if (unavailableProducts.length > 0) {
         throw new Error('PRODUCT_UNAVAILABLE');
       }
 
       // Вычисляем общую сумму заказа
-      const totalAmount = cart.items.reduce((sum, item) => {
+      const totalAmount = cart.items.reduce((sum: number, item: any) => {
         return sum + (item.product.price * item.quantity);
       }, 0);
 
       // Prepare minimal Telegram data
       const telegramData = {
-        telegramId: req.user!.telegramId,
-        username: req.user!.username,
-        first_name: req.user!.firstName,
-        last_name: req.user!.lastName
+        telegramId: user.telegramId,
+        username: user.username,
+        first_name: user.firstName,
+        last_name: user.lastName
       };
 
       // Создаем заказ
       const order = await prisma.order.create({
         data: {
-          userId: req.user!.id,
+          userId: user.id,
           totalAmount,
-          shippingInfo: shippingInfo,
-          telegramData: telegramData,
+          shippingInfo: stringifyJson(shippingInfo),
+          telegramData: stringifyJson(telegramData),
           status: 'pending'
         }
       });
 
       // Создаем элементы заказа
       const orderItems = await Promise.all(
-        cart.items.map(item =>
+        cart.items.map((item: any) =>
           prisma.orderItem.create({
             data: {
               orderId: order.id,
@@ -152,7 +155,7 @@ router.post('/', [
 
       // Помечаем товары как недоступные (inventory management)
       await Promise.all(
-        cart.items.map(item =>
+        cart.items.map((item: any) =>
           prisma.product.update({
             where: { id: item.productId },
             data: { isActive: false }
@@ -181,7 +184,7 @@ router.post('/', [
     // Parse images field for the created order
     const resultWithParsedImages = {
       ...result,
-      items: result!.items.map(item => ({
+      items: result!.items.map((item: any) => ({
         ...item,
         product: {
           ...item.product,
@@ -233,12 +236,13 @@ router.get('/:id', [
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
+    const user = getAuthenticatedUser(req.user);
     const orderId = parseInt(req.params.id);
 
     const order = await prisma.order.findFirst({
       where: {
         id: orderId,
-        userId: req.user!.id // Проверяем, что заказ принадлежит пользователю
+        userId: user.id // Проверяем, что заказ принадлежит пользователю
       },
       include: {
         items: {
@@ -256,7 +260,7 @@ router.get('/:id', [
     // Parse images field for the order
     const orderWithParsedImages = {
       ...order,
-      items: order.items.map(item => ({
+      items: order.items.map((item: any) => ({
         ...item,
         product: {
           ...item.product,
@@ -307,7 +311,7 @@ router.put('/:id/status', requireAdmin, [
     // Parse images field for the updated order
     const orderWithParsedImages = {
       ...updatedOrder,
-      items: updatedOrder.items.map(item => ({
+      items: updatedOrder.items.map((item: any) => ({
         ...item,
         product: {
           ...item.product,

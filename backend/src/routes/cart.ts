@@ -5,6 +5,7 @@ import { requireAuth } from '../middleware/telegramAuth';
 import { prisma } from '../lib/prisma';
 import { ApiResponse, ErrorCode } from '../utils/responses';
 import { toStringArray } from '../utils/normalize';
+import { getAuthenticatedUser } from '../types/auth';
 
 const router = Router();
 
@@ -14,9 +15,11 @@ router.use(requireAuth);
 // GET /api/cart - получить корзину пользователя
 router.get('/', async (req: Request, res: Response) => {
   try {
+    const user = getAuthenticatedUser(req.user);
+
     // Найдем или создадим корзину пользователя
     let cart = await prisma.cart.findUnique({
-      where: { userId: req.user!.id },
+      where: { userId: user.id },
       include: {
         items: {
           include: {
@@ -29,7 +32,7 @@ router.get('/', async (req: Request, res: Response) => {
     if (!cart) {
       // Создаем новую корзину если её нет
       cart = await prisma.cart.create({
-        data: { userId: req.user!.id },
+        data: { userId: user.id },
         include: {
           items: {
             include: {
@@ -43,7 +46,7 @@ router.get('/', async (req: Request, res: Response) => {
     // Parse images field for all cart items
     const cartWithParsedImages = {
       ...cart,
-      items: cart.items.map(item => ({
+      items: cart.items.map((item: any) => ({
         ...item,
         product: {
           ...item.product,
@@ -66,6 +69,7 @@ router.post('/items', [
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
+    const user = getAuthenticatedUser(req.user);
     const { productId, quantity = 1 } = req.body;
 
     // Проверяем, существует ли товар
@@ -79,12 +83,12 @@ router.post('/items', [
 
     // Найдем или создадим корзину пользователя
     let cart = await prisma.cart.findUnique({
-      where: { userId: req.user!.id }
+      where: { userId: user.id }
     });
 
     if (!cart) {
       cart = await prisma.cart.create({
-        data: { userId: req.user!.id }
+        data: { userId: user.id }
       });
     }
 
@@ -141,6 +145,7 @@ router.put('/items/:id', [
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
+    const user = getAuthenticatedUser(req.user);
     const cartItemId = parseInt(req.params.id);
     const { quantity } = req.body;
 
@@ -149,7 +154,7 @@ router.put('/items/:id', [
       where: {
         id: cartItemId,
         cart: {
-          userId: req.user!.id
+          userId: user.id
         }
       },
       include: { product: true }
@@ -193,6 +198,7 @@ router.delete('/items/:id', [
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
+    const user = getAuthenticatedUser(req.user);
     const cartItemId = parseInt(req.params.id);
 
     // Проверяем, принадлежит ли элемент корзины текущему пользователю
@@ -200,7 +206,7 @@ router.delete('/items/:id', [
       where: {
         id: cartItemId,
         cart: {
-          userId: req.user!.id
+          userId: user.id
         }
       }
     });

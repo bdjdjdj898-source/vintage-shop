@@ -1,144 +1,224 @@
-# Исправление проблемы с портом 3000
+# Deployment Guide - Deploy to Cloud
 
-## Проблема
-Порт 3000 постоянно занят, контейнеры не запускаются:
-```
-ERROR: failed to bind port 0.0.0.0:3000/tcp: bind: address already in use
-```
+После исправления TypeScript ошибок и настройки приложения для работы с SQLite, вот что нужно сделать для развертывания на облачном сервере.
 
-## Решение - пошагово
+## Что изменилось после исправлений
 
-### Шаг 1: Полная очистка портов и процессов
+1. ✅ Исправлены все TypeScript ошибки компиляции
+2. ✅ Обновлена система типов для Request/Response
+3. ✅ Настроена работа с SQLite (JSON поля → String поля)
+4. ✅ Приложение собирается и запускается локально
+
+## Развертывание на облачном сервере
+
+### Шаг 1: Подготовка файлов на сервере
+
 ```bash
-# 1. Найти что занимает порт
-sudo netstat -tulpn | grep :3000
+# Остановить все текущие контейнеры
+docker-compose down
 
-# 2. Найти все Node.js процессы
-ps aux | grep node
+# Обновить код из репозитория или скопировать измененные файлы
+# Если используете git:
+git pull origin main
 
-# 3. Убить все Node.js процессы
-sudo killall node
-
-# 4. Остановить все Docker контейнеры
-docker stop $(docker ps -aq)
-
-# 5. Полная очистка Docker
-docker-compose down --remove-orphans --volumes
-
-# 6. Проверить что порты свободны
-sudo netstat -tulpn | grep :3000
-sudo netstat -tulpn | grep :3001
+# Или скопировать измененные файлы:
+# - backend/src/routes/*.ts (исправленные типы)
+# - backend/src/types/auth.ts (новые helper функции)
+# - backend/src/utils/normalize.ts (поддержка JSON строк)
+# - backend/tsconfig.json (добавлен downlevelIteration)
+# - prisma/schema.prisma (Json → String для SQLite)
 ```
 
-### Шаг 2: Изменить порты в docker-compose.yml
+### Шаг 2: Выбор базы данных
+
+#### Вариант A: Остаться с SQLite (проще)
 ```bash
-# 7. Отредактировать файл
-nano docker-compose.yml
+# Убедиться что используется SQLite в schema.prisma
+sed -i 's/provider = "postgresql"/provider = "sqlite"/' prisma/schema.prisma
+
+# Обновить DATABASE_URL в backend/.env
+echo 'DATABASE_URL="file:./database.db"' > backend/.env
+echo 'TELEGRAM_BOT_TOKEN=ваш_токен' >> backend/.env
+echo 'ADMIN_TELEGRAM_IDS=ваш_id' >> backend/.env
+echo 'NODE_ENV=production' >> backend/.env
+echo 'PORT=3000' >> backend/.env
 ```
 
-Найти и изменить секции с портами:
-```yaml
-backend:
-  ports:
-    - "3002:3000"  # Изменить первое число с 3000 на 3002
-
-frontend:
-  ports:
-    - "3003:80"    # Изменить первое число на свободный порт
-```
-
-### Шаг 3: Запустить с новыми портами
+#### Вариант B: Использовать PostgreSQL (рекомендуется)
 ```bash
-# 8. Запустить контейнеры
+# Убедиться что используется PostgreSQL в schema.prisma
+sed -i 's/provider = "sqlite"/provider = "postgresql"/' prisma/schema.prisma
+
+# Обновить DATABASE_URL в backend/.env
+echo 'DATABASE_URL="postgresql://postgres:postgres@postgres:5432/vintage_shop?schema=public"' > backend/.env
+echo 'TELEGRAM_BOT_TOKEN=ваш_токен' >> backend/.env
+echo 'ADMIN_TELEGRAM_IDS=ваш_id' >> backend/.env
+echo 'NODE_ENV=production' >> backend/.env
+echo 'PORT=3000' >> backend/.env
+
+# Запустить PostgreSQL контейнер
+docker run -d --name postgres-vintage -p 5432:5432 \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=vintage_shop \
+  postgres:15-alpine
+```
+
+### Шаг 3: Пересобрать контейнеры
+
+```bash
+# Пересобрать backend с исправлениями
+docker-compose build --no-cache backend
+
+# Пересобрать frontend
+docker-compose build --no-cache frontend
+
+# Проверить что образы собрались
+docker images | grep vintage
+```
+
+### Шаг 4: Обновить базу данных
+
+#### Для SQLite:
+```bash
+# Сгенерировать Prisma клиент
+cd backend && npm run db:generate
+
+# Создать/обновить базу данных
+cd backend && npx prisma db push --schema=../prisma/schema.prisma
+```
+
+#### Для PostgreSQL:
+```bash
+# Сгенерировать Prisma клиент
+cd backend && npm run db:generate
+
+# Запустить миграции
+cd backend && npx prisma migrate deploy --schema=../prisma/schema.prisma
+```
+
+### Шаг 5: Запустить приложение
+
+```bash
+# Запустить все сервисы
 docker-compose up -d
 
-# 9. Проверить статус
+# Проверить статус
 docker-compose ps
 
-# 10. Проверить API (новый порт!)
-curl http://localhost:3002/api/health
-
-# 11. Проверить фронтенд (новый порт!)
-curl http://localhost:3003
-
-# 12. Посмотреть логи если не работает
-docker-compose logs backend
-docker-compose logs frontend
+# Должно быть:
+# - backend: Up
+# - frontend: Up
+# - postgres: Up (если используете PostgreSQL)
 ```
 
-### Шаг 4: Настроить nginx для доступа через обычные порты
-```bash
-# 13. Установить nginx
-sudo apt update && sudo apt install nginx -y
+### Шаг 6: Проверить работу
 
-# 14. Создать конфиг
+```bash
+# Проверить логи
+docker-compose logs backend --tail 20
+docker-compose logs frontend --tail 20
+
+# Проверить API
+curl http://localhost:3002/api/health
+
+# Ожидаемый ответ:
+# {"status":"ok","db":"up","timestamp":"...","uptime":...}
+
+# Проверить frontend
+curl http://localhost:3003
+```
+
+### Шаг 7: Настроить Nginx (если нужно)
+
+```bash
+# Обновить конфиг nginx
 sudo nano /etc/nginx/sites-available/vintage-shop
 ```
 
-Вставить (используя новые порты):
+Содержимое:
 ```nginx
 server {
     listen 80;
-    server_name ваш-ip-сервера;
+    server_name ваш-домен-или-ip;
 
-    # Фронтенд на порту 80
     location / {
-        proxy_pass http://localhost:3003;  # Новый порт фронтенда
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
+        proxy_pass http://localhost:3003;
         proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # API
     location /api {
-        proxy_pass http://localhost:3002;  # Новый порт API
-        proxy_http_version 1.1;
+        proxy_pass http://localhost:3002;
         proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 ```
 
 ```bash
-# 15. Активировать nginx
-sudo ln -s /etc/nginx/sites-available/vintage-shop /etc/nginx/sites-enabled/
-sudo rm /etc/nginx/sites-enabled/default
+# Перезапустить nginx
 sudo nginx -t
-sudo systemctl restart nginx
-
-# 16. Проверить через nginx (обычные порты)
-curl http://ваш-ip/
-curl http://ваш-ip/api/health
+sudo systemctl reload nginx
 ```
 
-## Признаки успеха
-- ✅ `docker-compose ps` показывает оба контейнера "Up"
-- ✅ `curl http://localhost:3002/api/health` возвращает JSON
-- ✅ `curl http://localhost:3003` возвращает HTML
-- ✅ Сайт работает в браузере по IP сервера через nginx
-- ✅ API доступно по адресу http://ваш-ip/api/health
+## Возможные проблемы и решения
 
-## Альтернатива - запуск без Docker
-Если Docker всё равно не работает:
+### Проблема: TypeScript ошибки при сборке
 ```bash
-# 1. Остановить Docker
-docker-compose down
-
-# 2. Запустить backend напрямую
-cd /var/www/my-vintage-shop/backend
-npm install --ignore-scripts
-npm run db:generate
-npm run db:migrate
-npm run start &
-
-# 3. Запустить frontend напрямую
-cd /var/www/my-vintage-shop/frontend
-npm install
-npm run build
-npx serve -s dist -l 8080 &
-
-# 4. Настроить nginx на эти порты
-# backend: http://localhost:3001
-# frontend: http://localhost:8080
+# Проверить что файлы обновились
+docker-compose build --no-cache backend
+docker-compose logs backend
 ```
+
+### Проблема: База данных не подключается
+```bash
+# Для SQLite - проверить права доступа
+ls -la backend/database.db
+
+# Для PostgreSQL - проверить контейнер
+docker ps | grep postgres
+docker logs postgres-vintage
+```
+
+### Проблема: Frontend не загружается
+```bash
+# Проверить переменные окружения
+cat frontend/.env
+
+# Должно быть:
+# VITE_API_URL=http://ваш-домен-или-ip:3002
+```
+
+## Финальная проверка
+
+1. ✅ Приложение доступно по http://ваш-ip
+2. ✅ API отвечает на http://ваш-ip/api/health
+3. ✅ Нет ошибок в логах: `docker-compose logs`
+4. ✅ База данных работает (SQLite файл создался или PostgreSQL подключается)
+5. ✅ Telegram WebApp работает (если настроен)
+
+## Команды для мониторинга
+
+```bash
+# Посмотреть статус всех сервисов
+docker-compose ps
+
+# Посмотреть логи в реальном времени
+docker-compose logs -f
+
+# Перезапустить только backend
+docker-compose restart backend
+
+# Посмотреть использование ресурсов
+docker stats
+
+# Очистить старые образы (экономия места)
+docker system prune -f
+```
+
+Приложение готово к работе в продакшене!

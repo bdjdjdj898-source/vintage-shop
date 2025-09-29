@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -36,7 +36,7 @@ model Product {
   condition   Int      // 1-10 шкала состояния
   description String
   price       Float
-  images      Json     // JSON массив URL изображений
+  images      String   // JSON строка с массивом URL изображений
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -87,8 +87,8 @@ model Order {
   userId        Int
   status        String   @default("pending") // "pending" | "confirmed" | "shipped" | "delivered" | "cancelled"
   totalAmount   Float
-  shippingInfo  Json?    // JSON с адресом доставки
-  telegramData  Json?    // Дополнительные данные из Telegram WebApp
+  shippingInfo  String?  // JSON строка с адресом доставки
+  telegramData  String?  // Дополнительные данные из Telegram WebApp как JSON строка
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
