@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api/client';
 import { useCart } from '../contexts/CartContext';
+import { useSwipe } from '../hooks/useSwipe';
 import Header from '../components/Header';
 import { Product } from '../types/api';
 
@@ -86,6 +87,15 @@ const ProductDetail: React.FC = () => {
     return 'Требует внимания';
   };
 
+  // Swipe handlers for image navigation
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: () => handleImageNavigation('next'),
+    onSwipeRight: () => handleImageNavigation('prev'),
+  }, {
+    threshold: 50,
+    preventDefaultTouchmoveEvent: false,
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-bg">
@@ -139,10 +149,11 @@ const ProductDetail: React.FC = () => {
             {/* Main Image */}
             <div className="relative bg-card rounded-lg overflow-hidden shadow-md">
               <div
-                className="relative h-96 lg:h-[500px] cursor-zoom-in"
+                className="relative h-96 lg:h-[500px] cursor-zoom-in touch-pan-y"
                 onMouseMove={handleMouseMove}
                 onMouseEnter={() => setIsZoomed(true)}
                 onMouseLeave={() => setIsZoomed(false)}
+                {...swipeHandlers}
               >
                 <img
                   src={product.images[currentImageIndex]}

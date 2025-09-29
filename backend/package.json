@@ -7,10 +7,10 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "postinstall": "prisma generate",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset",
+    "postinstall": "prisma generate --schema=../prisma/schema.prisma",
+    "db:generate": "prisma generate --schema=../prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=../prisma/schema.prisma",
+    "db:reset": "prisma migrate reset --schema=../prisma/schema.prisma",
     "db:seed": "ts-node prisma/seed.ts",
     "lint": "eslint src/**/*.ts",
     "clean": "rimraf dist",
@@ -49,5 +49,8 @@
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
-  }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

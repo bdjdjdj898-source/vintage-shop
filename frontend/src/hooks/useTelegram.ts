@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import WebApp from '@twa-dev/sdk';
 
 export interface TelegramWebApp {
@@ -82,6 +82,10 @@ export const useTelegram = (): UseTelegramReturn => {
   const [isReady, setIsReady] = useState(false);
   const [user, setUser] = useState<any>(null);
 
+  // Handler references to properly remove event listeners
+  const mainButtonHandlerRef = useRef<(() => void) | null>(null);
+  const backButtonHandlerRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     try {
       // Initialize Telegram WebApp
@@ -110,6 +114,14 @@ export const useTelegram = (): UseTelegramReturn => {
   // Main Button controls
   const showMainButton = useCallback((text: string, callback: () => void) => {
     if (webApp?.MainButton) {
+      // Remove previous handler if it exists
+      if (mainButtonHandlerRef.current) {
+        webApp.MainButton.offClick(mainButtonHandlerRef.current);
+      }
+
+      // Store the new handler reference
+      mainButtonHandlerRef.current = callback;
+
       webApp.MainButton.setText(text);
       webApp.MainButton.show();
       webApp.MainButton.enable();
@@ -119,6 +131,11 @@ export const useTelegram = (): UseTelegramReturn => {
 
   const hideMainButton = useCallback(() => {
     if (webApp?.MainButton) {
+      // Remove the stored handler before hiding
+      if (mainButtonHandlerRef.current) {
+        webApp.MainButton.offClick(mainButtonHandlerRef.current);
+        mainButtonHandlerRef.current = null;
+      }
       webApp.MainButton.hide();
     }
   }, [webApp]);
@@ -154,6 +171,14 @@ export const useTelegram = (): UseTelegramReturn => {
   // Back Button controls
   const showBackButton = useCallback((callback: () => void) => {
     if (webApp?.BackButton) {
+      // Remove previous handler if it exists
+      if (backButtonHandlerRef.current) {
+        webApp.BackButton.offClick(backButtonHandlerRef.current);
+      }
+
+      // Store the new handler reference
+      backButtonHandlerRef.current = callback;
+
       webApp.BackButton.show();
       webApp.BackButton.onClick(callback);
     }
@@ -161,6 +186,11 @@ export const useTelegram = (): UseTelegramReturn => {
 
   const hideBackButton = useCallback(() => {
     if (webApp?.BackButton) {
+      // Remove the stored handler before hiding
+      if (backButtonHandlerRef.current) {
+        webApp.BackButton.offClick(backButtonHandlerRef.current);
+        backButtonHandlerRef.current = null;
+      }
       webApp.BackButton.hide();
     }
   }, [webApp]);
