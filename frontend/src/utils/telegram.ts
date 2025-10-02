@@ -21,28 +21,13 @@ export function initTelegramWebApp() {
     // Проверяем загружен ли скрипт
     const scripts = Array.from(document.scripts);
     const telegramScript = scripts.find(script => script.src.includes('telegram-web-app.js'));
-    if (import.meta.env.DEV) {
-      console.log('📜 Telegram script найден:', !!telegramScript);
-      console.log('📜 Все скрипты:', scripts.map(s => s.src));
-    }
-
-    // FALLBACK для тестирования - только в DEV режиме
-    if (import.meta.env.DEV) {
-      console.log('🧪 Используем тестовый режим (DEV only)');
-      return {
-        initData: 'test_init_data=test_user',
-        user: {
-          id: 12345,
-          first_name: 'Test',
-          last_name: 'User',
-          username: 'testuser'
-        },
-        colorScheme: 'light'
-      };
-    }
+    console.log('📜 Telegram script найден:', !!telegramScript);
+    console.log('📜 Все скрипты:', scripts.map(s => s.src));
+    console.log('🌐 User Agent:', navigator.userAgent);
+    console.log('🔍 window keys:', Object.keys(window).filter(k => k.toLowerCase().includes('telegram')));
 
     // В продакшене без Telegram SDK - ошибка
-    throw new Error('Приложение должно быть открыто в Telegram');
+    throw new Error('Приложение должно быть открыто в Telegram. Пожалуйста, откройте через бота в Telegram.');
   }
 
   // Инициализируем WebApp
