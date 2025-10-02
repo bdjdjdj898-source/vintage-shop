@@ -46,7 +46,7 @@ router.get('/', async (req: Request, res: Response) => {
     // Parse images field for all cart items
     const cartWithParsedImages = {
       ...cart,
-      items: cart.items.map((item: any) => ({
+      items: cart.items.map((item: { product: { images: string } } & Record<string, unknown>) => ({
         ...item,
         product: {
           ...item.product,

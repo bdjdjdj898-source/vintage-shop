@@ -4,6 +4,7 @@ import { validateRequest } from '../middleware/validateRequest';
 import { requireAuth } from '../middleware/telegramAuth';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { prisma } from '../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { ApiResponse, ErrorCode } from '../utils/responses';
 import { telegramBot } from '../services/telegramBot';
 import { toStringArray, stringifyJson } from '../utils/normalize';
@@ -55,9 +56,9 @@ router.get('/', [
     const total = await prisma.order.count({ where });
 
     // Parse images field for all order items
-    const ordersWithParsedImages = orders.map((order: any) => ({
+    const ordersWithParsedImages = orders.map((order: { items: Array<{ product: { images: string } }> } & Record<string, unknown>) => ({
       ...order,
-      items: order.items.map((item: any) => ({
+      items: order.items.map((item: { product: { images: string } } & Record<string, unknown>) => ({
         ...item,
         product: {
           ...item.product,
@@ -92,7 +93,7 @@ router.post('/', [
     const { shippingInfo } = req.body;
 
     // Используем транзакцию для создания заказа
-    const result = await prisma.$transaction(async (prisma: any) => {
+    const result = await prisma.$transaction(async (prisma: Prisma.TransactionClient) => {
       // Получаем корзину пользователя с товарами
       const cart = await prisma.cart.findUnique({
         where: { userId: user.id },
@@ -110,13 +111,13 @@ router.post('/', [
       }
 
       // Проверяем доступность всех товаров в корзине
-      const unavailableProducts = cart.items.filter((item: any) => !item.product.isActive);
+      const unavailableProducts = cart.items.filter((item: { product: { isActive: boolean } }) => !item.product.isActive);
       if (unavailableProducts.length > 0) {
         throw new Error('PRODUCT_UNAVAILABLE');
       }
 
       // Вычисляем общую сумму заказа
-      const totalAmount = cart.items.reduce((sum: number, item: any) => {
+      const totalAmount = cart.items.reduce((sum: number, item: { product: { price: number }; quantity: number }) => {
         return sum + (item.product.price * item.quantity);
       }, 0);
 
@@ -141,7 +142,7 @@ router.post('/', [
 
       // Создаем элементы заказа
       const orderItems = await Promise.all(
-        cart.items.map((item: any) =>
+        cart.items.map((item: { productId: number; quantity: number; product: { price: number } }) =>
           prisma.orderItem.create({
             data: {
               orderId: order.id,
@@ -155,7 +156,7 @@ router.post('/', [
 
       // Помечаем товары как недоступные (inventory management)
       await Promise.all(
-        cart.items.map((item: any) =>
+        cart.items.map((item: { productId: number }) =>
           prisma.product.update({
             where: { id: item.productId },
             data: { isActive: false }
@@ -260,7 +261,7 @@ router.get('/:id', [
     // Parse images field for the order
     const orderWithParsedImages = {
       ...order,
-      items: order.items.map((item: any) => ({
+      items: order.items.map((item: { product: { images: string } } & Record<string, unknown>) => ({
         ...item,
         product: {
           ...item.product,
@@ -311,7 +312,7 @@ router.put('/:id/status', requireAdmin, [
     // Parse images field for the updated order
     const orderWithParsedImages = {
       ...updatedOrder,
-      items: updatedOrder.items.map((item: any) => ({
+      items: updatedOrder.items.map((item: { product: { images: string } } & Record<string, unknown>) => ({
         ...item,
         product: {
           ...item.product,

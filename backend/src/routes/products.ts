@@ -103,7 +103,7 @@ router.get('/', optionalAuth, [
     ]);
 
     // Normalize images to string array for API response
-    const productsWithImages = products.map((product: any) => ({
+    const productsWithImages = products.map((product: { images: string } & Record<string, unknown>) => ({
       ...product,
       images: toStringArray(product.images)
     }));
