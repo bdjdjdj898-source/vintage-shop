@@ -1,19 +1,16 @@
 export function initTelegramWebApp() {
-  if (import.meta.env.DEV) {
-    console.log('🔄 Initializing Telegram WebApp...');
-  }
+  console.log('🔄 Initializing Telegram WebApp...');
+  console.log('🌍 Environment:', import.meta.env.MODE);
 
   // Проверяем что Telegram WebApp SDK загружен
   const tg = (window as any).Telegram?.WebApp;
-  if (import.meta.env.DEV) {
-    console.log('📱 Telegram WebApp object:', tg);
-    console.log('🌍 window.Telegram:', (window as any).Telegram);
-    console.log('📄 document.readyState:', document.readyState);
+  console.log('📱 Telegram WebApp object:', tg);
+  console.log('🌍 window.Telegram:', (window as any).Telegram);
+  console.log('📄 document.readyState:', document.readyState);
 
-    // Проверяем все возможные варианты Telegram объектов
-    console.log('🔍 window.TelegramWebviewProxy:', (window as any).TelegramWebviewProxy);
-    console.log('🔍 window.external:', (window as any).external);
-  }
+  // Проверяем все возможные варианты Telegram объектов
+  console.log('🔍 window.TelegramWebviewProxy:', (window as any).TelegramWebviewProxy);
+  console.log('🔍 window.external:', (window as any).external);
 
   if (!tg) {
     console.error('❌ Telegram WebApp SDK не найден');
@@ -34,34 +31,22 @@ export function initTelegramWebApp() {
   tg.ready();
   tg.expand();
 
-  if (import.meta.env.DEV) {
-    console.log('Telegram WebApp initialized');
-    console.log('initData:', tg.initData);
-    console.log('initDataUnsafe:', tg.initDataUnsafe);
-    console.log('user:', tg.initDataUnsafe?.user);
-  }
+  console.log('✅ Telegram WebApp initialized');
+  console.log('📋 initData:', tg.initData);
+  console.log('📋 initDataUnsafe:', tg.initDataUnsafe);
+  console.log('👤 user:', tg.initDataUnsafe?.user);
+  console.log('🎨 colorScheme:', tg.colorScheme);
+  console.log('📱 platform:', tg.platform);
+  console.log('🔢 version:', tg.version);
 
   // Проверяем что есть данные пользователя
   if (!tg.initData || !tg.initDataUnsafe?.user) {
-    console.error('Telegram WebApp: нет данных пользователя');
-
-    // FALLBACK только в DEV режиме
-    if (import.meta.env.DEV) {
-      console.log('Используем тестовые данные пользователя (DEV only)');
-      return {
-        initData: tg.initData || 'fallback_init_data',
-        user: {
-          id: 67890,
-          first_name: 'Fallback',
-          last_name: 'User',
-          username: 'fallbackuser'
-        },
-        colorScheme: tg.colorScheme || 'light'
-      };
-    }
+    console.error('❌ Telegram WebApp: нет данных пользователя');
+    console.error('initData length:', tg.initData?.length || 0);
+    console.error('initDataUnsafe:', JSON.stringify(tg.initDataUnsafe));
 
     // В продакшене без данных пользователя - ошибка
-    throw new Error('Нет данных пользователя от Telegram');
+    throw new Error('Нет данных пользователя от Telegram. Пожалуйста, перезапустите Mini App.');
   }
 
   return {

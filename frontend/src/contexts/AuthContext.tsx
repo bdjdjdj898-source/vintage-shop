@@ -97,7 +97,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (err) {
         console.error('💥 Критическая ошибка инициализации:', err);
-        setError('Ошибка инициализации Telegram WebApp');
+        const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
+        console.error('Текст ошибки:', errorMessage);
+        setError(errorMessage);
       } finally {
         if (import.meta.env.DEV) {
           console.log('🏁 Инициализация завершена, isLoading = false');
