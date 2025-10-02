@@ -39,7 +39,7 @@ services:
     ports:
       - "3002:3000"
     environment:
-      - DATABASE_URL=file:./database.db
+      - DATABASE_URL=file:/app/backend/database.db
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - ADMIN_TELEGRAM_IDS=${ADMIN_TELEGRAM_IDS}
       - PORT=3000
@@ -48,10 +48,10 @@ services:
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
       - TELEGRAM_INITDATA_TTL=${TELEGRAM_INITDATA_TTL:-86400}
-      - ENABLE_TEST_AUTH=true
+      - ENABLE_TEST_AUTH=false
       - DEBUG_AUTH_SECRET=dev-secret-123
     volumes:
-      - ./backend/database.db:/app/backend/database.db
+      - backend-data:/app/backend
     networks:
       - app-network
     healthcheck:
@@ -67,4 +67,6 @@ networks:
 
 volumes:
   postgres_data:
+    driver: local
+  backend-data:
     driver: local
