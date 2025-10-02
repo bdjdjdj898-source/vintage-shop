@@ -39,7 +39,7 @@ services:
     ports:
       - "3002:3000"
     environment:
-      - DATABASE_URL=file:/app/backend/database.db
+      - DATABASE_URL=file:./database.db
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - ADMIN_TELEGRAM_IDS=${ADMIN_TELEGRAM_IDS}
       - PORT=3000
