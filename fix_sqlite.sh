@@ -1,33 +1,48 @@
 #!/bin/bash
 
-echo "🔧 Исправление SQLite настроек..."
+# Скрипт для исправления конфликта git и деплоя проекта
+set -e
 
-# Исправить DATABASE_URL в docker-compose.yml для использования SQLite
-echo "🐳 Настройка docker-compose.yml для SQLite..."
-sed -i 's|DATABASE_URL=postgresql://postgres:postgres@postgres:5432/vintage_shop?schema=public|DATABASE_URL=file:./database.db|' docker-compose.yml
+echo "🔧 Исправляем конфликт с backend/.env и подтягиваем изменения..."
 
-# Проверить что изменилось
-echo "✅ Проверка DATABASE_URL в docker-compose.yml:"
-cat docker-compose.yml | grep DATABASE_URL
+# Отменяем изменения в backend/.env
+echo "📝 Отменяем изменения в backend/.env..."
+git checkout backend/.env
 
+# Подтягиваем изменения с GitHub
+echo "⬇️  Подтягиваем изменения с GitHub..."
+git pull origin main
+
+# Восстанавливаем правильные настройки в .env
+echo "✏️  Настраиваем backend/.env..."
+cat > backend/.env << 'EOF'
+DATABASE_URL="file:./database.db"
+TELEGRAM_BOT_TOKEN=8296924139:AAFnzJ3i_UcU4_OfyLtp1ZzziWc9MVs0QBc
+ADMIN_TELEGRAM_IDS=5619341542
+NODE_ENV=production
+PORT=3000
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# Development Auth (for testing without Telegram)
+ENABLE_TEST_AUTH=true
+DEBUG_AUTH_SECRET=dev-secret-123
+DEBUG_TEST_ADMIN=false
+
+# Telegram Auth Configuration
+TELEGRAM_INITDATA_TTL=86400
+EOF
+
+echo "✅ Git конфликт исправлен!"
 echo ""
-echo "🚀 Перезапуск контейнеров..."
-docker-compose down
-docker-compose up -d
-
+echo "Теперь запускаем деплой..."
 echo ""
-echo "📊 Статус контейнеров:"
-docker-compose ps
 
-echo ""
-echo "📋 Логи backend (последние 20 строк):"
-docker-compose logs backend --tail 20
+# Делаем скрипт деплоя исполняемым
+chmod +x quick-deploy.sh
 
-echo ""
-echo "🔍 Проверка API..."
-sleep 5
-echo "Тестирование API health endpoint:"
-curl -s http://localhost:3002/api/health || echo "❌ API не отвечает, проверьте логи"
-
-echo ""
-echo "✅ Исправление завершено!"
+# Запускаем деплой
+./quick-deploy.sh
