@@ -7,6 +7,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
+import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import AdminProducts from "./pages/AdminProducts";
 import AdminOrders from "./pages/AdminOrders";
@@ -29,7 +30,9 @@ function AppContent() {
     );
   }
 
-  if (error) {
+  const isMockMode = import.meta.env.VITE_MOCK_TELEGRAM === 'true';
+
+  if (error && !isMockMode) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center p-6 max-w-md">
@@ -46,7 +49,7 @@ function AppContent() {
 
   // Allow access to catalog even without full user profile
   // Only require Telegram data for basic functionality
-  if (!telegramUser) {
+  if (!telegramUser && !isMockMode) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center p-6 max-w-md">
@@ -62,6 +65,11 @@ function AppContent() {
 
   return (
     <CartProvider>
+      {isMockMode && (
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 text-xs text-center">
+          🔧 Dev Mode: Mock Telegram Data
+        </div>
+      )}
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -69,6 +77,7 @@ function AppContent() {
           <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
           <Route path="/checkout" element={<RequireAuth><Checkout /></RequireAuth>} />
           <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
+          <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="/admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
           <Route path="/admin/products" element={<RequireAdmin><AdminProducts /></RequireAdmin>} />
           <Route path="/admin/orders" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />

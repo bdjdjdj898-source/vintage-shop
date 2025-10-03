@@ -34,7 +34,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
 
   return (
     <div
-      className="bg-card rounded-lg shadow-md overflow-hidden cursor-pointer transition-transform hover:scale-105 hover:shadow-lg"
+      className="bg-card rounded-lg shadow-md overflow-hidden cursor-pointer transition-transform hover:scale-105 hover:shadow-lg flex flex-col"
       onClick={handleClick}
     >
       {/* Product Image */}
@@ -62,7 +62,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
       </div>
 
       {/* Product Info */}
-      <div className="p-4">
+      <div className="p-5 flex flex-col flex-1">
         {/* Brand and Category */}
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium text-accent">{product.brand}</span>
@@ -70,7 +70,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
         </div>
 
         {/* Title */}
-        <h3 className="text-lg font-semibold text-text mb-2 line-clamp-2">
+        <h3 className="text-lg font-semibold text-text mb-2 line-clamp-2 overflow-hidden break-words">
           {product.title}
         </h3>
 
@@ -95,7 +95,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
         </div>
 
         {/* Description Preview */}
-        <p className="text-sm text-text-secondary mt-2 line-clamp-2">
+        <p className="text-sm text-text-secondary mt-2 line-clamp-2 overflow-hidden break-words">
           {product.description}
         </p>
       </div>

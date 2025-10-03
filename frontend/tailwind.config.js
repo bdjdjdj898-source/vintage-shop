@@ -13,6 +13,7 @@ export default {
         text: 'var(--color-text)',
         'text-secondary': 'var(--color-text-secondary)',
         accent: 'var(--color-accent)',
+        'accent-light': 'var(--color-accent-light)',
         border: 'var(--color-border)',
         success: 'var(--color-success)',
         error: 'var(--color-error)',
@@ -32,5 +33,18 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/line-clamp'),
+    function({ addUtilities }) {
+      addUtilities({
+        '.scrollbar-hide': {
+          '-ms-overflow-style': 'none',
+          'scrollbar-width': 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
+        },
+      });
+    },
+  ],
 }

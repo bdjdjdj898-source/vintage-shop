@@ -1,6 +1,31 @@
 export function initTelegramWebApp() {
   console.log('🔄 Initializing Telegram WebApp...');
   console.log('🌍 Environment:', import.meta.env.MODE);
+  console.log('🔧 VITE_MOCK_TELEGRAM:', import.meta.env.VITE_MOCK_TELEGRAM);
+  console.log('🔧 VITE_DEV_MODE:', import.meta.env.VITE_DEV_MODE);
+
+  // Если включен mock режим, возвращаем mock данные
+  if (import.meta.env.VITE_MOCK_TELEGRAM === 'true') {
+    console.log('🎭 Using MOCK Telegram data for development');
+
+    const mockData = {
+      initData: 'mock_init_data_for_development',
+      user: {
+        id: 123456789,
+        first_name: 'Dev',
+        last_name: 'User',
+        username: 'devuser',
+        language_code: 'ru',
+        is_premium: false
+      },
+      colorScheme: 'light' as 'light' | 'dark'
+    };
+
+    console.log('🎭 Mock user:', mockData.user);
+    console.log('🎭 Mock colorScheme:', mockData.colorScheme);
+
+    return mockData;
+  }
 
   // Проверяем что Telegram WebApp SDK загружен
   const tg = (window as any).Telegram?.WebApp;

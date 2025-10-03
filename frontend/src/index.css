@@ -10,6 +10,7 @@
   --color-text: #1f2937;
   --color-text-secondary: #6b7280;
   --color-accent: #5b8cc4;
+  --color-accent-light: #e3f2fd;
   --color-border: #e5e7eb;
   --color-success: #10b981;
   --color-error: #ef4444;
@@ -36,6 +37,7 @@
   --color-text: #ffffff;
   --color-text-secondary: #a1a1aa;
   --color-accent: #8ab4f8;
+  --color-accent-light: #1e3a8a;
   --color-border: #374151;
   --color-success: #34d399;
   --color-error: #f87171;
@@ -55,7 +57,29 @@
   --color-info-text: #bfdbfe;
 }
 
+/* Base Styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg text-text;
+  }
+}
+
 /* Smooth Transitions for Theme Switching */
 * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Scrollbar Utilities */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

@@ -40,12 +40,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        const isMockMode = import.meta.env.VITE_MOCK_TELEGRAM === 'true';
+
         if (import.meta.env.DEV) {
           console.log('🚀 Начинаем инициализацию авторизации...');
+          console.log('🎭 Mock режим:', isMockMode);
         }
 
-        // Ждем немного чтобы Telegram SDK успел загрузиться
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Ждем немного чтобы Telegram SDK успел загрузиться (если не mock)
+        if (!isMockMode) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
 
         // Initialize Telegram WebApp
         const telegramData = initTelegramWebApp();
@@ -81,11 +86,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             } else {
               console.error('❌ Сервер вернул ошибку:', response);
-              setError('Ошибка загрузки профиля пользователя');
+
+              // В dev режиме с mock данными создаем fallback user
+              if (isMockMode) {
+                console.log('🎭 Dev режим: создаем fallback user из telegramUser');
+                const fallbackUser: User = {
+                  id: telegramData.user.id,
+                  telegramId: telegramData.user.id,
+                  firstName: telegramData.user.first_name,
+                  lastName: telegramData.user.last_name || '',
+                  username: telegramData.user.username || '',
+                  role: 'user',
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString()
+                } as User;
+                setUser(fallbackUser);
+                console.log('✅ Fallback user создан:', fallbackUser);
+              } else {
+                setError('Ошибка загрузки профиля пользователя');
+              }
             }
           } catch (apiError) {
             console.error('❌ Ошибка API запроса:', apiError);
-            setError('Ошибка загрузки профиля пользователя');
+
+            // В dev режиме с mock данными создаем fallback user
+            if (isMockMode) {
+              console.log('🎭 Dev режим: API недоступен, создаем fallback user');
+              const fallbackUser: User = {
+                id: telegramData.user.id,
+                telegramId: telegramData.user.id,
+                firstName: telegramData.user.first_name,
+                lastName: telegramData.user.last_name || '',
+                username: telegramData.user.username || '',
+                role: 'user',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              } as User;
+              setUser(fallbackUser);
+              console.log('✅ Fallback user создан:', fallbackUser);
+            } else {
+              setError('Ошибка загрузки профиля пользователя');
+            }
           }
         } else {
           console.error('❌ Telegram данные недоступны:', telegramData);
@@ -93,13 +134,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('🌍 window.Telegram:', (window as any).Telegram);
             console.log('📱 window.Telegram?.WebApp:', (window as any).Telegram?.WebApp);
           }
-          setError('Telegram WebApp недоступен. Откройте приложение через Telegram.');
+
+          // В mock режиме не устанавливаем ошибку
+          if (!isMockMode) {
+            setError('Telegram WebApp недоступен. Откройте приложение через Telegram.');
+          }
         }
       } catch (err) {
         console.error('💥 Критическая ошибка инициализации:', err);
         const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
         console.error('Текст ошибки:', errorMessage);
-        setError(errorMessage);
+
+        const isMockMode = import.meta.env.VITE_MOCK_TELEGRAM === 'true';
+
+        // В mock режиме не устанавливаем ошибку
+        if (!isMockMode) {
+          setError(errorMessage);
+        } else {
+          console.log('🎭 Dev режим: игнорируем ошибку инициализации');
+        }
       } finally {
         if (import.meta.env.DEV) {
           console.log('🏁 Инициализация завершена, isLoading = false');
