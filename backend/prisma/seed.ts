@@ -121,10 +121,13 @@ async function main() {
   for (const productData of sampleProducts) {
     const product = await prisma.product.upsert({
       where: {
-        title: productData.title
+        id: 0 // Will never match, so always creates
       },
       update: {},
-      create: productData
+      create: {
+        ...productData,
+        images: JSON.stringify(productData.images)
+      }
     });
     console.log('✅ Product created/updated:', product.title);
   }

@@ -49,8 +49,11 @@ const Home: React.FC = () => {
       const queryString = params.toString();
       const url = `/api/products${queryString ? `?${queryString}` : ''}`;
 
+      console.log('🔍 Fetching products from:', url);
       const response = await apiFetch(url);
+      console.log('📦 API Response:', response);
       if (response.success) {
+        console.log('✅ Products loaded:', response.data.length);
         setProducts(response.data);
 
         // Extract unique options for filter dropdowns
@@ -63,10 +66,11 @@ const Home: React.FC = () => {
         setBrands(uniqueBrands);
         setSizes(uniqueSizes);
         setColors(uniqueColors);
+        console.log('📊 Фильтры установлены:', { categories: uniqueCategories, brands: uniqueBrands, sizes: uniqueSizes, colors: uniqueColors });
       }
     } catch (err) {
-      console.error('Error fetching products:', err);
-      setError('Ошибка загрузки товаров');
+      console.error('❌ Error fetching products:', err);
+      setError(`Ошибка загрузки товаров: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
