@@ -51,7 +51,7 @@ services:
       - ENABLE_TEST_AUTH=false
       - DEBUG_AUTH_SECRET=dev-secret-123
     volumes:
-      - backend-data:/app/backend
+      - backend-data:/app/prisma
     networks:
       - app-network
     healthcheck:
