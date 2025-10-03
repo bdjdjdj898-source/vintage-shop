@@ -58,14 +58,13 @@
 }
 
 /* Base Styles */
-@layer base {
-  html {
-    scroll-behavior: smooth;
-  }
+html {
+  scroll-behavior: smooth;
+}
 
-  body {
-    @apply bg-bg text-text;
-  }
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
 /* Smooth Transitions for Theme Switching */
