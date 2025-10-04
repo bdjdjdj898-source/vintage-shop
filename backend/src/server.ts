@@ -87,6 +87,19 @@ app.use(morgan('combined', { stream: loggerStream }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Client-side error logging endpoint (before rate limiter)
+app.post('/api/log-error', express.json(), (req, res) => {
+  const { message, stack, url, userAgent } = req.body;
+  logger.error('Client-side error', {
+    message,
+    stack,
+    url,
+    userAgent,
+    ip: req.ip
+  });
+  res.status(200).json({ logged: true });
+});
+
 // Health check endpoint (before rate limiter to avoid any limits)
 app.get('/health', async (req, res) => {
   let dbStatus: 'up' | 'down' = 'down';
