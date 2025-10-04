@@ -37,21 +37,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
 
   return (
     <div
-      className="rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:translate-y-[-4px] flex flex-col h-full"
+      className="rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 flex flex-col h-full border"
       onClick={handleClick}
       style={{
         backgroundColor: 'var(--color-card)',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+        borderColor: 'var(--color-border)',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
       }}
     >
       {/* Product Image */}
-      <div className="relative aspect-[3/4] overflow-hidden" style={{ backgroundColor: 'var(--color-surface)' }}>
+      <div className="relative aspect-square overflow-hidden" style={{ backgroundColor: 'var(--color-surface)' }}>
         <img
           src={product.images[0]}
           alt={product.title}
@@ -83,43 +84,29 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
       </div>
 
       {/* Product Info */}
-      <div className="p-3 flex flex-col flex-1">
+      <div className="p-3 flex flex-col flex-1 gap-1">
         {/* Brand */}
-        <div className="text-xs font-medium mb-1" style={{ color: 'var(--color-accent)' }}>
+        <div className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
           {product.brand}
         </div>
 
         {/* Title */}
-        <h3 className="text-sm font-semibold mb-2 line-clamp-2 min-h-[2.5rem]" style={{ color: 'var(--color-text)' }}>
+        <h3 className="text-sm font-medium line-clamp-1" style={{ color: 'var(--color-text)' }}>
           {product.title}
         </h3>
 
         {/* Size and Color */}
-        <div className="flex gap-2 mb-3 flex-wrap">
-          <span
-            className="inline-block px-2 py-0.5 rounded text-xs font-medium"
-            style={{ backgroundColor: 'var(--color-pill)', color: 'var(--color-muted)' }}
-          >
-            {product.size}
-          </span>
-          <span
-            className="inline-block px-2 py-0.5 rounded text-xs font-medium"
-            style={{ backgroundColor: 'var(--color-pill)', color: 'var(--color-muted)' }}
-          >
-            {product.color}
-          </span>
+        <div className="flex gap-1.5 flex-wrap text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+          <span>{product.size}</span>
+          <span>•</span>
+          <span>{product.color}</span>
         </div>
 
         {/* Price */}
-        <div className="mt-auto pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
-          <div className="flex justify-between items-center">
-            <p className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>
-              {formatCurrency(product.price)}
-            </p>
-            <div className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-              {product.condition}/10
-            </div>
-          </div>
+        <div className="mt-auto pt-2">
+          <p className="text-base font-bold" style={{ color: 'var(--color-text)' }}>
+            {formatCurrency(product.price)}
+          </p>
         </div>
       </div>
     </div>

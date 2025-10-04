@@ -18,6 +18,7 @@
 
   /* Additional semantic colors */
   --color-surface: #f3f4f6;
+  --color-surface-hover: #e5e7eb;
   --color-pill: #f3f4f6;
   --color-muted: #9ca3af;
   --color-success-bg: #dcfce7;
@@ -28,6 +29,14 @@
   --color-error-text: #991b1b;
   --color-info-bg: #dbeafe;
   --color-info-text: #1e40af;
+
+  /* UI Constants */
+  --radius: 12px;
+  --gap: 8px;
+  --card-padding: 12px;
+  --transition: 0.2s ease;
+
+  transition: background-color 0.3s, color 0.3s;
 }
 
 [data-theme="dark"] {
@@ -45,6 +54,7 @@
 
   /* Additional semantic colors for dark theme */
   --color-surface: #2d2d2d;
+  --color-surface-hover: #3a3a3a;
   --color-pill: #2d2d2d;
   --color-muted: #71717a;
   --color-success-bg: #14532d;

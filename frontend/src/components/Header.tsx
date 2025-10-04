@@ -12,27 +12,28 @@ const Header: React.FC = () => {
 
   return (
     <header
-      className="sticky top-0 z-50 backdrop-blur-sm"
+      className="sticky top-0 z-50 backdrop-blur-sm h-14"
       style={{
         backgroundColor: 'var(--color-card)',
         borderBottom: '1px solid var(--color-border)',
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
       }}
     >
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center h-14">
+      <div className="max-w-7xl mx-auto px-4 h-full">
+        <div className="flex justify-between items-center h-full">
           {/* Logo */}
           <button
             onClick={() => navigate('/')}
-            className="flex items-center space-x-2 transition-opacity hover:opacity-80"
+            className="flex items-center gap-2 border-none bg-transparent transition-opacity hover:opacity-80"
           >
+            <span className="text-2xl">🛍️</span>
             <h1 className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>
-              🛍️ Vintage Shop
+              Vintage Shop
             </h1>
           </button>
 
           {/* Navigation Icons */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-1">
             {/* Cart Button */}
             <button
               onClick={() => navigate('/cart')}
@@ -54,7 +55,7 @@ const Header: React.FC = () => {
               </svg>
               {cartItemsCount > 0 && (
                 <span
-                  className="absolute -top-1 -right-1 w-5 h-5 text-xs font-bold rounded-full flex items-center justify-center"
+                  className="absolute top-0 right-0 w-5 h-5 text-xs font-bold rounded-full flex items-center justify-center"
                   style={{
                     backgroundColor: 'var(--color-error)',
                     color: '#ffffff'

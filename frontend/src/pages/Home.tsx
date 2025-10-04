@@ -122,7 +122,7 @@ const Home: React.FC = () => {
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <div className="text-lg" style={{ color: 'var(--color-error)' }}>{error}</div>
+            <div className="text-center text-sm mt-4" style={{ color: 'var(--color-error)' }}>{error}</div>
           </div>
         </div>
       </div>
@@ -133,7 +133,7 @@ const Home: React.FC = () => {
     <div className="min-h-screen bg-bg">
       <Header />
       <div className="container mx-auto px-4 py-6 pb-20">
-        <h1 className="text-2xl font-bold mb-6" style={{ color: 'var(--color-text)' }}>
+        <h1 className="text-lg md:text-2xl font-bold mb-4 text-center" style={{ color: 'var(--color-text)', opacity: 0.9 }}>
           Винтажная одежда
         </h1>
 
@@ -177,7 +177,7 @@ const Home: React.FC = () => {
 
         {/* No Products Found */}
         {!isLoading && products.length === 0 && (
-          <div className="text-center mt-8" style={{ color: 'var(--color-text-secondary)' }}>
+          <div className="text-center py-10" style={{ color: 'var(--color-text-secondary)' }}>
             {filters.category || filters.brand || filters.search
               ? 'Товары по выбранным фильтрам не найдены'
               : 'Товары не найдены'

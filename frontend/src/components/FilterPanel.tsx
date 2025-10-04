@@ -252,20 +252,25 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   if (isDesktop) {
     return (
       <div
-        className="rounded-lg p-6 mb-6"
+        className="rounded-xl p-3 mb-4"
         style={{
           backgroundColor: 'var(--color-card)',
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
         }}
       >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-            Фильтры
-          </h2>
+        <div className="flex justify-between items-center mb-3 pb-3" style={{ borderBottom: '1px solid var(--color-border)', opacity: 0.4 }}>
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-accent)' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            <h2 className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+              Фильтры
+            </h2>
+          </div>
           {hasActiveFilters && (
             <button
               onClick={onClearFilters}
-              className="text-sm font-medium transition-opacity hover:opacity-70"
+              className="text-xs font-medium transition-opacity hover:opacity-70"
               style={{ color: 'var(--color-accent)' }}
             >
               Очистить ({activeFiltersCount})
