@@ -39,7 +39,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
   const getActiveFiltersCount = () => {
     let count = 0;
-    if (filters.category) count++;
     if (filters.brand) count++;
     if (filters.size) count++;
     if (filters.color) count++;
@@ -52,11 +51,31 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     return count;
   };
 
+  const inputStyle = {
+    backgroundColor: 'var(--color-card)',
+    color: 'var(--color-text)',
+    border: '1px solid var(--color-border)',
+    borderRadius: '0.5rem',
+    padding: '0.5rem 0.75rem',
+    width: '100%',
+    fontSize: '0.875rem',
+    outline: 'none',
+    transition: 'border-color 0.2s, box-shadow 0.2s'
+  };
+
+  const labelStyle = {
+    color: 'var(--color-text)',
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    marginBottom: '0.25rem',
+    display: 'block'
+  };
+
   const FilterContent = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Search */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label style={labelStyle}>
           Поиск
         </label>
         <input
@@ -64,38 +83,35 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           value={filters.search}
           onChange={(e) => onFilterChange('search', e.target.value)}
           placeholder="Поиск по названию..."
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          style={inputStyle}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-accent)';
+            e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-accent-light)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-border)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         />
-      </div>
-
-      {/* Category Filter */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Категория
-        </label>
-        <select
-          value={filters.category}
-          onChange={(e) => onFilterChange('category', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Все категории</option>
-          {categories.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Brand Filter */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label style={labelStyle}>
           Бренд
         </label>
         <select
           value={filters.brand}
           onChange={(e) => onFilterChange('brand', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          style={inputStyle}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-accent)';
+            e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-accent-light)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-border)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         >
           <option value="">Все бренды</option>
           {brands.map((brand) => (
@@ -108,13 +124,21 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
       {/* Size Filter */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label style={labelStyle}>
           Размер
         </label>
         <select
           value={filters.size}
           onChange={(e) => onFilterChange('size', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          style={inputStyle}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-accent)';
+            e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-accent-light)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-border)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         >
           <option value="">Все размеры</option>
           {sizes.map((size) => (
@@ -127,13 +151,21 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
       {/* Color Filter */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label style={labelStyle}>
           Цвет
         </label>
         <select
           value={filters.color}
           onChange={(e) => onFilterChange('color', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          style={inputStyle}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-accent)';
+            e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-accent-light)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-border)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         >
           <option value="">Все цвета</option>
           {colors.map((color) => (
@@ -146,13 +178,21 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
       {/* Sort Filter */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label style={labelStyle}>
           Сортировка
         </label>
         <select
           value={filters.sort}
           onChange={(e) => onFilterChange('sort', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          style={inputStyle}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-accent)';
+            e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-accent-light)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-border)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         >
           <option value="newest">Сначала новые</option>
           <option value="price_asc">Цена: по возрастанию</option>
@@ -161,74 +201,47 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         </select>
       </div>
 
-      {/* Min Condition Filter */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Состояние от
+      {/* Price Range */}
+      <div className="sm:col-span-2 lg:col-span-1">
+        <label style={labelStyle}>
+          Цена (₽)
         </label>
-        <select
-          value={filters.minCondition}
-          onChange={(e) => onFilterChange('minCondition', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Любое</option>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((condition) => (
-            <option key={condition} value={condition.toString()}>
-              {condition}/10
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Max Condition Filter */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Состояние до
-        </label>
-        <select
-          value={filters.maxCondition}
-          onChange={(e) => onFilterChange('maxCondition', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Любое</option>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((condition) => (
-            <option key={condition} value={condition.toString()}>
-              {condition}/10
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Min Price Filter */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Цена от (₽)
-        </label>
-        <input
-          type="number"
-          value={filters.minPrice}
-          onChange={(e) => onFilterChange('minPrice', e.target.value)}
-          placeholder="Мин. цена"
-          min="0"
-          step="100"
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      {/* Max Price Filter */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Цена до (₽)
-        </label>
-        <input
-          type="number"
-          value={filters.maxPrice}
-          onChange={(e) => onFilterChange('maxPrice', e.target.value)}
-          placeholder="Макс. цена"
-          min="0"
-          step="100"
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="flex gap-2">
+          <input
+            type="number"
+            value={filters.minPrice}
+            onChange={(e) => onFilterChange('minPrice', e.target.value)}
+            placeholder="От"
+            min="0"
+            step="100"
+            style={{ ...inputStyle, width: '50%' }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-accent)';
+              e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-accent-light)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-border)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          />
+          <input
+            type="number"
+            value={filters.maxPrice}
+            onChange={(e) => onFilterChange('maxPrice', e.target.value)}
+            placeholder="До"
+            min="0"
+            step="100"
+            style={{ ...inputStyle, width: '50%' }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-accent)';
+              e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-accent-light)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-border)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -238,21 +251,28 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
   if (isDesktop) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Фильтры</h2>
-        <FilterContent />
-
-        {/* Clear Filters */}
-        {hasActiveFilters && (
-          <div className="mt-4">
+      <div
+        className="rounded-lg p-6 mb-6"
+        style={{
+          backgroundColor: 'var(--color-card)',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+        }}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
+            Фильтры
+          </h2>
+          {hasActiveFilters && (
             <button
               onClick={onClearFilters}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="text-sm font-medium transition-opacity hover:opacity-70"
+              style={{ color: 'var(--color-accent)' }}
             >
-              Очистить фильтры
+              Очистить ({activeFiltersCount})
             </button>
-          </div>
-        )}
+          )}
+        </div>
+        <FilterContent />
       </div>
     );
   }
@@ -263,16 +283,27 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       <div className="mb-4">
         <button
           onClick={() => setIsMobileDrawerOpen(true)}
-          className="w-full flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 text-gray-800 dark:text-white"
+          className="w-full flex items-center justify-between rounded-lg p-4 transition-all active:scale-95"
+          style={{
+            backgroundColor: 'var(--color-card)',
+            color: 'var(--color-text)',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+          }}
         >
           <div className="flex items-center space-x-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            <span className="font-medium">Фильтры</span>
+            <span className="font-medium">Фильтры и сортировка</span>
           </div>
           {activeFiltersCount > 0 && (
-            <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+            <span
+              className="text-xs px-2 py-1 rounded-full font-medium"
+              style={{
+                backgroundColor: 'var(--color-accent)',
+                color: '#ffffff'
+              }}
+            >
               {activeFiltersCount}
             </span>
           )}
@@ -289,21 +320,30 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         </div>
 
         {/* Drawer Actions */}
-        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600 space-y-3">
+        <div className="mt-6 pt-6 space-y-3" style={{ borderTop: '1px solid var(--color-border)' }}>
           <button
             onClick={() => {
               onClearFilters();
               setIsMobileDrawerOpen(false);
             }}
-            className="w-full py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 font-medium"
+            className="w-full py-3 px-4 rounded-lg font-medium transition-all active:scale-95"
+            style={{
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text)',
+              backgroundColor: 'transparent'
+            }}
           >
             Очистить все
           </button>
           <button
             onClick={() => setIsMobileDrawerOpen(false)}
-            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium"
+            className="w-full py-3 px-4 rounded-lg font-medium transition-all active:scale-95"
+            style={{
+              backgroundColor: 'var(--color-accent)',
+              color: '#ffffff'
+            }}
           >
-            Применить
+            Применить фильтры
           </button>
         </div>
       </MobileFilterDrawer>
