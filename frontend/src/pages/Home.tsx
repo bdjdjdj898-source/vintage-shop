@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '../api/client';
 import ProductCard from '../components/ProductCard';
 import Header from '../components/Header';
-import FilterPanel from '../components/FilterPanel';
 import CategoryTabs from '../components/CategoryTabs';
 import { Product } from '../types/api';
 
@@ -130,10 +129,10 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
       <Header />
-      <div className="container mx-auto px-4 py-6 pb-20">
-        <h1 className="text-lg md:text-2xl font-bold mb-4 text-center" style={{ color: 'var(--color-text)', opacity: 0.9 }}>
+      <div className="max-w-screen-xl mx-auto px-4 py-6 space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text)' }}>
           Винтажная одежда
         </h1>
 
@@ -144,44 +143,26 @@ const Home: React.FC = () => {
           onCategorySelect={(category) => handleFilterChange('category', category)}
         />
 
-        {/* Filters */}
-        <FilterPanel
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          onClearFilters={clearFilters}
-          categories={categories}
-          brands={brands}
-          sizes={sizes}
-          colors={colors}
-          isLoading={isLoading}
-        />
-
-        {/* Loading State */}
-        {isLoading && (
+        {/* Product Grid */}
+        {isLoading ? (
           <div className="flex justify-center items-center h-32">
             <div className="text-lg" style={{ color: 'var(--color-text)' }}>Загрузка товаров...</div>
           </div>
-        )}
-
-        {/* Product Grid */}
-        {!isLoading && (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+        ) : products.length === 0 ? (
+          <div className="text-center py-10" style={{ color: 'var(--color-text-secondary)' }}>
+            {filters.category || filters.brand || filters.search
+              ? 'Товары по выбранным фильтрам не найдены'
+              : 'Товары не найдены'
+            }
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {products.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
               />
             ))}
-          </div>
-        )}
-
-        {/* No Products Found */}
-        {!isLoading && products.length === 0 && (
-          <div className="text-center py-10" style={{ color: 'var(--color-text-secondary)' }}>
-            {filters.category || filters.brand || filters.search
-              ? 'Товары по выбранным фильтрам не найдены'
-              : 'Товары не найдены'
-            }
           </div>
         )}
       </div>

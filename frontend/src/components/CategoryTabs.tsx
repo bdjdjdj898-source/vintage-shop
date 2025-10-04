@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 
 interface CategoryTabsProps {
   categories: string[];
@@ -11,142 +11,36 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
   selectedCategory,
   onCategorySelect,
 }) => {
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  // All categories including "Все" option
   const allCategories = ['Все', ...categories];
-
-  const checkScrollButtons = () => {
-    if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
-    }
-  };
-
-  useEffect(() => {
-    checkScrollButtons();
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.addEventListener('scroll', checkScrollButtons);
-      window.addEventListener('resize', checkScrollButtons);
-    }
-
-    return () => {
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.removeEventListener('scroll', checkScrollButtons);
-      }
-      window.removeEventListener('resize', checkScrollButtons);
-    };
-  }, [categories]);
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 200;
-      const newScrollLeft = direction === 'left'
-        ? scrollContainerRef.current.scrollLeft - scrollAmount
-        : scrollContainerRef.current.scrollLeft + scrollAmount;
-
-      scrollContainerRef.current.scrollTo({
-        left: newScrollLeft,
-        behavior: 'smooth'
-      });
-    }
-  };
 
   const handleCategoryClick = (category: string) => {
     const categoryValue = category === 'Все' ? '' : category;
     onCategorySelect(categoryValue);
-    setShowDropdown(false);
-  };
-
-  const getDisplayCategory = () => {
-    return selectedCategory === '' ? 'Все' : selectedCategory;
   };
 
   return (
-    <div
-      className="rounded-xl p-2 mb-4"
-      style={{ backgroundColor: 'var(--color-card)', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}
-    >
-      <div className="relative">
-        {/* Left Scroll Button */}
-        {canScrollLeft && (
+    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+      {allCategories.map((category) => {
+        const isSelected = (category === 'Все' && selectedCategory === '') ||
+                         (category !== 'Все' && selectedCategory === category);
+
+        return (
           <button
-            onClick={() => scroll('left')}
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 shadow-md rounded-full p-1.5 transition-all"
-            style={{ backgroundColor: 'var(--color-card)', color: 'var(--color-text)' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--color-surface)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--color-card)';
+            key={category}
+            onClick={() => handleCategoryClick(category)}
+            className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ${
+              isSelected
+                ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white'
+                : 'bg-transparent border-gray-300 dark:border-gray-700'
+            }`}
+            style={{
+              color: isSelected ? undefined : 'var(--color-text-secondary)'
             }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            {category}
           </button>
-        )}
-
-        {/* Scrollable Container */}
-        <div
-          ref={scrollContainerRef}
-          className="flex gap-2 overflow-x-auto scrollbar-hide px-8 md:justify-center"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {allCategories.map((category) => {
-            const isSelected = (category === 'Все' && selectedCategory === '') ||
-                             (category !== 'Все' && selectedCategory === category);
-
-            return (
-              <button
-                key={category}
-                onClick={() => handleCategoryClick(category)}
-                className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-                style={{
-                  backgroundColor: isSelected ? 'var(--color-accent)' : 'var(--color-surface)',
-                  color: isSelected ? '#ffffff' : 'var(--color-text)',
-                  boxShadow: isSelected ? '0 2px 8px rgba(0, 0, 0, 0.15)' : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSelected) {
-                    e.currentTarget.style.backgroundColor = 'var(--color-surface-hover)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) {
-                    e.currentTarget.style.backgroundColor = 'var(--color-surface)';
-                  }
-                }}
-              >
-                {category}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Right Scroll Button */}
-        {canScrollRight && (
-          <button
-            onClick={() => scroll('right')}
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 shadow-md rounded-full p-1.5 transition-all"
-            style={{ backgroundColor: 'var(--color-card)', color: 'var(--color-text)' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--color-surface)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--color-card)';
-            }}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        )}
-      </div>
+        );
+      })}
     </div>
   );
 };
