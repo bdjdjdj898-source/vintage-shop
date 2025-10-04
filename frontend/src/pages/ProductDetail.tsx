@@ -5,6 +5,7 @@ import { useCart } from '../contexts/CartContext';
 import { useSwipe } from '../hooks/useSwipe';
 import Header from '../components/Header';
 import { Product } from '../types/api';
+import { formatCurrency } from '../utils/format';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,8 +16,6 @@ const ProductDetail: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isZoomed, setIsZoomed] = useState(false);
-  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   useEffect(() => {
@@ -49,9 +48,12 @@ const ProductDetail: React.FC = () => {
     try {
       setIsAddingToCart(true);
       await addToCart(product.id);
+      // Show success feedback
+      setTimeout(() => {
+        navigate('/cart');
+      }, 500);
     } catch (err) {
       console.error('Error adding to cart:', err);
-    } finally {
       setIsAddingToCart(false);
     }
   };
@@ -67,24 +69,18 @@ const ProductDetail: React.FC = () => {
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isZoomed) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setZoomPosition({ x, y });
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('ru-RU').format(price);
-  };
-
   const getConditionText = (condition: number) => {
-    if (condition >= 9) return 'Отличное';
-    if (condition >= 7) return 'Хорошее';
-    if (condition >= 5) return 'Удовлетворительное';
+    if (condition >= 9) return 'Отлично';
+    if (condition >= 7) return 'Хорошо';
+    if (condition >= 5) return 'Средне';
     return 'Требует внимания';
+  };
+
+  const getConditionColor = (condition: number) => {
+    if (condition >= 9) return { bg: 'var(--color-success-bg)', text: 'var(--color-success-text)' };
+    if (condition >= 7) return { bg: 'var(--color-info-bg)', text: 'var(--color-info-text)' };
+    if (condition >= 5) return { bg: 'var(--color-warning-bg)', text: 'var(--color-warning-text)' };
+    return { bg: 'var(--color-error-bg)', text: 'var(--color-error-text)' };
   };
 
   // Swipe handlers for image navigation
@@ -100,9 +96,10 @@ const ProductDetail: React.FC = () => {
     return (
       <div className="min-h-screen bg-bg">
         <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-lg text-text">Загрузка товара...</div>
+        <div className="container mx-auto px-4 py-8 flex justify-center items-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--color-accent)' }}></div>
+            <p style={{ color: 'var(--color-text)' }}>Загрузка...</p>
           </div>
         </div>
       </div>
@@ -114,13 +111,16 @@ const ProductDetail: React.FC = () => {
       <div className="min-h-screen bg-bg">
         <Header />
         <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col items-center justify-center h-64 space-y-4">
-            <div className="text-lg text-error">{error || 'Товар не найден'}</div>
+          <div className="text-center">
+            <p className="text-lg mb-4" style={{ color: 'var(--color-error)' }}>
+              {error || 'Товар не найден'}
+            </p>
             <button
               onClick={() => navigate('/')}
-              className="px-4 py-2 bg-accent text-white rounded-md hover:opacity-90 transition-opacity"
+              className="px-6 py-2 rounded-lg font-medium transition-all hover:opacity-80"
+              style={{ backgroundColor: 'var(--color-accent)', color: '#ffffff' }}
             >
-              Вернуться на главную
+              Вернуться к каталогу
             </button>
           </div>
         </div>
@@ -128,14 +128,18 @@ const ProductDetail: React.FC = () => {
     );
   }
 
+  const conditionColors = getConditionColor(product.condition);
+
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen bg-bg pb-24">
       <Header />
-      <div className="container mx-auto px-4 py-8">
+
+      <div className="container mx-auto px-4 py-4 max-w-6xl">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center space-x-2 text-text-secondary hover:text-text transition-colors mb-6"
+          className="flex items-center gap-2 mb-4 transition-opacity hover:opacity-70"
+          style={{ color: 'var(--color-text)' }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -143,76 +147,82 @@ const ProductDetail: React.FC = () => {
           <span>Назад</span>
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Image Section */}
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Image Gallery */}
+          <div>
             {/* Main Image */}
-            <div className="relative bg-card rounded-lg overflow-hidden shadow-md">
+            <div
+              className="relative rounded-xl overflow-hidden mb-3"
+              style={{ backgroundColor: 'var(--color-surface)', aspectRatio: '3/4' }}
+              {...swipeHandlers}
+            >
+              <img
+                src={product.images[currentImageIndex]}
+                alt={product.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=1000&fit=crop&auto=format';
+                }}
+              />
+
+              {/* Navigation Arrows */}
+              {product.images.length > 1 && (
+                <>
+                  <button
+                    onClick={() => handleImageNavigation('prev')}
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full backdrop-blur-sm transition-all hover:scale-110"
+                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', color: '#ffffff' }}
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleImageNavigation('next')}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full backdrop-blur-sm transition-all hover:scale-110"
+                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', color: '#ffffff' }}
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </>
+              )}
+
+              {/* Image Counter */}
+              {product.images.length > 1 && (
+                <div
+                  className="absolute bottom-3 right-3 px-3 py-1 rounded-lg text-sm font-medium backdrop-blur-sm"
+                  style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', color: '#ffffff' }}
+                >
+                  {currentImageIndex + 1} / {product.images.length}
+                </div>
+              )}
+
+              {/* Condition Badge */}
               <div
-                className="relative h-96 lg:h-[500px] cursor-zoom-in touch-pan-y"
-                onMouseMove={handleMouseMove}
-                onMouseEnter={() => setIsZoomed(true)}
-                onMouseLeave={() => setIsZoomed(false)}
-                {...swipeHandlers}
+                className="absolute top-3 right-3 px-3 py-1 rounded-full text-sm font-medium shadow-lg"
+                style={{ backgroundColor: conditionColors.bg, color: conditionColors.text }}
               >
-                <img
-                  src={product.images[currentImageIndex]}
-                  alt={product.title}
-                  className={`w-full h-full object-cover transition-transform duration-200 ${
-                    isZoomed ? 'scale-150' : 'scale-100'
-                  }`}
-                  style={
-                    isZoomed
-                      ? {
-                          transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
-                        }
-                      : {}
-                  }
-                />
-
-                {/* Navigation Arrows */}
-                {product.images.length > 1 && (
-                  <>
-                    <button
-                      onClick={() => handleImageNavigation('prev')}
-                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-opacity"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => handleImageNavigation('next')}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-opacity"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </>
-                )}
-
-                {/* Image Counter */}
-                {product.images.length > 1 && (
-                  <div className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-                    {currentImageIndex + 1} / {product.images.length}
-                  </div>
-                )}
+                {getConditionText(product.condition)}
               </div>
             </div>
 
-            {/* Thumbnail Images */}
+            {/* Thumbnail Gallery */}
             {product.images.length > 1 && (
-              <div className="flex space-x-2 overflow-x-auto pb-2">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                 {product.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 transition-colors ${
-                      index === currentImageIndex
-                        ? 'border-accent'
-                        : 'border-border hover:border-accent'
-                    }`}
+                    className="flex-shrink-0 rounded-lg overflow-hidden transition-all"
+                    style={{
+                      width: '80px',
+                      height: '100px',
+                      border: index === currentImageIndex ? '2px solid var(--color-accent)' : '2px solid transparent',
+                      opacity: index === currentImageIndex ? 1 : 0.6
+                    }}
                   >
                     <img
                       src={image}
@@ -225,72 +235,106 @@ const ProductDetail: React.FC = () => {
             )}
           </div>
 
-          {/* Product Info Section */}
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold text-text mb-2">{product.title}</h1>
-              <p className="text-xl text-text-secondary">{product.brand}</p>
+          {/* Product Info */}
+          <div className="flex flex-col">
+            {/* Brand */}
+            <div className="text-sm font-medium mb-2" style={{ color: 'var(--color-accent)' }}>
+              {product.brand}
             </div>
 
-            <div className="text-3xl font-bold text-accent">
-              {formatPrice(product.price)} ₽
+            {/* Title */}
+            <h1 className="text-2xl font-bold mb-3" style={{ color: 'var(--color-text)' }}>
+              {product.title}
+            </h1>
+
+            {/* Price */}
+            <div className="text-3xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>
+              {formatCurrency(product.price)}
             </div>
 
-            {/* Product Details */}
-            <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-border">
-              <div>
-                <span className="text-text-secondary">Категория:</span>
-                <p className="text-text font-medium">{product.category}</p>
-              </div>
-              <div>
-                <span className="text-text-secondary">Размер:</span>
-                <p className="text-text font-medium">{product.size}</p>
-              </div>
-              <div>
-                <span className="text-text-secondary">Цвет:</span>
-                <p className="text-text font-medium">{product.color}</p>
-              </div>
-              <div>
-                <span className="text-text-secondary">Состояние:</span>
-                <p className="text-text font-medium">
-                  {product.condition}/10 ({getConditionText(product.condition)})
-                </p>
+            {/* Details Grid */}
+            <div
+              className="rounded-lg p-4 mb-4"
+              style={{ backgroundColor: 'var(--color-surface)' }}
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    Размер
+                  </div>
+                  <div className="font-medium" style={{ color: 'var(--color-text)' }}>
+                    {product.size}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    Цвет
+                  </div>
+                  <div className="font-medium" style={{ color: 'var(--color-text)' }}>
+                    {product.color}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    Категория
+                  </div>
+                  <div className="font-medium" style={{ color: 'var(--color-text)' }}>
+                    {product.category}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    Состояние
+                  </div>
+                  <div className="font-medium" style={{ color: 'var(--color-text)' }}>
+                    {product.condition}/10
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Description */}
-            {product.description && (
-              <div>
-                <h3 className="text-lg font-semibold text-text mb-2">Описание</h3>
-                <p className="text-text-secondary leading-relaxed">{product.description}</p>
-              </div>
-            )}
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+                Описание
+              </h2>
+              <p className="leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                {product.description}
+              </p>
+            </div>
 
-            {/* Add to Cart Button */}
-            <button
-              onClick={handleAddToCart}
-              disabled={isAddingToCart || !product.isActive}
-              className={`w-full py-3 px-6 rounded-lg font-semibold transition-all ${
-                product.isActive
-                  ? 'bg-accent text-white hover:opacity-90 active:scale-95'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              {isAddingToCart
-                ? 'Добавление...'
-                : product.isActive
-                ? 'Добавить в корзину'
-                : 'Товар недоступен'}
-            </button>
-
-            {/* Additional Info */}
-            <div className="text-sm text-text-secondary space-y-2">
-              <p>• Бесплатная доставка от 3000 ₽</p>
-              <p>• Возврат в течение 14 дней</p>
-              <p>• Оригинальность гарантирована</p>
+            {/* Add to Cart Button - Fixed at bottom on mobile */}
+            <div className="mt-auto">
+              <button
+                onClick={handleAddToCart}
+                disabled={isAddingToCart}
+                className="w-full py-4 rounded-xl font-semibold text-lg transition-all active:scale-95 disabled:opacity-50"
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  color: '#ffffff',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}
+              >
+                {isAddingToCart ? 'Добавление...' : 'Добавить в корзину'}
+              </button>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Fixed Bottom Button on Mobile */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 lg:hidden" style={{ backgroundColor: 'var(--color-card)', boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)' }}>
+        <button
+          onClick={handleAddToCart}
+          disabled={isAddingToCart}
+          className="w-full py-4 rounded-xl font-semibold text-lg transition-all active:scale-95 disabled:opacity-50"
+          style={{
+            backgroundColor: 'var(--color-accent)',
+            color: '#ffffff'
+          }}
+        >
+          {isAddingToCart ? 'Добавление...' : `Добавить в корзину · ${formatCurrency(product.price)}`}
+        </button>
       </div>
     </div>
   );
