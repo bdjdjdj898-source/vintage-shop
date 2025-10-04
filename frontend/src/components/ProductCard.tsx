@@ -18,86 +18,109 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
       navigate(`/product/${product.id}`);
     }
   };
+
   const conditionText = (condition: number) => {
-    if (condition >= 9) return 'Отличное';
-    if (condition >= 7) return 'Хорошее';
-    if (condition >= 5) return 'Удовлетв.';
+    if (condition >= 9) return 'Отлично';
+    if (condition >= 7) return 'Хорошо';
+    if (condition >= 5) return 'Средне';
     return 'Требует внимания';
   };
 
   const conditionColor = (condition: number) => {
-    if (condition >= 9) return 'bg-success-bg text-success-text';
-    if (condition >= 7) return 'bg-warning-bg text-warning-text';
-    if (condition >= 5) return 'bg-warning-bg text-warning-text';
-    return 'bg-error-bg text-error-text';
+    if (condition >= 9) return { bg: 'var(--color-success-bg)', text: 'var(--color-success-text)' };
+    if (condition >= 7) return { bg: 'var(--color-info-bg)', text: 'var(--color-info-text)' };
+    if (condition >= 5) return { bg: 'var(--color-warning-bg)', text: 'var(--color-warning-text)' };
+    return { bg: 'var(--color-error-bg)', text: 'var(--color-error-text)' };
   };
+
+  const colors = conditionColor(product.condition);
 
   return (
     <div
-      className="bg-card rounded-lg shadow-md overflow-hidden cursor-pointer transition-transform hover:scale-105 hover:shadow-lg flex flex-col"
+      className="rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:translate-y-[-4px] flex flex-col h-full"
       onClick={handleClick}
+      style={{
+        backgroundColor: 'var(--color-card)',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+      }}
     >
       {/* Product Image */}
-      <div className="relative h-64 bg-surface">
+      <div className="relative aspect-[3/4] overflow-hidden" style={{ backgroundColor: 'var(--color-surface)' }}>
         <img
-          src={product.images[0]} // Используем images[0], а не image
+          src={product.images[0]}
           alt={product.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           onError={(e) => {
-            // Fallback image если основное изображение не загрузится
             const target = e.target as HTMLImageElement;
             target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=500&fit=crop&auto=format';
           }}
+          loading="lazy"
         />
+
         {/* Condition Badge */}
-        <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${conditionColor(product.condition)}`}>
+        <div
+          className="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium shadow-sm"
+          style={{ backgroundColor: colors.bg, color: colors.text }}
+        >
           {conditionText(product.condition)}
         </div>
+
         {/* Multiple Images Indicator */}
         {product.images.length > 1 && (
-          <div className="absolute bottom-2 right-2 bg-info-bg text-info-text px-2 py-1 rounded text-xs">
-            +{product.images.length - 1}
+          <div
+            className="absolute bottom-2 right-2 px-2 py-1 rounded-lg text-xs font-medium shadow-sm backdrop-blur-sm"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', color: '#ffffff' }}
+          >
+            📷 {product.images.length}
           </div>
         )}
       </div>
 
       {/* Product Info */}
-      <div className="p-5 flex flex-col flex-1">
-        {/* Brand and Category */}
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-accent">{product.brand}</span>
-          <span className="text-xs text-text-secondary">{product.category}</span>
+      <div className="p-3 flex flex-col flex-1">
+        {/* Brand */}
+        <div className="text-xs font-medium mb-1" style={{ color: 'var(--color-accent)' }}>
+          {product.brand}
         </div>
 
         {/* Title */}
-        <h3 className="text-lg font-semibold text-text mb-2 line-clamp-2 overflow-hidden break-words">
+        <h3 className="text-sm font-semibold mb-2 line-clamp-2 min-h-[2.5rem]" style={{ color: 'var(--color-text)' }}>
           {product.title}
         </h3>
 
         {/* Size and Color */}
-        <div className="flex gap-2 mb-3">
-          <span className="inline-block bg-pill px-2 py-1 rounded text-xs font-medium text-muted">
+        <div className="flex gap-2 mb-3 flex-wrap">
+          <span
+            className="inline-block px-2 py-0.5 rounded text-xs font-medium"
+            style={{ backgroundColor: 'var(--color-pill)', color: 'var(--color-muted)' }}
+          >
             {product.size}
           </span>
-          <span className="inline-block bg-pill px-2 py-1 rounded text-xs font-medium text-muted">
+          <span
+            className="inline-block px-2 py-0.5 rounded text-xs font-medium"
+            style={{ backgroundColor: 'var(--color-pill)', color: 'var(--color-muted)' }}
+          >
             {product.color}
           </span>
         </div>
 
-        {/* Price - Using formatCurrency for proper RUB formatting */}
-        <div className="flex justify-between items-center">
-          <p className="text-lg font-bold text-text">
-            {formatCurrency(product.price)}
-          </p>
-          <div className="text-xs text-text-secondary">
-            Состояние: {product.condition}/10
+        {/* Price */}
+        <div className="mt-auto pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
+          <div className="flex justify-between items-center">
+            <p className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>
+              {formatCurrency(product.price)}
+            </p>
+            <div className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+              {product.condition}/10
+            </div>
           </div>
         </div>
-
-        {/* Description Preview */}
-        <p className="text-sm text-text-secondary mt-2 line-clamp-2 overflow-hidden break-words">
-          {product.description}
-        </p>
       </div>
     </div>
   );

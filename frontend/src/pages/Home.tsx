@@ -105,11 +105,11 @@ const Home: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-bg">
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <div className="text-lg text-gray-900 dark:text-white">Загрузка товаров...</div>
+            <div className="text-lg" style={{ color: 'var(--color-text)' }}>Загрузка товаров...</div>
           </div>
         </div>
       </div>
@@ -118,11 +118,11 @@ const Home: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-bg">
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <div className="text-lg text-red-600">{error}</div>
+            <div className="text-lg" style={{ color: 'var(--color-error)' }}>{error}</div>
           </div>
         </div>
       </div>
@@ -130,10 +130,10 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-bg">
       <Header />
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+      <div className="container mx-auto px-4 py-6 pb-20">
+        <h1 className="text-2xl font-bold mb-6" style={{ color: 'var(--color-text)' }}>
           Винтажная одежда
         </h1>
 
@@ -159,13 +159,13 @@ const Home: React.FC = () => {
         {/* Loading State */}
         {isLoading && (
           <div className="flex justify-center items-center h-32">
-            <div className="text-lg text-gray-900 dark:text-white">Загрузка товаров...</div>
+            <div className="text-lg" style={{ color: 'var(--color-text)' }}>Загрузка товаров...</div>
           </div>
         )}
 
         {/* Product Grid */}
         {!isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
             {products.map((product) => (
               <ProductCard
                 key={product.id}
@@ -177,7 +177,7 @@ const Home: React.FC = () => {
 
         {/* No Products Found */}
         {!isLoading && products.length === 0 && (
-          <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
+          <div className="text-center mt-8" style={{ color: 'var(--color-text-secondary)' }}>
             {filters.category || filters.brand || filters.search
               ? 'Товары по выбранным фильтрам не найдены'
               : 'Товары не найдены'
