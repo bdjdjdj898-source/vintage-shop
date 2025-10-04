@@ -65,6 +65,14 @@ html {
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
+  min-height: 100vh;
+}
+
+/* Ensure root div takes full height */
+#root {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
 /* Smooth Transitions for Theme Switching */
