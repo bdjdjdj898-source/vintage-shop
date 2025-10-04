@@ -68,16 +68,26 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
 
   return (
     <>
-      {/* Desktop: Horizontal Scrollable Tabs */}
-      <div className="hidden md:block bg-card rounded-lg shadow-sm p-2 mb-6">
+      {/* Desktop & Mobile: Horizontal Scrollable Tabs */}
+      <div
+        className="rounded-lg p-2 mb-4"
+        style={{ backgroundColor: 'var(--color-card)', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}
+      >
         <div className="relative">
           {/* Left Scroll Button */}
           {canScrollLeft && (
             <button
               onClick={() => scroll('left')}
-              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-card shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors"
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 shadow-md rounded-full p-2 transition-all"
+              style={{ backgroundColor: 'var(--color-card)', color: 'var(--color-text)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-card)';
+              }}
             >
-              <svg className="w-4 h-4 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
@@ -97,13 +107,24 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                 <button
                   key={category}
                   onClick={() => handleCategoryClick(category)}
-                  className={`
-                    flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-all duration-200
-                    ${isSelected
-                      ? 'bg-accent text-white shadow-md'
-                      : 'bg-gray-100 text-text hover:bg-gray-200 hover:text-accent'
+                  className="flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-all duration-200"
+                  style={{
+                    backgroundColor: isSelected ? 'var(--color-accent)' : 'var(--color-surface)',
+                    color: isSelected ? '#ffffff' : 'var(--color-text)',
+                    boxShadow: isSelected ? '0 2px 8px rgba(0, 0, 0, 0.1)' : 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.color = 'var(--color-accent)';
+                      e.currentTarget.style.transform = 'scale(1.05)';
                     }
-                  `}
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.color = 'var(--color-text)';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }
+                  }}
                 >
                   {category}
                 </button>
@@ -115,9 +136,16 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
           {canScrollRight && (
             <button
               onClick={() => scroll('right')}
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-card shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors"
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 shadow-md rounded-full p-2 transition-all"
+              style={{ backgroundColor: 'var(--color-card)', color: 'var(--color-text)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-card)';
+              }}
             >
-              <svg className="w-4 h-4 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -125,61 +153,6 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
         </div>
       </div>
 
-      {/* Mobile: Dropdown */}
-      <div className="md:hidden mb-4">
-        <div className="relative">
-          <button
-            onClick={() => setShowDropdown(!showDropdown)}
-            className="w-full flex items-center justify-between bg-card rounded-lg shadow-sm p-4 text-text"
-          >
-            <span className="font-medium">{getDisplayCategory()}</span>
-            <svg
-              className={`w-5 h-5 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {/* Dropdown Menu */}
-          {showDropdown && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-card rounded-lg shadow-lg border border-border z-20 max-h-60 overflow-y-auto">
-              {allCategories.map((category) => {
-                const isSelected = (category === 'Все' && selectedCategory === '') ||
-                                 (category !== 'Все' && selectedCategory === category);
-
-                return (
-                  <button
-                    key={category}
-                    onClick={() => handleCategoryClick(category)}
-                    className={`
-                      w-full text-left px-4 py-3 transition-colors
-                      ${isSelected
-                        ? 'bg-accent text-white'
-                        : 'text-text hover:bg-gray-50'
-                      }
-                      ${category === allCategories[0] ? 'rounded-t-lg' : ''}
-                      ${category === allCategories[allCategories.length - 1] ? 'rounded-b-lg' : ''}
-                    `}
-                  >
-                    {category}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Backdrop for mobile dropdown */}
-        {showDropdown && (
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setShowDropdown(false)}
-          />
-        )}
-      </div>
     </>
   );
 };

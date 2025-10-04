@@ -1,56 +1,127 @@
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
+import { useCart } from '../contexts/CartContext';
 
 const Header: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const { cart } = useCart();
+
+  const cartItemsCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <button onClick={() => navigate('/')} className="flex items-center space-x-2">
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+    <header
+      className="sticky top-0 z-50 backdrop-blur-sm"
+      style={{
+        backgroundColor: 'var(--color-card)',
+        borderBottom: '1px solid var(--color-border)',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex justify-between items-center h-14">
+          {/* Logo */}
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-2 transition-opacity hover:opacity-80"
+          >
+            <h1 className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>
               🛍️ Vintage Shop
             </h1>
           </button>
 
-          <div className="flex items-center space-x-4">
+          {/* Navigation Icons */}
+          <div className="flex items-center space-x-2">
+            {/* Cart Button */}
             <button
               onClick={() => navigate('/cart')}
-              className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="relative p-2 rounded-lg transition-all hover:scale-105 active:scale-95"
+              style={{
+                color: 'var(--color-text)',
+                backgroundColor: 'transparent'
+              }}
               aria-label="Корзина"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
+              {cartItemsCount > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 w-5 h-5 text-xs font-bold rounded-full flex items-center justify-center"
+                  style={{
+                    backgroundColor: 'var(--color-error)',
+                    color: '#ffffff'
+                  }}
+                >
+                  {cartItemsCount > 9 ? '9+' : cartItemsCount}
+                </span>
+              )}
             </button>
 
+            {/* Orders Button */}
             <button
               onClick={() => navigate('/orders')}
-              className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-lg transition-all hover:scale-105 active:scale-95"
+              style={{
+                color: 'var(--color-text)',
+                backgroundColor: 'transparent'
+              }}
               aria-label="Заказы"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </button>
 
+            {/* Profile Button */}
             <button
               onClick={() => navigate('/profile')}
-              className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-lg transition-all hover:scale-105 active:scale-95"
+              style={{
+                color: 'var(--color-text)',
+                backgroundColor: 'transparent'
+              }}
               aria-label="Профиль"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </button>
 
+            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
+              className="p-2 rounded-lg transition-all hover:scale-105 active:scale-95"
+              style={{
+                color: 'var(--color-accent)',
+                backgroundColor: 'transparent'
+              }}
+              aria-label={`Переключить на ${theme === 'light' ? 'темную' : 'светлую'} тему`}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
             >
               {theme === 'light' ? (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
