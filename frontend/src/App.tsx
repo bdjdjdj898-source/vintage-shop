@@ -19,9 +19,6 @@ import RequireAdmin from "./components/guards/RequireAdmin";
 function AppContent() {
   const { user, telegramUser, isLoading, error } = useAuth();
 
-  // Debug logging
-  console.log('AppContent render:', { isLoading, error, telegramUser: !!telegramUser, user: !!user });
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg">

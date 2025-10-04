@@ -22,19 +22,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => {
-    // TEMPORARY FIX: Force light theme because dark theme has visibility issues on mobile
-    // TODO: Fix dark theme text colors properly
-    const forcedTheme = 'light';
-    console.log('🎨 Forcing light theme (dark theme disabled temporarily)');
-    setTheme(forcedTheme);
-    updateDocumentClass(forcedTheme);
-
-    // Original code (commented out for now)
-    /*
+    // Initialize theme from Telegram colorScheme
     try {
       const telegramApp = initTelegramWebApp();
       const telegramTheme = telegramApp.colorScheme === 'dark' ? 'dark' : 'light';
-      console.log('🎨 Telegram colorScheme:', telegramApp.colorScheme, '-> theme:', telegramTheme);
       setTheme(telegramTheme);
       updateDocumentClass(telegramTheme);
     } catch (error) {
@@ -42,7 +33,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setTheme('light');
       updateDocumentClass('light');
     }
-    */
 
     // Listen for Telegram theme changes if available
     const tg = (window as any).Telegram?.WebApp;
