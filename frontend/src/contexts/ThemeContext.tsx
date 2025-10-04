@@ -26,8 +26,20 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const telegramApp = initTelegramWebApp();
       const telegramTheme = telegramApp.colorScheme === 'dark' ? 'dark' : 'light';
+      console.log('🎨 Telegram colorScheme:', telegramApp.colorScheme, '-> theme:', telegramTheme);
       setTheme(telegramTheme);
       updateDocumentClass(telegramTheme);
+
+      // Log to server for debugging mobile
+      fetch('/api/log-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Theme initialized: ${telegramTheme}, Telegram colorScheme: ${telegramApp.colorScheme}`,
+          url: window.location.href,
+          userAgent: navigator.userAgent
+        })
+      }).catch(() => {});
     } catch (error) {
       console.warn('Could not get Telegram color scheme, using light theme:', error);
       setTheme('light');
