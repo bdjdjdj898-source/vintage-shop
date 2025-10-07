@@ -28,13 +28,14 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
           <button
             key={category}
             onClick={() => handleCategoryClick(category)}
-            className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ${
+            className={`whitespace-nowrap rounded-full border px-5 py-2.5 text-base font-medium transition ${
               isSelected
                 ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white'
                 : 'bg-transparent border-gray-300 dark:border-gray-700'
             }`}
             style={{
-              color: isSelected ? undefined : 'var(--color-text-secondary)'
+              color: isSelected ? undefined : 'var(--color-text-secondary)',
+              minHeight: '44px'
             }}
           >
             {category}
