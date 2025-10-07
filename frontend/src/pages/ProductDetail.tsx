@@ -10,7 +10,7 @@ import { formatCurrency } from '../utils/format';
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addItem } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +47,7 @@ const ProductDetail: React.FC = () => {
 
     try {
       setIsAddingToCart(true);
-      await addToCart(product.id);
+      await addItem(product.id);
       // Show success feedback
       setTimeout(() => {
         navigate('/cart');
