@@ -12,12 +12,11 @@ const Header: React.FC = () => {
   const cartItemsCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b dark:bg-neutral-900/90" style={{ borderColor: 'var(--color-border)' }}>
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b dark:bg-neutral-900/90" style={{ borderColor: 'var(--border)' }}>
       <div className="max-w-screen-xl mx-auto flex justify-between items-center px-4 py-2">
         <button
           onClick={() => navigate('/')}
-          className="text-lg font-bold"
-          style={{ color: 'var(--color-text)' }}
+          className="text-lg font-bold text-text"
         >
           👜 Vintage Shop
         </button>
@@ -26,12 +25,12 @@ const Header: React.FC = () => {
           {/* Cart */}
           <button
             onClick={() => navigate('/cart')}
-            className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition text-gray-700 dark:text-gray-300"
+            className="relative w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-border hover:scale-105 transition"
             aria-label="Корзина"
           >
-            <ShoppingCart className="w-5 h-5" />
+            <ShoppingCart className="w-5 h-5 text-muted" strokeWidth={1.5} />
             {cartItemsCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1 min-w-[18px] h-[18px] flex items-center justify-center font-medium">
+              <span className="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full px-1.5">
                 {cartItemsCount > 9 ? '9+' : cartItemsCount}
               </span>
             )}
@@ -40,22 +39,22 @@ const Header: React.FC = () => {
           {/* Profile */}
           <button
             onClick={() => navigate('/profile')}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition text-gray-700 dark:text-gray-300"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-border hover:bg-surface/80 transition"
             aria-label="Профиль"
           >
-            <User className="w-5 h-5" />
+            <User className="w-5 h-5 text-muted" strokeWidth={1.5} />
           </button>
 
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition text-gray-700 dark:text-gray-300"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-border hover:bg-surface/80 transition"
             aria-label="Сменить тему"
           >
             {theme === 'light' ? (
-              <Moon className="w-5 h-5" />
+              <Moon className="w-5 h-5 text-muted" strokeWidth={1.5} />
             ) : (
-              <Sun className="w-5 h-5" />
+              <Sun className="w-5 h-5 text-muted" strokeWidth={1.5} />
             )}
           </button>
         </div>

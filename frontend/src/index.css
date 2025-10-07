@@ -6,13 +6,22 @@
 
 /* CSS Variables for Theme System */
 :root {
-  /* Light Theme - Neutral Palette */
-  --color-bg: #ffffff;
-  --color-card: #ffffff;
-  --color-text: #000000;
-  --color-text-secondary: #737373;
-  --color-accent: #000000;
-  --color-border: #e5e5e5;
+  /* Light theme */
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --card: #f8fafc;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e6e7eb;
+  --accent: #2b8cff;
+
+  /* Legacy support */
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-text: var(--text);
+  --color-text-secondary: var(--muted);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
   --color-error: #ef4444;
 
   /* UI Constants */
@@ -22,14 +31,40 @@
   transition: background-color 0.3s, color 0.3s;
 }
 
+/* Dark theme */
+.dark {
+  --bg: #1b1b1e;
+  --surface: #232427;
+  --card: #2a2a2f;
+  --text: #e6eef1;
+  --muted: #9ca3af;
+  --border: #2f3034;
+  --accent: #2b8cff;
+
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-text: var(--text);
+  --color-text-secondary: var(--muted);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
+  --color-error: #f87171;
+}
+
 [data-theme="dark"] {
-  /* Dark Theme - Neutral Palette */
-  --color-bg: #171717;
-  --color-card: #171717;
-  --color-text: #fafafa;
-  --color-text-secondary: #a3a3a3;
-  --color-accent: #ffffff;
-  --color-border: #404040;
+  --bg: #1b1b1e;
+  --surface: #232427;
+  --card: #2a2a2f;
+  --text: #e6eef1;
+  --muted: #9ca3af;
+  --border: #2f3034;
+  --accent: #2b8cff;
+
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-text: var(--text);
+  --color-text-secondary: var(--muted);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
   --color-error: #f87171;
 }
 
