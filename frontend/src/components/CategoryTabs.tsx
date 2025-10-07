@@ -19,7 +19,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
   };
 
   return (
-    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+    <div className="flex overflow-x-auto no-scrollbar gap-2 px-3 pb-2">
       {allCategories.map((category) => {
         const isSelected = (category === 'Все' && selectedCategory === '') ||
                          (category !== 'Все' && selectedCategory === category);
@@ -28,15 +28,11 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
           <button
             key={category}
             onClick={() => handleCategoryClick(category)}
-            className={`whitespace-nowrap rounded-full border px-5 py-2.5 text-base font-medium transition ${
+            className={`whitespace-nowrap rounded-full border text-sm font-medium px-4 py-1.5 transition-colors ${
               isSelected
-                ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white'
-                : 'bg-transparent border-gray-300 dark:border-gray-700'
+                ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
+                : 'bg-transparent border-gray-200 text-gray-700 hover:bg-gray-100 dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-neutral-800'
             }`}
-            style={{
-              color: isSelected ? undefined : 'var(--color-text-secondary)',
-              minHeight: '44px'
-            }}
           >
             {category}
           </button>
