@@ -25,12 +25,12 @@ const Header: React.FC = () => {
           {/* Cart */}
           <button
             onClick={() => navigate('/cart')}
-            className="relative w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-border hover:scale-105 transition"
+            className="relative w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-border hover:scale-105 transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
             aria-label="Корзина"
           >
             <ShoppingCart className="w-5 h-5 text-muted" strokeWidth={1.5} />
             {cartItemsCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full px-1.5">
+              <span className="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full px-1.5 min-w-[1.25rem] h-5 flex items-center justify-center">
                 {cartItemsCount > 9 ? '9+' : cartItemsCount}
               </span>
             )}
@@ -39,7 +39,7 @@ const Header: React.FC = () => {
           {/* Profile */}
           <button
             onClick={() => navigate('/profile')}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-border hover:bg-surface/80 transition"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-border hover:scale-105 transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
             aria-label="Профиль"
           >
             <User className="w-5 h-5 text-muted" strokeWidth={1.5} />
@@ -48,7 +48,7 @@ const Header: React.FC = () => {
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-border hover:bg-surface/80 transition"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-border hover:scale-105 transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
             aria-label="Сменить тему"
           >
             {theme === 'light' ? (

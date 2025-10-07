@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface CategoryTabsProps {
   categories: string[];
@@ -12,34 +13,52 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
   onCategorySelect,
 }) => {
   const allCategories = ['Все', ...categories];
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showExpanded, setShowExpanded] = useState(false);
 
   const handleCategoryClick = (category: string) => {
     const categoryValue = category === 'Все' ? '' : category;
     onCategorySelect(categoryValue);
   };
 
-  return (
-    <div className="flex overflow-x-auto no-scrollbar gap-3 px-3 py-2">
-      {allCategories.map((category) => {
-        const isSelected = (category === 'Все' && selectedCategory === '') ||
-                         (category !== 'Все' && selectedCategory === category);
+  const toggleExpanded = () => {
+    setShowExpanded(!showExpanded);
+  };
 
-        return (
-          <button
-            key={category}
-            onClick={() => handleCategoryClick(category)}
-            aria-pressed={isSelected}
-            className={`whitespace-nowrap rounded-full px-5 py-2 text-sm font-medium transition-all duration-150 ${
-              isSelected
-                ? 'bg-accent text-white shadow-md'
-                : 'bg-transparent text-text hover:bg-surface/60'
-            }`}
-            style={{ border: '1px solid var(--border)' }}
-          >
-            {category}
-          </button>
-        );
-      })}
+  return (
+    <div className="flex items-center px-3">
+      <div ref={scrollRef} className="flex-1 flex overflow-x-auto no-scrollbar gap-3 py-2">
+        {allCategories.map((category) => {
+          const isSelected = (category === 'Все' && selectedCategory === '') ||
+                           (category !== 'Все' && selectedCategory === category);
+
+          return (
+            <button
+              key={category}
+              onClick={() => handleCategoryClick(category)}
+              aria-pressed={isSelected}
+              className={`flex-shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${
+                isSelected
+                  ? 'bg-accent text-white shadow-md'
+                  : 'bg-transparent border border-border text-text hover:bg-surface/70'
+              }`}
+            >
+              {category}
+            </button>
+          );
+        })}
+      </div>
+      <button
+        onClick={toggleExpanded}
+        aria-label={showExpanded ? 'Свернуть категории' : 'Развернуть категории'}
+        className="ml-3 w-10 h-10 flex-shrink-0 rounded-full border border-border bg-surface flex items-center justify-center hover:scale-105 transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+      >
+        {showExpanded ? (
+          <ChevronUp className="w-5 h-5 text-muted" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-muted" />
+        )}
+      </button>
     </div>
   );
 };

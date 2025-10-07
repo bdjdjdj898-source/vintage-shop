@@ -31,15 +31,15 @@
   transition: background-color 0.3s, color 0.3s;
 }
 
-/* Dark theme */
+/* Dark theme - specific RGB colors */
 .dark {
-  --bg: #1b1b1e;
-  --surface: #232427;
-  --card: #2a2a2f;
-  --text: #e6eef1;
-  --muted: #9ca3af;
-  --border: #2f3034;
-  --accent: #2b8cff;
+  --bg: rgb(26, 29, 41);        /* --c-dark-bg */
+  --surface: rgb(61, 63, 74);   /* --c-surface */
+  --card: rgb(61, 63, 74);      /* card same as surface */
+  --text: rgb(235, 238, 240);   /* readable on dark */
+  --muted: rgb(125, 132, 145);  /* --c-muted */
+  --border: rgb(177, 178, 181); /* --c-border */
+  --accent: rgb(43, 140, 255);  /* accent */
 
   --color-bg: var(--bg);
   --color-card: var(--card);
@@ -51,13 +51,13 @@
 }
 
 [data-theme="dark"] {
-  --bg: #1b1b1e;
-  --surface: #232427;
-  --card: #2a2a2f;
-  --text: #e6eef1;
-  --muted: #9ca3af;
-  --border: #2f3034;
-  --accent: #2b8cff;
+  --bg: rgb(26, 29, 41);        /* --c-dark-bg */
+  --surface: rgb(61, 63, 74);   /* --c-surface */
+  --card: rgb(61, 63, 74);      /* card same as surface */
+  --text: rgb(235, 238, 240);   /* readable on dark */
+  --muted: rgb(125, 132, 145);  /* --c-muted */
+  --border: rgb(177, 178, 181); /* --c-border */
+  --accent: rgb(43, 140, 255);  /* accent */
 
   --color-bg: var(--bg);
   --color-card: var(--card);

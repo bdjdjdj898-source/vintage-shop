@@ -19,6 +19,9 @@ export default {
       },
       borderRadius: {
         xl2: '14px'
+      },
+      aspectRatio: {
+        '4/5': '4 / 5',
       }
     },
   },

@@ -89,6 +89,17 @@ app.use(requestId_1.requestIdMiddleware);
 app.use((0, morgan_1.default)('combined', { stream: logger_1.loggerStream }));
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
+app.post('/api/log-error', express_1.default.json(), (req, res) => {
+    const { message, stack, url, userAgent } = req.body;
+    logger_1.default.error('Client-side error', {
+        message,
+        stack,
+        url,
+        userAgent,
+        ip: req.ip
+    });
+    res.status(200).json({ logged: true });
+});
 app.get('/health', async (req, res) => {
     let dbStatus = 'down';
     let overallStatus = 'degraded';
