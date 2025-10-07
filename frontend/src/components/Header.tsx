@@ -22,10 +22,10 @@ const Header: React.FC = () => {
         </button>
 
         <div className="flex items-center gap-2">
-          {/* Cart */}
+          {/* Cart - hidden on mobile, shown on desktop */}
           <button
             onClick={() => navigate('/cart')}
-            className="relative w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-border hover:scale-105 transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+            className="hidden md:flex relative w-9 h-9 items-center justify-center rounded-full bg-surface border border-border hover:scale-105 transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
             aria-label="Корзина"
           >
             <ShoppingCart className="w-5 h-5 text-muted" strokeWidth={1.5} />

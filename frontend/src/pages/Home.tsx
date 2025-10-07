@@ -3,6 +3,7 @@ import { apiFetch } from '../api/client';
 import ProductCard from '../components/ProductCard';
 import Header from '../components/Header';
 import CategoryTabs from '../components/CategoryTabs';
+import FloatingCartButton from '../components/FloatingCartButton';
 import { Product } from '../types/api';
 
 const Home: React.FC = () => {
@@ -131,7 +132,7 @@ const Home: React.FC = () => {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
       <Header />
-      <div className="max-w-screen-xl mx-auto px-4 py-4 space-y-4">
+      <div className="max-w-screen-xl mx-auto px-4 py-4 space-y-4 pb-24">
         {/* Category Tabs */}
         <CategoryTabs
           categories={categories}
@@ -162,6 +163,9 @@ const Home: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Floating Cart Button */}
+      <FloatingCartButton />
     </div>
   );
 };

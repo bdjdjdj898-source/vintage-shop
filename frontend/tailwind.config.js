@@ -15,6 +15,7 @@ export default {
         muted: 'var(--muted)',
         border: 'var(--border)',
         accent: 'var(--accent)',
+        'accent-weak': 'var(--accent-weak)',
         error: 'var(--color-error)',
       },
       borderRadius: {
@@ -22,6 +23,9 @@ export default {
       },
       aspectRatio: {
         '4/5': '4 / 5',
+      },
+      inset: {
+        'safe-bottom': 'calc(16px + env(safe-area-inset-bottom, 0px))',
       }
     },
   },

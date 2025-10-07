@@ -31,15 +31,16 @@
   transition: background-color 0.3s, color 0.3s;
 }
 
-/* Dark theme - specific RGB colors */
+/* Dark theme - pure black palette */
 .dark {
-  --bg: rgb(26, 29, 41);        /* --c-dark-bg */
-  --surface: rgb(61, 63, 74);   /* --c-surface */
-  --card: rgb(61, 63, 74);      /* card same as surface */
-  --text: rgb(235, 238, 240);   /* readable on dark */
-  --muted: rgb(125, 132, 145);  /* --c-muted */
-  --border: rgb(177, 178, 181); /* --c-border */
-  --accent: rgb(43, 140, 255);  /* accent */
+  --bg: #000000;                /* основной фон - чистый черный */
+  --surface: #0F1114;           /* панели, навигация */
+  --card: #151719;              /* фон карточек товаров */
+  --text: #FFFFFF;              /* основной текст - белый */
+  --muted: #9AA0A6;             /* вторичный текст */
+  --border: #26282B;            /* границы/разделители */
+  --accent: #2B8CFF;            /* CTA - синий */
+  --accent-weak: rgba(43, 140, 255, 0.08); /* subtle highlights */
 
   --color-bg: var(--bg);
   --color-card: var(--card);
@@ -51,13 +52,14 @@
 }
 
 [data-theme="dark"] {
-  --bg: rgb(26, 29, 41);        /* --c-dark-bg */
-  --surface: rgb(61, 63, 74);   /* --c-surface */
-  --card: rgb(61, 63, 74);      /* card same as surface */
-  --text: rgb(235, 238, 240);   /* readable on dark */
-  --muted: rgb(125, 132, 145);  /* --c-muted */
-  --border: rgb(177, 178, 181); /* --c-border */
-  --accent: rgb(43, 140, 255);  /* accent */
+  --bg: #000000;                /* основной фон - чистый черный */
+  --surface: #0F1114;           /* панели, навигация */
+  --card: #151719;              /* фон карточек товаров */
+  --text: #FFFFFF;              /* основной текст - белый */
+  --muted: #9AA0A6;             /* вторичный текст */
+  --border: #26282B;            /* границы/разделители */
+  --accent: #2B8CFF;            /* CTA - синий */
+  --accent-weak: rgba(43, 140, 255, 0.08); /* subtle highlights */
 
   --color-bg: var(--bg);
   --color-card: var(--card);
