@@ -1,5 +1,5 @@
 export const formatCurrency = (amount: number, currency = 'RUB', locale = 'ru-RU') =>
-  new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
+  new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
 // Additional formatting utilities
 export const formatNumber = (value: number, locale = 'ru-RU') =>

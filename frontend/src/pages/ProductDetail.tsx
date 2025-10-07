@@ -46,14 +46,16 @@ const ProductDetail: React.FC = () => {
     if (!product) return;
 
     try {
+      console.log('🔵 Кнопка добавления в корзину нажата, товар:', product.id);
       setIsAddingToCart(true);
       await addItem(product.id);
+      console.log('✅ Товар добавлен, переходим в корзину через 500мс');
       // Show success feedback
       setTimeout(() => {
         navigate('/cart');
       }, 500);
     } catch (err) {
-      console.error('Error adding to cart:', err);
+      console.error('❌ Ошибка при добавлении в корзину:', err);
       setIsAddingToCart(false);
     }
   };

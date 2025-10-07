@@ -47,6 +47,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addItem = async (productId: number, quantity: number = 1) => {
     try {
+      console.log('🛒 Добавление товара в корзину:', { productId, quantity });
       setIsLoading(true);
       setError(null);
       const response = await apiFetch('/api/cart/items', {
@@ -54,12 +55,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ productId, quantity })
       });
 
+      console.log('📥 Ответ API добавления в корзину:', response);
+
       if (response.success) {
+        console.log('✅ Товар успешно добавлен, обновляем корзину');
         // Refresh cart after adding item
         await getCart();
+      } else {
+        console.error('❌ API вернул ошибку:', response);
       }
     } catch (err) {
-      console.error('Error adding item to cart:', err);
+      console.error('💥 Error adding item to cart:', err);
       setError('Ошибка добавления товара в корзину');
       throw err;
     } finally {
