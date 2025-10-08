@@ -9,9 +9,14 @@ export default defineConfig({
       '/api': 'http://localhost:3000'
     }
   },
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: [],
+  build: {
+    rollupOptions: {
+      output: {
+        // Add timestamp to bust Telegram WebApp cache
+        entryFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+        chunkFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+        assetFileNames: `assets/[name]-[hash]-${Date.now()}.[ext]`
+      }
+    }
   }
 })
