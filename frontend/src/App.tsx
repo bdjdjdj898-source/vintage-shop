@@ -17,7 +17,7 @@ import RequireAuth from "./components/guards/RequireAuth";
 import RequireAdmin from "./components/guards/RequireAdmin";
 
 function AppContent() {
-  const { user, telegramUser, isLoading, error } = useAuth();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -32,36 +32,8 @@ function AppContent() {
 
   const isMockMode = import.meta.env.VITE_MOCK_TELEGRAM === 'true';
 
-  if (error && !isMockMode) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center p-6 max-w-md">
-          <div className="text-red-500 text-xl mb-4">⚠️</div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">Ошибка авторизации</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <p className="text-sm text-gray-500">
-            Пожалуйста, откройте приложение через Telegram.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Allow access to catalog even without full user profile
-  // Only require Telegram data for basic functionality
-  if (!telegramUser && !isMockMode) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center p-6 max-w-md">
-          <div className="text-blue-500 text-xl mb-4">🔐</div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">Требуется авторизация</h2>
-          <p className="text-gray-600">
-            Для доступа к приложению необходимо войти через Telegram.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Allow browser access - no Telegram requirement for viewing catalog
+  // Telegram auth is only required for protected routes (cart, checkout, orders)
 
   return (
     <CartProvider>
