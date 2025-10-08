@@ -11,6 +11,7 @@ import cartRouter from './routes/cart';
 import ordersRouter from './routes/orders';
 import adminRouter from './routes/admin';
 import meRouter from './routes/me';
+import proxyRouter from './routes/proxy';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -137,6 +138,7 @@ app.use('/api/cart', cartRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/me', meRouter);
+app.use('/api/proxy', proxyRouter);
 
 // Express обрабатывает ТОЛЬКО API роуты
 // Статические файлы обслуживаются Nginx в production и Vite dev server в development

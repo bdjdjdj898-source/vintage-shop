@@ -6,6 +6,7 @@ import { useSwipe } from '../hooks/useSwipe';
 import Header from '../components/Header';
 import { Product } from '../types/api';
 import { formatCurrency } from '../utils/format';
+import { getProxiedImageUrl } from '../utils/imageProxy';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -159,12 +160,13 @@ const ProductDetail: React.FC = () => {
               {...swipeHandlers}
             >
               <img
-                src={product.images[currentImageIndex]}
+                src={getProxiedImageUrl(product.images[currentImageIndex])}
                 alt={product.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=1000&fit=crop&auto=format';
+                  const fallback = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=1000&fit=crop&auto=format';
+                  target.src = getProxiedImageUrl(fallback);
                 }}
               />
 
@@ -227,7 +229,7 @@ const ProductDetail: React.FC = () => {
                     }}
                   >
                     <img
-                      src={image}
+                      src={getProxiedImageUrl(image)}
                       alt={`${product.title} ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
