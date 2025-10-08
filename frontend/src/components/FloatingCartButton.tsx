@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 
 interface FloatingCartButtonProps {
@@ -12,6 +12,11 @@ const FloatingCartButton: React.FC<FloatingCartButtonProps> = ({ className }) =>
   const { getTotalItems } = useCart();
 
   const count = getTotalItems();
+
+  // Скрываем кнопку если корзина пустая
+  if (count === 0) {
+    return null;
+  }
 
   const handleClick = () => {
     navigate('/cart');
@@ -27,23 +32,22 @@ const FloatingCartButton: React.FC<FloatingCartButtonProps> = ({ className }) =>
     <button
       aria-label={`Открыть корзину — ${count} ${getCountLabel(count)}`}
       onClick={handleClick}
-      className={`fixed left-4 bottom-safe-bottom z-50
+      className={`fixed right-4 z-50
                   w-14 h-14 rounded-full flex items-center justify-center
-                  bg-accent ring-1 ring-border shadow-xl transform transition-transform duration-150
-                  hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${className ?? ''}`}
+                  bg-accent shadow-2xl transform transition-all duration-200
+                  hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${className ?? ''}`}
       style={{ bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}
     >
-      {/* Icon */}
-      <ShoppingCart className="w-6 h-6 text-white" strokeWidth={2} aria-hidden="true" />
+      {/* Shopping Bag Icon */}
+      <ShoppingBag className="w-7 h-7 text-white" strokeWidth={2.5} aria-hidden="true" />
 
-      {count > 0 && (
-        <span
-          className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 text-[10px] rounded-full flex items-center justify-center bg-red-600 text-white font-semibold"
-          aria-hidden="true"
-        >
-          {count > 99 ? '99+' : count}
-        </span>
-      )}
+      {/* Badge with count */}
+      <span
+        className="absolute -top-0.5 -right-0.5 min-w-[22px] h-[22px] px-1.5 text-[11px] rounded-full flex items-center justify-center bg-white text-accent font-bold shadow-md"
+        aria-hidden="true"
+      >
+        {count > 99 ? '99' : count}
+      </span>
     </button>
   );
 };
