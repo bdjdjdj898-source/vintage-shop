@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/format';
-import { getProxiedImageUrl } from '../utils/imageProxy';
 import type { Product } from '../types/api';
 
 interface ProductCardProps {
@@ -109,15 +108,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
           {images.map((src, i) => (
             <div key={i} className="flex-shrink-0 w-full h-full">
               <img
-                src={getProxiedImageUrl(src)}
+                src={src}
                 loading="lazy"
                 decoding="async"
                 alt={`${title} — ${i + 1}`}
                 className="object-cover w-full h-full"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  const fallback = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=1000&fit=crop&auto=format';
-                  target.src = getProxiedImageUrl(fallback);
+                  target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=1000&fit=crop&auto=format';
                 }}
               />
             </div>
