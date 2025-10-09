@@ -129,30 +129,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
         } else {
-          console.error('❌ Telegram данные недоступны:', telegramData);
+          console.log('⚠️ Telegram данные недоступны - работаем как обычный сайт');
           if (import.meta.env.DEV) {
             console.log('🌍 window.Telegram:', (window as any).Telegram);
             console.log('📱 window.Telegram?.WebApp:', (window as any).Telegram?.WebApp);
           }
 
-          // В mock режиме не устанавливаем ошибку
-          if (!isMockMode) {
-            setError('Telegram WebApp недоступен. Откройте приложение через Telegram.');
-          }
+          // Не показываем ошибку - просто работаем без авторизации
+          // Пользователь может смотреть каталог, но не может делать заказы
         }
       } catch (err) {
-        console.error('💥 Критическая ошибка инициализации:', err);
+        console.log('⚠️ Ошибка инициализации - возможно открыто в браузере:', err);
         const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
-        console.error('Текст ошибки:', errorMessage);
+        console.log('Текст ошибки:', errorMessage);
 
-        const isMockMode = import.meta.env.VITE_MOCK_TELEGRAM === 'true';
-
-        // В mock режиме не устанавливаем ошибку
-        if (!isMockMode) {
-          setError(errorMessage);
-        } else {
-          console.log('🎭 Dev режим: игнорируем ошибку инициализации');
-        }
+        // Не показываем ошибку - работаем без авторизации
+        // Это позволит работать в обычном браузере для просмотра каталога
       } finally {
         if (import.meta.env.DEV) {
           console.log('🏁 Инициализация завершена, isLoading = false');

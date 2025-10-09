@@ -38,18 +38,16 @@ export function initTelegramWebApp() {
   console.log('🔍 window.external:', (window as any).external);
 
   if (!tg) {
-    console.error('❌ Telegram WebApp SDK не найден');
+    console.log('⚠️ Telegram WebApp SDK не найден - возможно открыто в браузере');
 
     // Проверяем загружен ли скрипт
     const scripts = Array.from(document.scripts);
     const telegramScript = scripts.find(script => script.src.includes('telegram-web-app.js'));
     console.log('📜 Telegram script найден:', !!telegramScript);
-    console.log('📜 Все скрипты:', scripts.map(s => s.src));
     console.log('🌐 User Agent:', navigator.userAgent);
-    console.log('🔍 window keys:', Object.keys(window).filter(k => k.toLowerCase().includes('telegram')));
 
-    // В продакшене без Telegram SDK - ошибка
-    throw new Error('Приложение должно быть открыто в Telegram. Пожалуйста, откройте через бота в Telegram.');
+    // Возвращаем null вместо выброса ошибки - пусть работает как обычный сайт
+    return null;
   }
 
   // Инициализируем WebApp
@@ -70,8 +68,8 @@ export function initTelegramWebApp() {
     console.error('initData length:', tg.initData?.length || 0);
     console.error('initDataUnsafe:', JSON.stringify(tg.initDataUnsafe));
 
-    // В продакшене без данных пользователя - ошибка
-    throw new Error('Нет данных пользователя от Telegram. Пожалуйста, перезапустите Mini App.');
+    // Возвращаем null - пусть работает без авторизации
+    return null;
   }
 
   return {
