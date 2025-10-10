@@ -17,17 +17,43 @@
 
     <!-- Clear service workers and cache -->
     <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            registration.unregister();
+      // Агрессивная очистка всех кэшей
+      const APP_VERSION = '2.0.1';
+      const STORED_VERSION = localStorage.getItem('app_version');
+
+      if (STORED_VERSION !== APP_VERSION) {
+        console.log('🔄 Обнаружена новая версия приложения, очищаем кэши...');
+
+        // Очищаем Service Workers
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+              registration.unregister();
+            }
+          });
+        }
+
+        // Очищаем все кэши
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            for (let name of names) caches.delete(name);
+          });
+        }
+
+        // Очищаем localStorage (кроме версии)
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key !== 'app_version') {
+            keysToRemove.push(key);
           }
-        });
-      }
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          for (let name of names) caches.delete(name);
-        });
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+
+        // Сохраняем новую версию
+        localStorage.setItem('app_version', APP_VERSION);
+
+        console.log('✅ Кэши очищены, версия обновлена до ' + APP_VERSION);
       }
     </script>
   </head>
