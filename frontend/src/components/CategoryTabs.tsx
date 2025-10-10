@@ -40,7 +40,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
               className={`flex-shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${
                 isSelected
                   ? 'bg-accent text-white shadow-md'
-                  : 'bg-transparent border border-border text-text hover:bg-surface/70'
+                  : 'bg-accent/10 text-accent hover:bg-accent/20'
               }`}
             >
               {category}
