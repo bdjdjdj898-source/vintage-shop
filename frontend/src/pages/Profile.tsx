@@ -22,7 +22,7 @@ const Profile: React.FC = () => {
       <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-500 text-white text-center py-4 mb-4 text-2xl font-bold rounded-lg">
-          🔥 VERSION 2.0 - NEW ADMIN BUTTON 🔥
+          ⚡ ОБНОВЛЕНО 10.10.2025 18:30 ⚡
         </div>
         <h1 className="text-3xl font-bold text-text dark:text-white mb-8">
           Личный кабинет
