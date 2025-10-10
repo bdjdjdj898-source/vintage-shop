@@ -18,7 +18,7 @@
     <!-- Clear service workers and cache -->
     <script>
       // Агрессивная очистка всех кэшей
-      const APP_VERSION = '2.0.1';
+      const APP_VERSION = '3.0.0';
       const STORED_VERSION = localStorage.getItem('app_version');
 
       if (STORED_VERSION !== APP_VERSION) {
@@ -54,6 +54,11 @@
         localStorage.setItem('app_version', APP_VERSION);
 
         console.log('✅ Кэши очищены, версия обновлена до ' + APP_VERSION);
+
+        // ПРИНУДИТЕЛЬНАЯ ПЕРЕЗАГРУЗКА без кэша
+        setTimeout(function() {
+          window.location.reload(true);
+        }, 500);
       }
     </script>
   </head>
