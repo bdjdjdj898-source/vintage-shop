@@ -8,6 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Кастомные цвета через CSS переменные
         bg: 'var(--bg)',
         surface: 'var(--surface)',
         card: 'var(--card)',
@@ -17,6 +18,7 @@ export default {
         accent: 'var(--accent)',
         'accent-weak': 'var(--accent-weak)',
         error: 'var(--color-error)',
+        // Стандартные цвета Tailwind остаются доступными через extend
       },
       borderRadius: {
         xl2: '14px'
