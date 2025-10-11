@@ -91,9 +91,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
   };
 
   return (
-    <article className="rounded-xl overflow-hidden bg-card border border-border">
+    <article className="rounded-2xl overflow-hidden bg-card border border-border shadow-sm hover:shadow-md transition-all duration-150 hover:-translate-y-0.5">
       <div
-        className="relative w-full overflow-hidden touch-pan-y"
+        className="relative w-full overflow-hidden touch-pan-y rounded-xl"
         style={{ aspectRatio: '4 / 5' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -124,23 +124,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
 
         {/* Dots indicator */}
         {images.length > 1 && (
-          <div
-            className="absolute left-1/2 -translate-x-1/2 bottom-3 px-2 py-1 rounded-full flex items-center gap-2"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)', backdropFilter: 'blur(4px)' }}
-          >
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-2 flex items-center gap-1.5">
             {images.map((_, i) => (
-              <button
+              <span
                 key={i}
-                onClick={(ev) => {
-                  ev.stopPropagation();
-                  setIndex(i);
-                }}
-                aria-label={`Изображение ${i + 1}`}
-                className={`rounded-full transition-all duration-150 focus-visible:ring-1 focus-visible:ring-white focus-visible:outline-none ${
+                className={`rounded-full transition-all duration-150 ${
                   i === index
-                    ? 'w-2.5 h-2.5 bg-white'
-                    : 'w-2 h-2 bg-white/60 hover:bg-white/80'
+                    ? 'w-2 h-2 bg-white opacity-100 scale-110'
+                    : 'w-2 h-2 bg-white opacity-50'
                 }`}
+                style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
               />
             ))}
           </div>
@@ -148,12 +141,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
       </div>
 
       {/* Meta */}
-      <div className="p-3">
-        {brand && <div className="text-xs text-muted mb-1">{brand}</div>}
-        <h3 className="text-sm font-semibold text-text line-clamp-2 leading-tight mb-1">
+      <div className="p-3 sm:p-4 flex flex-col gap-1">
+        {brand && <span className="text-xs text-muted font-medium">{brand}</span>}
+        <h3 className="text-sm font-semibold text-text line-clamp-2 leading-snug">
           {title}
         </h3>
-        <div className="text-sm font-semibold text-text">{formatCurrency(price)}</div>
+        <span className="text-base font-semibold text-text mt-0.5">{formatCurrency(price)}</span>
       </div>
     </article>
   );
