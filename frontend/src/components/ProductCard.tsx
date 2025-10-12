@@ -143,17 +143,28 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
         </div>
 
         {/* Dots indicator - always visible */}
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-2 flex items-center gap-1.5">
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            bottom: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
           {images.map((_, i) => (
             <span
               key={i}
-              className="rounded-full transition-all duration-150"
               style={{
                 width: i === index ? '8px' : '6px',
                 height: i === index ? '8px' : '6px',
                 backgroundColor: '#ffffff',
                 opacity: i === index ? 1 : 0.5,
                 boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                borderRadius: '50%',
+                transition: 'all 150ms',
               }}
             />
           ))}
