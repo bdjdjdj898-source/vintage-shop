@@ -98,17 +98,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
 
   return (
     <article
-      className="overflow-hidden bg-card border border-border transition-all duration-150"
+      className="overflow-hidden bg-card transition-all duration-150"
       style={{
         borderRadius: '16px',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)';
         e.currentTarget.style.transform = 'translateY(-2px)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.08)';
+        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
         e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
