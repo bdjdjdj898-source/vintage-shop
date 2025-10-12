@@ -172,7 +172,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
       </div>
 
       {/* Meta */}
-      <div className="p-3 sm:p-4 flex flex-col gap-1">
+      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', textAlign: 'center' }}>
         {brand && <span className="text-xs text-muted font-medium">{brand}</span>}
         <h3 className="line-clamp-2" style={{ fontSize: '14px', fontWeight: 400, color: 'var(--text)', lineHeight: '1.4' }}>
           {title}

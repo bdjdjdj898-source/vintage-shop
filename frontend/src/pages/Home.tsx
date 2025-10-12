@@ -132,7 +132,7 @@ const Home: React.FC = () => {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
       <Header />
-      <div className="max-w-screen-xl mx-auto px-4 py-4 space-y-4 pb-24">
+      <div className="max-w-screen-xl mx-auto px-4 py-4 pb-24" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Category Tabs */}
         <CategoryTabs
           categories={categories}
