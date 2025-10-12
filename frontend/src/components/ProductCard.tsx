@@ -91,10 +91,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
   };
 
   return (
-    <article className="rounded-2xl overflow-hidden bg-card border border-border shadow-sm hover:shadow-md transition-all duration-150 hover:-translate-y-0.5">
+    <article
+      className="overflow-hidden bg-card border border-border transition-all duration-150"
+      style={{
+        borderRadius: '16px',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.08)';
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
+    >
       <div
-        className="relative w-full overflow-hidden touch-pan-y rounded-xl"
-        style={{ aspectRatio: '4 / 5' }}
+        className="relative w-full overflow-hidden touch-pan-y"
+        style={{ aspectRatio: '4 / 5', borderRadius: '12px' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
