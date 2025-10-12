@@ -38,12 +38,27 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
               onClick={() => handleCategoryClick(category)}
               aria-pressed={isSelected}
               style={{
-                backgroundColor: isSelected ? '#3b82f6' : '#eff6ff',
-                color: isSelected ? '#ffffff' : '#2563eb',
+                backgroundColor: isSelected ? '#1f2937' : '#f3f4f6',
+                color: isSelected ? '#ffffff' : '#6b7280',
+                padding: '8px 20px',
+                borderRadius: '20px',
+                fontSize: '14px',
+                fontWeight: 500,
+                transition: 'all 150ms',
+                border: 'none',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
-              className={`flex-shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none hover:opacity-90 ${
-                isSelected ? 'shadow-md' : ''
-              }`}
+              onMouseEnter={(e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.backgroundColor = '#e5e7eb';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.backgroundColor = '#f3f4f6';
+                }
+              }}
             >
               {category}
             </button>
