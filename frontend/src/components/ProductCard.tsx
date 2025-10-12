@@ -33,6 +33,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
   function handlePointerMove(e: React.PointerEvent) {
     if (!draggingRef.current || startXRef.current === null) return;
     deltaXRef.current = e.clientX - startXRef.current;
+
+    // Prevent page scroll when swiping horizontally
+    if (Math.abs(deltaXRef.current) > 5) {
+      e.preventDefault();
+    }
+
     // Update visual transform — no state change yet
     requestAnimationFrame(() => {
       if (trackRef.current) {
@@ -136,22 +142,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
           ))}
         </div>
 
-        {/* Dots indicator */}
-        {images.length > 1 && (
-          <div className="absolute left-1/2 -translate-x-1/2 bottom-2 flex items-center gap-1.5">
-            {images.map((_, i) => (
-              <span
-                key={i}
-                className={`rounded-full transition-all duration-150 ${
-                  i === index
-                    ? 'w-2 h-2 bg-white opacity-100 scale-110'
-                    : 'w-2 h-2 bg-white opacity-50'
-                }`}
-                style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
-              />
-            ))}
-          </div>
-        )}
+        {/* Dots indicator - always visible */}
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-2 flex items-center gap-1.5">
+          {images.map((_, i) => (
+            <span
+              key={i}
+              className="rounded-full transition-all duration-150"
+              style={{
+                width: i === index ? '8px' : '6px',
+                height: i === index ? '8px' : '6px',
+                backgroundColor: '#ffffff',
+                opacity: i === index ? 1 : 0.5,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Meta */}
