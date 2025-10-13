@@ -172,9 +172,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
       </div>
 
       {/* Meta */}
-      <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center', textAlign: 'center' }}>
+      <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', textAlign: 'center' }}>
         {brand && <span className="text-xs text-muted font-medium">{brand}</span>}
-        <h3 className="line-clamp-2" style={{ fontSize: '14px', fontWeight: 400, color: 'var(--text)', lineHeight: '1.3', margin: 0 }}>
+        <h3 className="line-clamp-2" style={{ fontSize: '14px', fontWeight: 400, color: 'var(--text)', lineHeight: '1.5', margin: 0 }}>
           {title}
         </h3>
         <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', marginTop: '2px' }}>{formatCurrency(price)}</span>
