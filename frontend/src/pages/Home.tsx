@@ -5,8 +5,10 @@ import Header from '../components/Header';
 import CategoryTabs from '../components/CategoryTabs';
 import FloatingCartButton from '../components/FloatingCartButton';
 import { Product } from '../types/api';
+import { useSearch } from '../contexts/SearchContext';
 
 const Home: React.FC = () => {
+  const { searchQuery } = useSearch();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +82,13 @@ const Home: React.FC = () => {
     fetchProducts();
   }, [fetchProducts]);
 
+  // Sync search query from context to filters
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      search: searchQuery
+    }));
+  }, [searchQuery]);
 
   const handleFilterChange = (field: keyof typeof filters, value: string) => {
     setFilters(prev => ({

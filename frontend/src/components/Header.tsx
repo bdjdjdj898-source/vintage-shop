@@ -1,14 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Search } from 'lucide-react';
+import { useSearch } from '../contexts/SearchContext';
 
 const Header: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement search functionality
-    console.log('Search for:', searchQuery);
-  };
+  const { searchQuery, setSearchQuery } = useSearch();
 
   return (
     <header style={{
@@ -35,7 +30,7 @@ const Header: React.FC = () => {
           Vintage Shop
         </h1>
 
-        <form onSubmit={handleSearch} style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }}>
           <Search
             size={20}
             strokeWidth={2}
@@ -64,7 +59,7 @@ const Header: React.FC = () => {
               outline: 'none'
             }}
           />
-        </form>
+        </div>
       </div>
     </header>
   );

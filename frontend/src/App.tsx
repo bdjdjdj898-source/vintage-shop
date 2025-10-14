@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { SearchProvider } from './contexts/SearchContext';
 import Home from "./pages/Home";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
@@ -36,13 +37,14 @@ function AppContent() {
   // Telegram auth is only required for protected routes (cart, checkout, orders)
 
   return (
-    <CartProvider>
-      {isMockMode && (
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 text-xs text-center">
-          🔧 Dev Mode: Mock Telegram Data
-        </div>
-      )}
-      <BrowserRouter>
+    <SearchProvider>
+      <CartProvider>
+        {isMockMode && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 text-xs text-center">
+            🔧 Dev Mode: Mock Telegram Data
+          </div>
+        )}
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/product/:id" element={<ProductDetail />} />
@@ -58,6 +60,7 @@ function AppContent() {
         </Routes>
       </BrowserRouter>
     </CartProvider>
+    </SearchProvider>
   );
 }
 
