@@ -16,7 +16,7 @@ const Header: React.FC = () => {
       <div style={{
         maxWidth: '1280px',
         margin: '0 auto',
-        padding: '12px 16px'
+        padding: '8px 16px 12px 16px'
       }}>
         <h1 style={{
           fontSize: '20px',
@@ -24,7 +24,7 @@ const Header: React.FC = () => {
           color: 'var(--text)',
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           margin: 0,
-          marginBottom: '12px',
+          marginBottom: '8px',
           letterSpacing: '-0.5px'
         }}>
           Vintage Shop
