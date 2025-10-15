@@ -116,9 +116,8 @@ router.get('/', optionalAuth, [
     let totalCount: number;
 
     if (search && typeof search === 'string') {
-      const searchLower = `%${search.toLowerCase()}%`;
-
-      // Build WHERE conditions for raw SQL
+      // For case-insensitive search with Cyrillic support, we'll filter in-memory
+      // First, get all matching products without search filter
       const conditions: string[] = [];
       const params: any[] = [];
 
@@ -159,10 +158,6 @@ router.get('/', optionalAuth, [
         params.push(where.price.lte);
       }
 
-      // Add search condition
-      conditions.push('(LOWER(title) LIKE ? OR LOWER(brand) LIKE ?)');
-      params.push(searchLower, searchLower);
-
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
       // Determine order by clause
@@ -171,25 +166,26 @@ router.get('/', optionalAuth, [
       else if (sort === 'price_desc') orderByClause = 'ORDER BY price DESC';
       else if (sort === 'brand_asc') orderByClause = 'ORDER BY brand ASC';
 
-      // Execute raw queries (use lowercase table name 'products' from @@map)
-      products = await prisma.$queryRawUnsafe(
+      // Get ALL products matching other filters (without limit for in-memory search)
+      const allProducts: any = await prisma.$queryRawUnsafe(
         `SELECT id, title, brand, category, size, color, condition, description, price, images, isActive, createdAt, updatedAt
          FROM products
          ${whereClause}
-         ${orderByClause}
-         LIMIT ? OFFSET ?`,
-        ...params,
-        Number(limit),
-        skip
-      );
-
-      const countResult: any = await prisma.$queryRawUnsafe(
-        `SELECT COUNT(*) as count FROM products ${whereClause}`,
+         ${orderByClause}`,
         ...params
       );
 
-      // Convert BigInt to number for SQLite
-      totalCount = Number(countResult[0]?.count || 0);
+      // Filter in-memory for case-insensitive search (works with Cyrillic)
+      const searchLower = search.toLowerCase();
+      const filteredProducts = allProducts.filter((p: any) => {
+        const titleLower = (p.title || '').toLowerCase();
+        const brandLower = (p.brand || '').toLowerCase();
+        return titleLower.includes(searchLower) || brandLower.includes(searchLower);
+      });
+
+      // Apply pagination after filtering
+      totalCount = filteredProducts.length;
+      products = filteredProducts.slice(skip, skip + Number(limit));
     } else {
       // No search - use regular Prisma query
       [products, totalCount] = await Promise.all([
