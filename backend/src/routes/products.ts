@@ -112,8 +112,8 @@ router.get('/', optionalAuth, [
     }
 
     // For search, use raw SQL query with case-insensitive LIKE
-    let products;
-    let totalCount;
+    let products: any[];
+    let totalCount: number;
 
     if (search && typeof search === 'string') {
       const searchLower = `%${search.toLowerCase()}%`;
