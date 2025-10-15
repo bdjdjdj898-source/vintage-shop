@@ -115,8 +115,6 @@ router.get('/', optionalAuth, [
     let products: any[];
     let totalCount: number;
 
-    logger.info('Before search check', { search, searchType: typeof search, hasSearch: !!search });
-
     if (search && typeof search === 'string') {
       // For case-insensitive search with Cyrillic support, we'll filter in-memory
       // First, get all matching products without search filter
@@ -179,18 +177,10 @@ router.get('/', optionalAuth, [
 
       // Filter in-memory for case-insensitive search (works with Cyrillic)
       const searchLower = search.toLowerCase();
-      logger.info('Search filter', { search, searchLower, totalProducts: allProducts.length });
-
       const filteredProducts = allProducts.filter((p: any) => {
         const titleLower = (p.title || '').toLowerCase();
         const brandLower = (p.brand || '').toLowerCase();
-        const matches = titleLower.includes(searchLower) || brandLower.includes(searchLower);
-
-        if (matches) {
-          logger.info('Match found', { title: p.title, titleLower, searchLower });
-        }
-
-        return matches;
+        return titleLower.includes(searchLower) || brandLower.includes(searchLower);
       });
 
       // Apply pagination after filtering
