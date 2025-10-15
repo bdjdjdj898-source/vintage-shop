@@ -171,10 +171,10 @@ router.get('/', optionalAuth, [
       else if (sort === 'price_desc') orderByClause = 'ORDER BY price DESC';
       else if (sort === 'brand_asc') orderByClause = 'ORDER BY brand ASC';
 
-      // Execute raw queries
+      // Execute raw queries (use lowercase table name 'products' from @@map)
       products = await prisma.$queryRawUnsafe(
         `SELECT id, title, brand, category, size, color, condition, description, price, images, isActive, createdAt, updatedAt
-         FROM Product
+         FROM products
          ${whereClause}
          ${orderByClause}
          LIMIT ? OFFSET ?`,
@@ -184,7 +184,7 @@ router.get('/', optionalAuth, [
       );
 
       const countResult: any = await prisma.$queryRawUnsafe(
-        `SELECT COUNT(*) as count FROM Product ${whereClause}`,
+        `SELECT COUNT(*) as count FROM products ${whereClause}`,
         ...params
       );
 
