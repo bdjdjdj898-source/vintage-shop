@@ -177,10 +177,18 @@ router.get('/', optionalAuth, [
 
       // Filter in-memory for case-insensitive search (works with Cyrillic)
       const searchLower = search.toLowerCase();
+      logger.info('Search filter', { search, searchLower, totalProducts: allProducts.length });
+
       const filteredProducts = allProducts.filter((p: any) => {
         const titleLower = (p.title || '').toLowerCase();
         const brandLower = (p.brand || '').toLowerCase();
-        return titleLower.includes(searchLower) || brandLower.includes(searchLower);
+        const matches = titleLower.includes(searchLower) || brandLower.includes(searchLower);
+
+        if (matches) {
+          logger.info('Match found', { title: p.title, titleLower, searchLower });
+        }
+
+        return matches;
       });
 
       // Apply pagination after filtering
