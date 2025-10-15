@@ -97,7 +97,7 @@ const ProductDetail: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-bg">
-        <Header />
+        <Header hideSearch />
         <div className="container mx-auto px-4 py-8 flex justify-center items-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--color-accent)' }}></div>
@@ -111,7 +111,7 @@ const ProductDetail: React.FC = () => {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-bg">
-        <Header />
+        <Header hideSearch />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <p className="text-lg mb-4" style={{ color: 'var(--color-error)' }}>
@@ -134,7 +134,7 @@ const ProductDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-bg pb-24">
-      <Header />
+      <Header hideSearch />
 
       <div className="container mx-auto px-4 py-4 max-w-6xl">
         {/* Back Button */}

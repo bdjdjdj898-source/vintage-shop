@@ -1,6 +1,18 @@
 import React, { useRef, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
+// Add this to hide scrollbar
+const scrollContainerStyle = document.createElement('style');
+scrollContainerStyle.textContent = `
+  .category-scroll::-webkit-scrollbar {
+    display: none;
+  }
+`;
+if (!document.querySelector('#category-scroll-style')) {
+  scrollContainerStyle.id = 'category-scroll-style';
+  document.head.appendChild(scrollContainerStyle);
+}
+
 interface CategoryTabsProps {
   categories: string[];
   selectedCategory: string;
@@ -26,8 +38,20 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
   };
 
   return (
-    <div className="flex items-center px-3">
-      <div ref={scrollRef} className="flex-1 flex overflow-x-auto no-scrollbar gap-3 py-2">
+    <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px' }}>
+      <div
+        ref={scrollRef}
+        className="category-scroll"
+        style={{
+          flex: 1,
+          display: 'flex',
+          overflowX: 'auto',
+          gap: '12px',
+          padding: '8px 0',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
+      >
         {allCategories.map((category) => {
           const isSelected = (category === 'Все' && selectedCategory === '') ||
                            (category !== 'Все' && selectedCategory === category);
@@ -48,6 +72,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                 border: 'none',
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
+                cursor: 'pointer'
               }}
               onMouseEnter={(e) => {
                 if (!isSelected) {
@@ -68,12 +93,32 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
       <button
         onClick={toggleExpanded}
         aria-label={showExpanded ? 'Свернуть категории' : 'Развернуть категории'}
-        className="ml-3 w-10 h-10 flex-shrink-0 rounded-full border border-border bg-surface flex items-center justify-center hover:scale-105 transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+        style={{
+          marginLeft: '12px',
+          width: '40px',
+          height: '40px',
+          flexShrink: 0,
+          borderRadius: '50%',
+          border: '1px solid var(--border)',
+          backgroundColor: 'var(--bg)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'transform 150ms',
+          cursor: 'pointer',
+          outline: 'none'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+        }}
       >
         {showExpanded ? (
-          <ChevronUp className="w-5 h-5 text-muted" />
+          <ChevronUp size={20} style={{ color: '#9ca3af' }} />
         ) : (
-          <ChevronDown className="w-5 h-5 text-muted" />
+          <ChevronDown size={20} style={{ color: '#9ca3af' }} />
         )}
       </button>
     </div>
