@@ -188,7 +188,8 @@ router.get('/', optionalAuth, [
         ...params
       );
 
-      totalCount = countResult[0]?.count || 0;
+      // Convert BigInt to number for SQLite
+      totalCount = Number(countResult[0]?.count || 0);
     } else {
       // No search - use regular Prisma query
       [products, totalCount] = await Promise.all([
