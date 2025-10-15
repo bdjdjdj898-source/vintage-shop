@@ -80,15 +80,8 @@ export function buildProductWhere(filters: ProductFilters, options: FilterOption
   if (size) where.size = size;
   if (color) where.color = color;
 
-  // Search functionality
-  // SQLite doesn't support case-insensitive mode, so we search as-is
-  // In production with PostgreSQL, you can use mode: 'insensitive'
-  if (search) {
-    where.OR = [
-      { title: { contains: search } },
-      { brand: { contains: search } }
-    ];
-  }
+  // Search functionality - handled separately in routes with raw SQL for case-insensitive search
+  // Don't add search to where clause here
 
   // Condition range filtering
   if (minCondition || maxCondition) {

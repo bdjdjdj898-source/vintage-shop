@@ -47,7 +47,7 @@ router.get('/', optionalAuth, [
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    // Build where clause using shared utility
+    // Build where clause using shared utility (without search)
     const where = buildProductWhere({
       category,
       brand,
@@ -57,11 +57,46 @@ router.get('/', optionalAuth, [
       maxCondition,
       minPrice,
       maxPrice,
-      search,
+      search: undefined, // Handle search separately
       includeInactive
     }, {
       isAdmin: req.user?.role === 'admin'
     });
+
+    // Add case-insensitive search if provided
+    if (search && typeof search === 'string') {
+      const searchLower = search.toLowerCase();
+      where.OR = [
+        {
+          title: {
+            contains: searchLower,
+            mode: 'insensitive' as any // TypeScript workaround - will be ignored by SQLite
+          }
+        },
+        {
+          brand: {
+            contains: searchLower,
+            mode: 'insensitive' as any
+          }
+        }
+      ];
+
+      // For SQLite, we need raw SQL. Let's use a workaround with Prisma:
+      // Add raw where condition for case-insensitive search
+      const rawSearch = `%${searchLower}%`;
+      (where as any).OR = undefined; // Remove the OR condition
+
+      // Use raw SQL condition
+      (where as any).AND = [
+        ...(where.AND || []),
+        {
+          OR: [
+            prisma.$queryRaw`LOWER(title) LIKE ${rawSearch}`,
+            prisma.$queryRaw`LOWER(brand) LIKE ${rawSearch}`
+          ]
+        }
+      ];
+    }
 
     // Compute orderBy based on sort parameter
     let orderBy: any = { createdAt: 'desc' }; // default
@@ -76,31 +111,111 @@ router.get('/', optionalAuth, [
       orderBy = { brand: 'asc' };
     }
 
-    // Запросы к БД
-    const [products, totalCount] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        orderBy,
-        skip,
-        take: Number(limit),
-        select: {
-          id: true,
-          title: true,
-          brand: true,
-          category: true,
-          size: true,
-          color: true,
-          condition: true,
-          description: true,
-          price: true,
-          images: true,
-          isActive: true,
-          createdAt: true,
-          updatedAt: true
-        }
-      }),
-      prisma.product.count({ where })
-    ]);
+    // For search, use raw SQL query with case-insensitive LIKE
+    let products;
+    let totalCount;
+
+    if (search && typeof search === 'string') {
+      const searchLower = `%${search.toLowerCase()}%`;
+
+      // Build WHERE conditions for raw SQL
+      const conditions: string[] = [];
+      const params: any[] = [];
+
+      if (where.isActive !== undefined) {
+        conditions.push('isActive = ?');
+        params.push(where.isActive ? 1 : 0);
+      }
+      if (where.category) {
+        conditions.push('category = ?');
+        params.push(where.category);
+      }
+      if (where.brand) {
+        conditions.push('brand = ?');
+        params.push(where.brand);
+      }
+      if (where.size) {
+        conditions.push('size = ?');
+        params.push(where.size);
+      }
+      if (where.color) {
+        conditions.push('color = ?');
+        params.push(where.color);
+      }
+      if (where.condition?.gte) {
+        conditions.push('condition >= ?');
+        params.push(where.condition.gte);
+      }
+      if (where.condition?.lte) {
+        conditions.push('condition <= ?');
+        params.push(where.condition.lte);
+      }
+      if (where.price?.gte) {
+        conditions.push('price >= ?');
+        params.push(where.price.gte);
+      }
+      if (where.price?.lte) {
+        conditions.push('price <= ?');
+        params.push(where.price.lte);
+      }
+
+      // Add search condition
+      conditions.push('(LOWER(title) LIKE ? OR LOWER(brand) LIKE ?)');
+      params.push(searchLower, searchLower);
+
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+      // Determine order by clause
+      let orderByClause = 'ORDER BY createdAt DESC';
+      if (sort === 'price_asc') orderByClause = 'ORDER BY price ASC';
+      else if (sort === 'price_desc') orderByClause = 'ORDER BY price DESC';
+      else if (sort === 'brand_asc') orderByClause = 'ORDER BY brand ASC';
+
+      // Execute raw queries
+      products = await prisma.$queryRawUnsafe(
+        `SELECT id, title, brand, category, size, color, condition, description, price, images, isActive, createdAt, updatedAt
+         FROM Product
+         ${whereClause}
+         ${orderByClause}
+         LIMIT ? OFFSET ?`,
+        ...params,
+        Number(limit),
+        skip
+      );
+
+      const countResult: any = await prisma.$queryRawUnsafe(
+        `SELECT COUNT(*) as count FROM Product ${whereClause}`,
+        ...params
+      );
+
+      totalCount = countResult[0]?.count || 0;
+    } else {
+      // No search - use regular Prisma query
+      [products, totalCount] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          orderBy,
+          skip,
+          take: Number(limit),
+          select: {
+            id: true,
+            title: true,
+            brand: true,
+            category: true,
+            size: true,
+            color: true,
+            condition: true,
+            description: true,
+            price: true,
+            images: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        }),
+        prisma.product.count({ where })
+      ]);
+    }
 
     // Normalize images to string array for API response
     const productsWithImages = products.map((product: { images: string } & Record<string, unknown>) => ({
