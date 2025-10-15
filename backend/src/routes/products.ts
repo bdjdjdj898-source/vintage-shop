@@ -115,6 +115,8 @@ router.get('/', optionalAuth, [
     let products: any[];
     let totalCount: number;
 
+    logger.info('Before search check', { search, searchType: typeof search, hasSearch: !!search });
+
     if (search && typeof search === 'string') {
       // For case-insensitive search with Cyrillic support, we'll filter in-memory
       // First, get all matching products without search filter
