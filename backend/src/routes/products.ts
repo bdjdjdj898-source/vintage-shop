@@ -111,108 +111,43 @@ router.get('/', optionalAuth, [
       orderBy = { brand: 'asc' };
     }
 
-    // For search, use raw SQL query with case-insensitive LIKE
+    // PostgreSQL case-insensitive search with Cyrillic support
     let products: any[];
     let totalCount: number;
 
     if (search && typeof search === 'string') {
-      // For case-insensitive search with Cyrillic support, we'll filter in-memory
-      // First, get all matching products without search filter
-      const conditions: string[] = [];
-      const params: any[] = [];
-
-      if (where.isActive !== undefined) {
-        conditions.push('isActive = ?');
-        params.push(where.isActive ? 1 : 0);
-      }
-      if (where.category) {
-        conditions.push('category = ?');
-        params.push(where.category);
-      }
-      if (where.brand) {
-        conditions.push('brand = ?');
-        params.push(where.brand);
-      }
-      if (where.size) {
-        conditions.push('size = ?');
-        params.push(where.size);
-      }
-      if (where.color) {
-        conditions.push('color = ?');
-        params.push(where.color);
-      }
-      if (where.condition?.gte) {
-        conditions.push('condition >= ?');
-        params.push(where.condition.gte);
-      }
-      if (where.condition?.lte) {
-        conditions.push('condition <= ?');
-        params.push(where.condition.lte);
-      }
-      if (where.price?.gte) {
-        conditions.push('price >= ?');
-        params.push(where.price.gte);
-      }
-      if (where.price?.lte) {
-        conditions.push('price <= ?');
-        params.push(where.price.lte);
-      }
-
-      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
-      // Determine order by clause
-      let orderByClause = 'ORDER BY createdAt DESC';
-      if (sort === 'price_asc') orderByClause = 'ORDER BY price ASC';
-      else if (sort === 'price_desc') orderByClause = 'ORDER BY price DESC';
-      else if (sort === 'brand_asc') orderByClause = 'ORDER BY brand ASC';
-
-      // Get ALL products matching other filters (without limit for in-memory search)
-      const allProducts: any = await prisma.$queryRawUnsafe(
-        `SELECT id, title, brand, category, size, color, condition, description, price, images, isActive, createdAt, updatedAt
-         FROM products
-         ${whereClause}
-         ${orderByClause}`,
-        ...params
-      );
-
-      // Filter in-memory for case-insensitive search (works with Cyrillic)
-      const searchLower = search.toLowerCase();
-      const filteredProducts = allProducts.filter((p: any) => {
-        const titleLower = (p.title || '').toLowerCase();
-        const brandLower = (p.brand || '').toLowerCase();
-        return titleLower.includes(searchLower) || brandLower.includes(searchLower);
-      });
-
-      // Apply pagination after filtering
-      totalCount = filteredProducts.length;
-      products = filteredProducts.slice(skip, skip + Number(limit));
-    } else {
-      // No search - use regular Prisma query
-      [products, totalCount] = await Promise.all([
-        prisma.product.findMany({
-          where,
-          orderBy,
-          skip,
-          take: Number(limit),
-          select: {
-            id: true,
-            title: true,
-            brand: true,
-            category: true,
-            size: true,
-            color: true,
-            condition: true,
-            description: true,
-            price: true,
-            images: true,
-            isActive: true,
-            createdAt: true,
-            updatedAt: true
-          }
-        }),
-        prisma.product.count({ where })
-      ]);
+      // Use PostgreSQL ILIKE for case-insensitive search (works with Cyrillic!)
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { brand: { contains: search, mode: 'insensitive' } }
+      ];
     }
+
+    // Execute query with pagination
+    [products, totalCount] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        orderBy,
+        skip,
+        take: Number(limit),
+        select: {
+          id: true,
+          title: true,
+          brand: true,
+          category: true,
+          size: true,
+          color: true,
+          condition: true,
+          description: true,
+          price: true,
+          images: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      }),
+      prisma.product.count({ where })
+    ]);
 
     // Normalize images to string array for API response
     const productsWithImages = products.map((product: { images: string } & Record<string, unknown>) => ({
