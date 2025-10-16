@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '../api/client';
 import ProductCard from '../components/ProductCard';
+import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import Header from '../components/Header';
 import CategoryTabs from '../components/CategoryTabs';
 import FloatingCartButton from '../components/FloatingCartButton';
@@ -114,11 +115,17 @@ const Home: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
         <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-lg" style={{ color: 'var(--color-text)' }}>Загрузка товаров...</div>
+        <div className="max-w-screen-xl mx-auto px-4 py-4 pb-24" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Skeleton for category tabs */}
+          <div style={{ height: '48px', backgroundColor: '#f3f4f6', borderRadius: '8px' }} />
+
+          {/* Skeleton grid - 6 cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
           </div>
         </div>
       </div>
@@ -150,11 +157,7 @@ const Home: React.FC = () => {
         />
 
         {/* Product Grid */}
-        {isLoading ? (
-          <div className="flex justify-center items-center h-32">
-            <div className="text-lg" style={{ color: 'var(--color-text)' }}>Загрузка товаров...</div>
-          </div>
-        ) : products.length === 0 ? (
+        {products.length === 0 ? (
           <div className="text-center py-10" style={{ color: 'var(--color-text-secondary)' }}>
             {filters.category || filters.brand || filters.search
               ? 'Товары по выбранным фильтрам не найдены'
