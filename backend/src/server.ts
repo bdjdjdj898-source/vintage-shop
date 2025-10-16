@@ -11,6 +11,8 @@ import cartRouter from './routes/cart';
 import ordersRouter from './routes/orders';
 import adminRouter from './routes/admin';
 import meRouter from './routes/me';
+import favoritesRouter from './routes/favorites';
+import searchHistoryRouter from './routes/searchHistory';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -137,6 +139,8 @@ app.use('/api/cart', cartRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/me', meRouter);
+app.use('/api/favorites', favoritesRouter);
+app.use('/api/search-history', searchHistoryRouter);
 
 // Express обрабатывает ТОЛЬКО API роуты
 // Статические файлы обслуживаются Nginx в production и Vite dev server в development
