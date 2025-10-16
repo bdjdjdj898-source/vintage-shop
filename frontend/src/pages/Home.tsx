@@ -4,7 +4,7 @@ import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import Header from '../components/Header';
 import CategoryTabs from '../components/CategoryTabs';
-import FloatingCartButton from '../components/FloatingCartButton';
+import BottomNavigation from '../components/BottomNavigation';
 import { Product } from '../types/api';
 import { useSearch } from '../contexts/SearchContext';
 
@@ -176,8 +176,8 @@ const Home: React.FC = () => {
         )}
       </div>
 
-      {/* Floating Cart Button */}
-      <FloatingCartButton />
+      {/* Bottom Navigation */}
+      <BottomNavigation />
     </div>
   );
 };

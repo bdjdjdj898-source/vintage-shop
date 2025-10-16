@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Header from '../components/Header';
+import BottomNavigation from '../components/BottomNavigation';
 
 const Profile: React.FC = () => {
   const { user, telegramUser } = useAuth();
@@ -18,8 +19,8 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-bg dark:bg-gray-900">
-      <Header />
+    <div className="min-h-screen bg-bg dark:bg-gray-900" style={{ paddingBottom: '80px' }}>
+      <Header hideSearch />
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-500 text-white text-center py-4 mb-4 text-2xl font-bold rounded-lg">
           ⚡ ОБНОВЛЕНО 10.10.2025 18:30 ⚡
@@ -189,6 +190,7 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </div>
+      <BottomNavigation />
     </div>
   );
 };

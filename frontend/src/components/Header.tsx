@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useSearch } from '../contexts/SearchContext';
 
@@ -7,7 +8,8 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ hideSearch = false }) => {
-  const { searchQuery, setSearchQuery } = useSearch();
+  const navigate = useNavigate();
+  const { searchQuery } = useSearch();
 
   return (
     <header style={{
@@ -53,7 +55,8 @@ const Header: React.FC<HeaderProps> = ({ hideSearch = false }) => {
               type="text"
               placeholder="Поиск"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => navigate('/search')}
+              readOnly
               style={{
                 width: '100%',
                 padding: '10px 12px 10px 40px',
@@ -62,7 +65,8 @@ const Header: React.FC<HeaderProps> = ({ hideSearch = false }) => {
                 backgroundColor: '#f3f4f6',
                 fontSize: '15px',
                 color: 'var(--text)',
-                outline: 'none'
+                outline: 'none',
+                cursor: 'pointer'
               }}
             />
           </div>

@@ -1,17 +1,24 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Heart } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
+import { apiFetch } from '../api/client';
+import { useAuth } from '../contexts/AuthContext';
 import type { Product } from '../types/api';
 
 interface ProductCardProps {
   product: Product;
   onClick?: (product: Product) => void;
+  onFavoriteChange?: (productId: number) => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteChange }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { images, brand, title, price, id } = product;
   const [index, setIndex] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const trackRef = useRef<HTMLDivElement | null>(null);
 
   // Drag state
@@ -84,10 +91,68 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
   }
 
   // Update transform when index changes (non-drag)
-  React.useEffect(() => {
+  useEffect(() => {
     if (!trackRef.current) return;
     trackRef.current.style.transform = `translateX(${-index * 100}%)`;
   }, [index]);
+
+  // Check if product is in favorites
+  useEffect(() => {
+    if (!user) {
+      setIsFavorite(false);
+      return;
+    }
+
+    const checkFavorite = async () => {
+      try {
+        const response = await apiFetch('/api/favorites');
+        if (response.success) {
+          const favoriteIds = response.data.map((item: Product) => item.id);
+          setIsFavorite(favoriteIds.includes(id));
+        }
+      } catch (error) {
+        console.error('Error checking favorite:', error);
+      }
+    };
+
+    checkFavorite();
+  }, [user, id]);
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!user) {
+      navigate('/profile');
+      return;
+    }
+
+    if (isFavoriteLoading) return;
+
+    try {
+      setIsFavoriteLoading(true);
+
+      if (isFavorite) {
+        // Remove from favorites
+        await apiFetch(`/api/favorites/${id}`, {
+          method: 'DELETE'
+        });
+        setIsFavorite(false);
+        if (onFavoriteChange) {
+          onFavoriteChange(id);
+        }
+      } else {
+        // Add to favorites
+        await apiFetch(`/api/favorites/${id}`, {
+          method: 'POST'
+        });
+        setIsFavorite(true);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    } finally {
+      setIsFavoriteLoading(false);
+    }
+  };
 
   const conditionColor = (condition: number) => {
     if (condition >= 9) return { bg: 'var(--color-success-bg)', text: 'var(--color-success-text)' };
@@ -169,6 +234,47 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
             />
           ))}
         </div>
+
+        {/* Favorite button */}
+        <button
+          onClick={handleFavoriteClick}
+          disabled={isFavoriteLoading}
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: isFavoriteLoading ? 'not-allowed' : 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            opacity: isFavoriteLoading ? 0.6 : 1,
+            transition: 'transform 0.15s, opacity 0.15s'
+          }}
+          onMouseEnter={(e) => {
+            if (!isFavoriteLoading) {
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          <Heart
+            size={20}
+            fill={isFavorite ? '#ef4444' : 'transparent'}
+            stroke={isFavorite ? '#ef4444' : '#6b7280'}
+            strokeWidth={2}
+            style={{
+              transition: 'all 0.2s'
+            }}
+          />
+        </button>
       </div>
 
       {/* Meta */}
