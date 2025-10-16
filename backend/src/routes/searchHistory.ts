@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { body } from 'express-validator';
 import { prisma } from '../lib/prisma';
-import { requireAuth } from '../middleware/requireAuth';
+import { requireAuth } from '../middleware/telegramAuth';
 import { validateRequest } from '../middleware/validateRequest';
 import { ApiResponse } from '../utils/responses';
+import { getAuthenticatedUser } from '../types/auth';
 import logger from '../lib/logger';
 
 const router = Router();
@@ -13,7 +14,8 @@ const MAX_HISTORY_ITEMS = 15;
 // GET /api/search-history - получить историю поиска пользователя (последние 15)
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const user = getAuthenticatedUser(req.user);
+    const userId = user.id;
 
     const history = await prisma.searchHistory.findMany({
       where: { userId },
@@ -44,7 +46,8 @@ router.post('/', requireAuth, [
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const user = getAuthenticatedUser(req.user);
+    const userId = user.id;
     const { query } = req.body;
 
     // Don't save empty or whitespace-only queries
@@ -118,7 +121,8 @@ router.post('/', requireAuth, [
 // DELETE /api/search-history - очистить всю историю поиска
 router.delete('/', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const user = getAuthenticatedUser(req.user);
+    const userId = user.id;
 
     await prisma.searchHistory.deleteMany({
       where: { userId }

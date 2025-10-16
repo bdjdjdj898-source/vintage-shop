@@ -1,10 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { param } from 'express-validator';
 import { prisma } from '../lib/prisma';
-import { requireAuth } from '../middleware/requireAuth';
+import { requireAuth } from '../middleware/telegramAuth';
 import { validateRequest } from '../middleware/validateRequest';
 import { ApiResponse } from '../utils/responses';
 import { toStringArray } from '../utils/normalize';
+import { getAuthenticatedUser } from '../types/auth';
 import logger from '../lib/logger';
 
 const router = Router();
@@ -12,7 +13,8 @@ const router = Router();
 // GET /api/favorites - получить избранные товары пользователя
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const user = getAuthenticatedUser(req.user);
+    const userId = user.id;
 
     const favorites = await prisma.favorite.findMany({
       where: { userId },
@@ -66,7 +68,8 @@ router.post('/:productId', requireAuth, [
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const user = getAuthenticatedUser(req.user);
+    const userId = user.id;
     const productId = Number(req.params.productId);
 
     // Check if product exists and is active
@@ -130,7 +133,8 @@ router.delete('/:productId', requireAuth, [
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const user = getAuthenticatedUser(req.user);
+    const userId = user.id;
     const productId = Number(req.params.productId);
 
     // Check if exists in favorites
