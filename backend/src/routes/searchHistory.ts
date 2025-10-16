@@ -30,9 +30,10 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 
     return ApiResponse.success(res, history);
   } catch (error) {
+    const user = req.user ? getAuthenticatedUser(req.user) : null;
     logger.error('Error fetching search history', {
       reqId: req.requestId,
-      userId: req.user?.id,
+      userId: user?.id,
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined
     });
@@ -107,9 +108,10 @@ router.post('/', requireAuth, [
 
     return ApiResponse.success(res, searchHistory, 201);
   } catch (error) {
+    const user = req.user ? getAuthenticatedUser(req.user) : null;
     logger.error('Error saving search history', {
       reqId: req.requestId,
-      userId: req.user?.id,
+      userId: user?.id,
       query: req.body?.query,
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined
@@ -130,9 +132,10 @@ router.delete('/', requireAuth, async (req: Request, res: Response) => {
 
     return ApiResponse.success(res, { message: 'История поиска очищена' });
   } catch (error) {
+    const user = req.user ? getAuthenticatedUser(req.user) : null;
     logger.error('Error clearing search history', {
       reqId: req.requestId,
-      userId: req.user?.id,
+      userId: user?.id,
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined
     });

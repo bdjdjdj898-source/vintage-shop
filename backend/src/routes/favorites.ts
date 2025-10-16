@@ -52,9 +52,10 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 
     return ApiResponse.success(res, activeProducts);
   } catch (error) {
+    const user = req.user ? getAuthenticatedUser(req.user) : null;
     logger.error('Error fetching favorites', {
       reqId: req.requestId,
-      userId: req.user?.id,
+      userId: user?.id,
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined
     });
@@ -116,9 +117,10 @@ router.post('/:productId', requireAuth, [
       favoritedAt: favorite.createdAt
     }, 201);
   } catch (error) {
+    const user = req.user ? getAuthenticatedUser(req.user) : null;
     logger.error('Error adding to favorites', {
       reqId: req.requestId,
-      userId: req.user?.id,
+      userId: user?.id,
       productId: req.params.productId,
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined
@@ -160,9 +162,10 @@ router.delete('/:productId', requireAuth, [
 
     return ApiResponse.success(res, { message: 'Товар удален из избранного' });
   } catch (error) {
+    const user = req.user ? getAuthenticatedUser(req.user) : null;
     logger.error('Error removing from favorites', {
       reqId: req.requestId,
-      userId: req.user?.id,
+      userId: user?.id,
       productId: req.params.productId,
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined
