@@ -17,6 +17,7 @@ const ProductDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -46,9 +47,9 @@ const ProductDetail: React.FC = () => {
     if (!product) return;
 
     try {
-      console.log('🔵 Кнопка добавления в корзину нажата, товар:', product.id);
+      console.log('🔵 Кнопка добавления в корзину нажата, товар:', product.id, 'количество:', quantity);
       setIsAddingToCart(true);
-      await addItem(product.id);
+      await addItem(product.id, quantity);
       console.log('✅ Товар добавлен, переходим в корзину через 500мс');
       // Show success feedback
       setTimeout(() => {
@@ -137,18 +138,6 @@ const ProductDetail: React.FC = () => {
       <Header hideSearch />
 
       <div className="container mx-auto px-4 py-4 max-w-6xl">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 mb-4 transition-opacity hover:opacity-70"
-          style={{ color: 'var(--color-text)' }}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          <span>Назад</span>
-        </button>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Image Gallery */}
           <div>
@@ -334,18 +323,87 @@ const ProductDetail: React.FC = () => {
           zIndex: 40
         }}
       >
-        <button
-          onClick={handleAddToCart}
-          disabled={isAddingToCart}
-          className="w-full py-4 rounded-xl font-semibold text-lg transition-all active:scale-95 disabled:opacity-50"
-          style={{
-            backgroundColor: 'var(--color-accent)',
-            color: '#ffffff',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
-          }}
-        >
-          {isAddingToCart ? 'Добавление...' : `Добавить в корзину · ${formatCurrency(product.price)}`}
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'stretch' }}>
+          {/* Quantity Controls */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: '#ffffff',
+              border: '1px solid #e5e7eb',
+              borderRadius: '12px',
+              overflow: 'hidden'
+            }}
+          >
+            <button
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              disabled={quantity <= 1}
+              style={{
+                padding: '0 16px',
+                height: '56px',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: quantity <= 1 ? '#d1d5db' : '#111827',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: quantity <= 1 ? 'not-allowed' : 'pointer',
+                transition: 'opacity 0.2s'
+              }}
+            >
+              −
+            </button>
+            <div
+              style={{
+                padding: '0 20px',
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#111827',
+                minWidth: '50px',
+                textAlign: 'center'
+              }}
+            >
+              {quantity}
+            </div>
+            <button
+              onClick={() => setQuantity(quantity + 1)}
+              style={{
+                padding: '0 16px',
+                height: '56px',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: '#111827',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s'
+              }}
+            >
+              +
+            </button>
+          </div>
+
+          {/* Add to Cart Button */}
+          <button
+            onClick={handleAddToCart}
+            disabled={isAddingToCart}
+            style={{
+              flex: 1,
+              padding: '16px',
+              borderRadius: '12px',
+              fontSize: '16px',
+              fontWeight: '600',
+              backgroundColor: '#3b82f6',
+              color: '#ffffff',
+              border: 'none',
+              cursor: isAddingToCart ? 'not-allowed' : 'pointer',
+              opacity: isAddingToCart ? 0.5 : 1,
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
+            }}
+          >
+            {isAddingToCart ? 'Добавление...' : `Перейти в корзину · ${formatCurrency(product.price * quantity)}`}
+          </button>
+        </div>
       </div>
     </div>
   );

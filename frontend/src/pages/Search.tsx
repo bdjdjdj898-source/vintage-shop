@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search as SearchIcon, ArrowLeft, X, Clock, Trash2 } from 'lucide-react';
+import { Search as SearchIcon, X, Clock, Trash2 } from 'lucide-react';
 import { useSearch } from '../contexts/SearchContext';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
@@ -77,10 +77,6 @@ const Search: React.FC = () => {
     }
   };
 
-  const handleBack = () => {
-    navigate(-1);
-  };
-
   const handleClear = () => {
     setLocalQuery('');
   };
@@ -106,22 +102,6 @@ const Search: React.FC = () => {
           alignItems: 'center',
           gap: '12px'
         }}>
-          {/* Back button */}
-          <button
-            onClick={handleBack}
-            style={{
-              padding: '8px',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              color: 'var(--text)'
-            }}
-          >
-            <ArrowLeft size={24} />
-          </button>
-
           {/* Search input */}
           <div style={{
             flex: 1,
