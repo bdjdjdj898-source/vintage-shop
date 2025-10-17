@@ -122,7 +122,7 @@ const Home: React.FC = () => {
           <div style={{ height: '48px', backgroundColor: '#f3f4f6', borderRadius: '8px' }} />
 
           {/* Skeleton grid - 6 cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: '12px' }}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <ProductCardSkeleton key={i} />
             ))}
@@ -165,7 +165,7 @@ const Home: React.FC = () => {
             }
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: '12px' }}>
             {products.map((product) => (
               <ProductCard
                 key={product.id}

@@ -238,6 +238,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
         {/* Favorite button */}
         <button
           onClick={handleFavoriteClick}
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerMove={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
           disabled={isFavoriteLoading}
           style={{
             position: 'absolute',

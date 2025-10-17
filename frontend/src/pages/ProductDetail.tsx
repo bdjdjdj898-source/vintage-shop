@@ -133,7 +133,7 @@ const ProductDetail: React.FC = () => {
   const conditionColors = getConditionColor(product.condition);
 
   return (
-    <div className="min-h-screen bg-bg pb-24">
+    <div className="min-h-screen bg-bg" style={{ paddingBottom: '160px' }}>
       <Header hideSearch />
 
       <div className="container mx-auto px-4 py-4 max-w-6xl">
@@ -325,14 +325,23 @@ const ProductDetail: React.FC = () => {
       </div>
 
       {/* Fixed Bottom Button on Mobile */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 lg:hidden" style={{ backgroundColor: 'var(--color-card)', boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)' }}>
+      <div
+        className="fixed left-0 right-0 p-4 lg:hidden"
+        style={{
+          bottom: '70px',
+          backgroundColor: 'var(--color-bg)',
+          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
+          zIndex: 40
+        }}
+      >
         <button
           onClick={handleAddToCart}
           disabled={isAddingToCart}
           className="w-full py-4 rounded-xl font-semibold text-lg transition-all active:scale-95 disabled:opacity-50"
           style={{
             backgroundColor: 'var(--color-accent)',
-            color: '#ffffff'
+            color: '#ffffff',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
           }}
         >
           {isAddingToCart ? 'Добавление...' : `Добавить в корзину · ${formatCurrency(product.price)}`}
