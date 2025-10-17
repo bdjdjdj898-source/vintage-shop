@@ -40,8 +40,8 @@ const Cart: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto p-4">
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', width: '100%', overflowX: 'hidden' }}>
+        <div style={{ width: '100%', maxWidth: '100%', padding: '16px' }}>
           <div className="flex justify-center items-center h-64">
             <div className="text-lg">Загрузка корзины...</div>
           </div>
@@ -52,8 +52,8 @@ const Cart: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto p-4">
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', width: '100%', overflowX: 'hidden' }}>
+        <div style={{ width: '100%', maxWidth: '100%', padding: '16px' }}>
           <div className="flex justify-center items-center h-64">
             <div className="text-lg text-red-600">{error}</div>
           </div>
@@ -102,8 +102,8 @@ const Cart: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ paddingBottom: '80px' }}>
-      <div className="max-w-4xl mx-auto p-4">
+    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', paddingBottom: '80px', width: '100%', overflowX: 'hidden' }}>
+      <div style={{ width: '100%', maxWidth: '100%', padding: '16px' }}>
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Корзина</h1>
 
         {/* Error Banner */}

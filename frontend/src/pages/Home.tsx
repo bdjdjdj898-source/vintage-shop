@@ -115,14 +115,14 @@ const Home: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-bg)', width: '100%', overflowX: 'hidden' }}>
         <Header />
-        <div className="max-w-screen-xl mx-auto px-4 py-4 pb-24" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ width: '100%', maxWidth: '100%', padding: '16px 16px 96px 16px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Skeleton for category tabs */}
           <div style={{ height: '48px', backgroundColor: '#f3f4f6', borderRadius: '8px' }} />
 
           {/* Skeleton grid - 6 cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', width: '100%' }}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <ProductCardSkeleton key={i} />
             ))}
@@ -146,9 +146,9 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-bg)', width: '100%', overflowX: 'hidden' }}>
       <Header />
-      <div className="max-w-screen-xl mx-auto px-4 py-4 pb-24" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ width: '100%', maxWidth: '100%', padding: '16px 16px 96px 16px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Category Tabs */}
         <CategoryTabs
           categories={categories}
@@ -158,14 +158,14 @@ const Home: React.FC = () => {
 
         {/* Product Grid */}
         {products.length === 0 ? (
-          <div className="text-center py-10" style={{ color: 'var(--color-text-secondary)' }}>
+          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--color-text-secondary)' }}>
             {filters.category || filters.brand || filters.search
               ? 'Товары по выбранным фильтрам не найдены'
               : 'Товары не найдены'
             }
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', width: '100%' }}>
             {products.map((product) => (
               <ProductCard
                 key={product.id}
