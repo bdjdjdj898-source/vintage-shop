@@ -293,33 +293,20 @@ const ProductDetail: React.FC = () => {
                 {product.description}
               </p>
             </div>
-
-            {/* Add to Cart Button - Fixed at bottom on mobile */}
-            <div className="mt-auto">
-              <button
-                onClick={handleAddToCart}
-                disabled={isAddingToCart}
-                className="w-full py-4 rounded-xl font-semibold text-lg transition-all active:scale-95 disabled:opacity-50"
-                style={{
-                  backgroundColor: 'var(--color-accent)',
-                  color: '#ffffff',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                }}
-              >
-                {isAddingToCart ? 'Добавление...' : 'Добавить в корзину'}
-              </button>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Fixed Bottom Button on Mobile */}
+      {/* Fixed Bottom Button */}
       <div
-        className="fixed left-0 right-0 p-4 lg:hidden"
         style={{
-          bottom: '70px',
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          padding: '12px 16px 12px 16px',
           backgroundColor: 'var(--color-bg)',
-          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
+          borderTop: '1px solid var(--color-border)',
           zIndex: 40
         }}
       >
@@ -329,9 +316,8 @@ const ProductDetail: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             backgroundColor: '#3b82f6',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
+            borderRadius: '8px',
+            overflow: 'hidden'
           }}
         >
           {/* Minus Button */}
