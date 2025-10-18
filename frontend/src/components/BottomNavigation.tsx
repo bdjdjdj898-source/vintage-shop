@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Heart, ShoppingBag, User } from 'lucide-react';
 
 const BottomNavigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [telegramUser, setTelegramUser] = useState<any>(null);
+
+  useEffect(() => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.initDataUnsafe?.user) {
+      setTelegramUser(tg.initDataUnsafe.user);
+    }
+  }, []);
 
   const tabs = [
     {
@@ -78,14 +86,28 @@ const BottomNavigation: React.FC = () => {
                 transition: 'all 0.2s'
               }}
             >
-              <Icon
-                size={24}
-                strokeWidth={active ? 2.5 : 2}
-                style={{
-                  color: active ? 'var(--tg-theme-link-color, #2481cc)' : 'var(--text-secondary)',
-                  transition: 'color 0.2s'
-                }}
-              />
+              {tab.id === 'profile' && telegramUser?.photo_url ? (
+                <img
+                  src={telegramUser.photo_url}
+                  alt="Profile"
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: active ? '2px solid var(--tg-theme-link-color, #2481cc)' : '2px solid transparent'
+                  }}
+                />
+              ) : (
+                <Icon
+                  size={24}
+                  strokeWidth={active ? 2.5 : 2}
+                  style={{
+                    color: active ? 'var(--tg-theme-link-color, #2481cc)' : 'var(--text-secondary)',
+                    transition: 'color 0.2s'
+                  }}
+                />
+              )}
               <span style={{
                 fontSize: '11px',
                 fontWeight: active ? 500 : 400,
