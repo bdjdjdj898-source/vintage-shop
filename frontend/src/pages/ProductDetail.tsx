@@ -18,6 +18,7 @@ const ProductDetail: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [showQuantityControls, setShowQuantityControls] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -46,6 +47,13 @@ const ProductDetail: React.FC = () => {
   const handleAddToCart = async () => {
     if (!product) return;
 
+    // If quantity controls not shown, show them first
+    if (!showQuantityControls) {
+      setShowQuantityControls(true);
+      return;
+    }
+
+    // Otherwise, add to cart
     try {
       console.log('🔵 Кнопка добавления в корзину нажата, товар:', product.id, 'количество:', quantity);
       setIsAddingToCart(true);
@@ -135,7 +143,7 @@ const ProductDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-bg" style={{ paddingBottom: '160px' }}>
-      <Header hideSearch />
+      <Header hideSearch showBack />
 
       <div className="container mx-auto px-4 py-4 max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -310,101 +318,109 @@ const ProductDetail: React.FC = () => {
           zIndex: 40
         }}
       >
-        {/* Single Button with Integrated Quantity Controls */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            backgroundColor: '#3b82f6',
-            borderRadius: '8px',
-            overflow: 'hidden'
-          }}
-        >
-          {/* Minus Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setQuantity(Math.max(1, quantity - 1));
-            }}
-            disabled={quantity <= 1 || isAddingToCart}
-            style={{
-              padding: '0 20px',
-              height: '56px',
-              fontSize: '28px',
-              fontWeight: 'bold',
-              color: '#ffffff',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderRight: '1px solid rgba(255, 255, 255, 0.2)',
-              cursor: (quantity <= 1 || isAddingToCart) ? 'not-allowed' : 'pointer',
-              opacity: (quantity <= 1 || isAddingToCart) ? 0.5 : 1,
-              transition: 'opacity 0.2s'
-            }}
-          >
-            −
-          </button>
-
-          {/* Quantity Display */}
-          <div
-            style={{
-              padding: '0 16px',
-              fontSize: '20px',
-              fontWeight: '700',
-              color: '#ffffff',
-              minWidth: '50px',
-              textAlign: 'center',
-              borderRight: '1px solid rgba(255, 255, 255, 0.2)'
-            }}
-          >
-            {quantity}
-          </div>
-
-          {/* Plus Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setQuantity(quantity + 1);
-            }}
-            disabled={isAddingToCart}
-            style={{
-              padding: '0 20px',
-              height: '56px',
-              fontSize: '28px',
-              fontWeight: 'bold',
-              color: '#ffffff',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderRight: '1px solid rgba(255, 255, 255, 0.2)',
-              cursor: isAddingToCart ? 'not-allowed' : 'pointer',
-              opacity: isAddingToCart ? 0.5 : 1,
-              transition: 'opacity 0.2s'
-            }}
-          >
-            +
-          </button>
-
-          {/* Main Cart Button */}
+        {!showQuantityControls ? (
+          /* Simple Add to Cart Button */
           <button
             onClick={handleAddToCart}
             disabled={isAddingToCart}
             style={{
-              flex: 1,
-              padding: '16px 20px',
-              height: '56px',
+              width: '100%',
+              padding: '16px',
+              borderRadius: '8px',
               fontSize: '16px',
               fontWeight: '600',
+              backgroundColor: '#3b82f6',
               color: '#ffffff',
-              backgroundColor: 'transparent',
               border: 'none',
               cursor: isAddingToCart ? 'not-allowed' : 'pointer',
               opacity: isAddingToCart ? 0.7 : 1,
-              transition: 'opacity 0.2s',
-              textAlign: 'left'
+              transition: 'opacity 0.2s'
             }}
           >
-            {isAddingToCart ? 'Добавление...' : 'Перейти в корзину'}
+            {isAddingToCart ? 'Добавление...' : 'Добавить в корзину'}
           </button>
-        </div>
+        ) : (
+          /* Button with Quantity Controls (like pablomsk) */
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+            {/* White Quantity Controls */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                overflow: 'hidden'
+              }}
+            >
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                disabled={quantity <= 1 || isAddingToCart}
+                style={{
+                  padding: '0 16px',
+                  height: '50px',
+                  fontSize: '24px',
+                  fontWeight: 'bold',
+                  color: quantity <= 1 ? '#d1d5db' : '#111827',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: (quantity <= 1 || isAddingToCart) ? 'not-allowed' : 'pointer'
+                }}
+              >
+                −
+              </button>
+              <div
+                style={{
+                  padding: '0 16px',
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  minWidth: '40px',
+                  textAlign: 'center'
+                }}
+              >
+                {quantity}
+              </div>
+              <button
+                onClick={() => setQuantity(quantity + 1)}
+                disabled={isAddingToCart}
+                style={{
+                  padding: '0 16px',
+                  height: '50px',
+                  fontSize: '24px',
+                  fontWeight: 'bold',
+                  color: '#111827',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: isAddingToCart ? 'not-allowed' : 'pointer'
+                }}
+              >
+                +
+              </button>
+            </div>
+
+            {/* Blue Cart Button */}
+            <button
+              onClick={handleAddToCart}
+              disabled={isAddingToCart}
+              style={{
+                flex: 1,
+                padding: '16px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                backgroundColor: '#3b82f6',
+                color: '#ffffff',
+                border: 'none',
+                cursor: isAddingToCart ? 'not-allowed' : 'pointer',
+                opacity: isAddingToCart ? 0.7 : 1,
+                transition: 'opacity 0.2s'
+              }}
+            >
+              {isAddingToCart ? 'Добавление...' : 'Перейти в корзину'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

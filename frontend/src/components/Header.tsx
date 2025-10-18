@@ -1,13 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, ArrowLeft } from 'lucide-react';
 import { useSearch } from '../contexts/SearchContext';
 
 interface HeaderProps {
   hideSearch?: boolean;
+  showBack?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ hideSearch = false }) => {
+const Header: React.FC<HeaderProps> = ({ hideSearch = false, showBack = false }) => {
   const navigate = useNavigate();
   const { searchQuery } = useSearch();
 
@@ -22,8 +23,29 @@ const Header: React.FC<HeaderProps> = ({ hideSearch = false }) => {
       <div style={{
         maxWidth: '1280px',
         margin: '0 auto',
-        padding: '8px 16px 12px 16px'
+        padding: '8px 16px 12px 16px',
+        position: 'relative'
       }}>
+        {showBack && (
+          <button
+            onClick={() => navigate(-1)}
+            style={{
+              position: 'absolute',
+              left: '16px',
+              top: '8px',
+              padding: '4px',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              color: 'var(--text)',
+              zIndex: 1
+            }}
+          >
+            <ArrowLeft size={24} />
+          </button>
+        )}
         <h1 style={{
           fontSize: '20px',
           fontWeight: 500,
