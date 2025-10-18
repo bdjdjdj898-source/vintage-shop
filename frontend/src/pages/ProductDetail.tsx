@@ -21,23 +21,30 @@ const ProductDetail: React.FC = () => {
   const [quantity, setQuantity] = useState(1);
   const [showQuantityControls, setShowQuantityControls] = useState(false);
 
-  // Telegram UI кнопки
-  useTelegramBackButton(() => navigate(-1));
-  useTelegramSettingsButton(() => console.log('Settings clicked'));
+  const handleAddToCart = async () => {
+    if (!product) return;
 
-  // Telegram Main Button для добавления в корзину
-  useTelegramMainButton(
-    !showQuantityControls
-      ? 'Добавить в корзину'
-      : `Перейти в корзину · ${formatCurrency((product?.price || 0) * quantity)}`,
-    handleAddToCart,
-    {
-      color: '#3b82f6',
-      textColor: '#ffffff',
-      isActive: !isAddingToCart,
-      isProgressVisible: isAddingToCart
+    // If quantity controls not shown, show them first
+    if (!showQuantityControls) {
+      setShowQuantityControls(true);
+      return;
     }
-  );
+
+    // Otherwise, add to cart
+    try {
+      console.log('🔵 Кнопка добавления в корзину нажата, товар:', product.id, 'количество:', quantity);
+      setIsAddingToCart(true);
+      await addItem(product.id, quantity);
+      console.log('✅ Товар добавлен, переходим в корзину через 500мс');
+      // Show success feedback
+      setTimeout(() => {
+        navigate('/cart');
+      }, 500);
+    } catch (err) {
+      console.error('❌ Ошибка при добавлении в корзину:', err);
+      setIsAddingToCart(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -63,30 +70,23 @@ const ProductDetail: React.FC = () => {
     fetchProduct();
   }, [id]);
 
-  const handleAddToCart = async () => {
-    if (!product) return;
+  // Telegram UI кнопки
+  useTelegramBackButton(() => navigate(-1));
+  useTelegramSettingsButton(() => console.log('Settings clicked'));
 
-    // If quantity controls not shown, show them first
-    if (!showQuantityControls) {
-      setShowQuantityControls(true);
-      return;
+  // Telegram Main Button для добавления в корзину
+  useTelegramMainButton(
+    !showQuantityControls
+      ? 'Добавить в корзину'
+      : `Перейти в корзину · ${formatCurrency((product?.price || 0) * quantity)}`,
+    handleAddToCart,
+    {
+      color: '#3b82f6',
+      textColor: '#ffffff',
+      isActive: !isAddingToCart,
+      isProgressVisible: isAddingToCart
     }
-
-    // Otherwise, add to cart
-    try {
-      console.log('🔵 Кнопка добавления в корзину нажата, товар:', product.id, 'количество:', quantity);
-      setIsAddingToCart(true);
-      await addItem(product.id, quantity);
-      console.log('✅ Товар добавлен, переходим в корзину через 500мс');
-      // Show success feedback
-      setTimeout(() => {
-        navigate('/cart');
-      }, 500);
-    } catch (err) {
-      console.error('❌ Ошибка при добавлении в корзину:', err);
-      setIsAddingToCart(false);
-    }
-  };
+  );
 
   const handleImageNavigation = (direction: 'prev' | 'next') => {
     if (!product?.images) return;
