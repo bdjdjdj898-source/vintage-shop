@@ -125,12 +125,12 @@ const ProductDetail: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
         <Header hideSearch />
-        <div className="container mx-auto px-4 py-8 flex justify-center items-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--color-accent)' }}></div>
-            <p style={{ color: 'var(--color-text)' }}>Загрузка...</p>
+        <div style={{ padding: '32px 16px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ width: '48px', height: '48px', border: '2px solid transparent', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }}></div>
+            <p style={{ color: '#111827' }}>Загрузка...</p>
           </div>
         </div>
       </div>
@@ -139,17 +139,16 @@ const ProductDetail: React.FC = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
         <Header hideSearch />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <p className="text-lg mb-4" style={{ color: 'var(--color-error)' }}>
+        <div style={{ padding: '32px 16px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '18px', marginBottom: '16px', color: '#ef4444' }}>
               {error || 'Товар не найден'}
             </p>
             <button
               onClick={() => navigate('/')}
-              className="px-6 py-2 rounded-lg font-medium transition-all hover:opacity-80"
-              style={{ backgroundColor: 'var(--color-accent)', color: '#ffffff' }}
+              style={{ padding: '8px 24px', borderRadius: '8px', fontWeight: '500', backgroundColor: '#3b82f6', color: '#ffffff', border: 'none', cursor: 'pointer' }}
             >
               Вернуться к каталогу
             </button>
@@ -162,142 +161,171 @@ const ProductDetail: React.FC = () => {
   const conditionColors = getConditionColor(product.condition);
 
   return (
-    <div className="min-h-screen bg-bg" style={{ paddingBottom: '80px' }}>
+    <div style={{ minHeight: '100vh', paddingBottom: '80px', backgroundColor: '#f5f5f5' }}>
       <Header hideSearch />
 
-      <div className="container mx-auto px-4 py-4 max-w-6xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Image Gallery */}
-          <div>
-            {/* Main Image */}
+      <div style={{ maxWidth: '100%', padding: '16px' }}>
+        {/* Main Image */}
+        <div
+          style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#e5e7eb', aspectRatio: '3/4', borderRadius: '12px', marginBottom: '16px' }}
+          {...swipeHandlers}
+        >
+          {/* Progress bars at top (like pablomsk) */}
+          {product.images.length > 1 && (
             <div
-              className="relative rounded-xl overflow-hidden mb-3"
-              style={{ backgroundColor: 'var(--color-surface)', aspectRatio: '3/4' }}
-              {...swipeHandlers}
+              style={{
+                position: 'absolute',
+                top: '8px',
+                left: '8px',
+                right: '8px',
+                display: 'flex',
+                gap: '4px',
+                zIndex: 10
+              }}
             >
-              {/* Progress bars at top (like pablomsk) */}
-              {product.images.length > 1 && (
+              {product.images.map((_, index) => (
                 <div
+                  key={index}
                   style={{
-                    position: 'absolute',
-                    top: '8px',
-                    left: '8px',
-                    right: '8px',
-                    display: 'flex',
-                    gap: '4px',
-                    zIndex: 10
+                    flex: 1,
+                    height: '2px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                    borderRadius: '2px',
+                    overflow: 'hidden'
                   }}
                 >
-                  {product.images.map((_, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        flex: 1,
-                        height: '2px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                        borderRadius: '2px',
-                        overflow: 'hidden'
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: index === currentImageIndex ? '100%' : '0%',
-                          height: '100%',
-                          backgroundColor: '#ffffff',
-                          transition: 'width 0.3s ease'
-                        }}
-                      />
-                    </div>
-                  ))}
+                  <div
+                    style={{
+                      width: index === currentImageIndex ? '100%' : '0%',
+                      height: '100%',
+                      backgroundColor: '#ffffff',
+                      transition: 'width 0.3s ease'
+                    }}
+                  />
                 </div>
-              )}
+              ))}
+            </div>
+          )}
 
-              <img
-                src={product.images[currentImageIndex]}
-                alt={product.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=1000&fit=crop&auto=format';
-                }}
-              />
+          <img
+            src={product.images[currentImageIndex]}
+            alt={product.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=1000&fit=crop&auto=format';
+            }}
+          />
 
-              {/* Condition Badge */}
-              <div
-                className="absolute top-3 right-3 px-3 py-1 rounded-full text-sm font-medium shadow-lg"
-                style={{ backgroundColor: conditionColors.bg, color: conditionColors.text }}
-              >
-                {getConditionText(product.condition)}
-              </div>
+          {/* Condition Badge */}
+          <div
+            style={{ position: 'absolute', top: '12px', right: '12px', padding: '4px 12px', borderRadius: '9999px', fontSize: '14px', fontWeight: '500', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', backgroundColor: conditionColors.bg, color: conditionColors.text }}
+          >
+            {getConditionText(product.condition)}
+          </div>
+        </div>
+
+        {/* Title and Price Block */}
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '16px', marginBottom: '12px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', marginBottom: '8px', margin: 0 }}>
+            {product.title}
+          </h1>
+          <div style={{ fontSize: '28px', fontWeight: '700', color: '#111827' }}>
+            {formatCurrency(product.price)}
+          </div>
+        </div>
+
+        {/* Description Block */}
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '16px', marginBottom: '12px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '12px', margin: 0, marginBottom: '12px' }}>
+            Описание товара
+          </h2>
+          <div
+            style={{
+              color: '#374151',
+              lineHeight: '1.6',
+              fontSize: '15px',
+              whiteSpace: 'pre-wrap'
+            }}
+          >
+            {product.description.length > 150 ? (
+              <>
+                {product.description.substring(0, 150)}...
+                <div style={{ marginTop: '12px' }}>
+                  <button
+                    onClick={() => setShowDescriptionPopup(true)}
+                    style={{
+                      color: 'var(--tg-theme-link-color, #2481cc)',
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      fontSize: '15px',
+                      cursor: 'pointer',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    Читать дальше ▼
+                  </button>
+                </div>
+              </>
+            ) : (
+              product.description
+            )}
+          </div>
+        </div>
+
+        {/* Product Details Block */}
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '16px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
+              <span style={{ color: '#6b7280', fontWeight: '500' }}>Размер</span>
+              <span style={{ color: '#111827', fontWeight: '600' }}>{product.size}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
+              <span style={{ color: '#6b7280', fontWeight: '500' }}>Цвет</span>
+              <span style={{ color: '#111827', fontWeight: '600' }}>{product.color}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
+              <span style={{ color: '#6b7280', fontWeight: '500' }}>Состояние</span>
+              <span style={{ color: '#111827', fontWeight: '600' }}>{product.condition}/10</span>
             </div>
           </div>
+        </div>
 
-          {/* Product Info */}
-          <div className="flex flex-col">
-            {/* Title */}
-            <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--color-text)', marginBottom: '8px' }}>
-              {product.title}
-            </h1>
-
-            {/* Price */}
-            <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--color-text)', marginBottom: '24px' }}>
-              {formatCurrency(product.price)}
-            </div>
-
-            {/* Description - pablomsk style */}
-            <div style={{ marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--color-text)', marginBottom: '12px' }}>
-                Описание товара
-              </h2>
-              <div
-                style={{
-                  color: 'var(--color-text)',
-                  lineHeight: '1.5',
-                  fontSize: '15px',
-                  whiteSpace: 'pre-wrap'
-                }}
-              >
-                {product.description.length > 150 ? (
-                  <>
-                    {product.description.substring(0, 150)}...
-                    <div style={{ marginTop: '12px' }}>
-                      <button
-                        onClick={() => setShowDescriptionPopup(true)}
-                        style={{
-                          color: 'var(--tg-theme-link-color, #2481cc)',
-                          background: 'none',
-                          border: 'none',
-                          padding: 0,
-                          fontSize: '15px',
-                          cursor: 'pointer',
-                          textDecoration: 'none',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        Читать дальше ▼
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  product.description
-                )}
-              </div>
-
-              {/* Product Details (pablomsk style) */}
-              <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
-                  <span style={{ color: 'var(--color-text)' }}>Размер: {product.size}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
-                  <span style={{ color: 'var(--color-text)' }}>Цвет: {product.color}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
-                  <span style={{ color: 'var(--color-text)' }}>Состояние: {product.condition}/10</span>
-                </div>
-              </div>
-            </div>
+        {/* Support Contact Block */}
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '16px', marginBottom: '12px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', marginBottom: '12px', margin: 0, marginBottom: '12px' }}>
+              Остались вопросы?
+            </h3>
+            <button
+              onClick={() => {
+                // Open Telegram support chat
+                const tg = (window as any).Telegram?.WebApp;
+                if (tg) {
+                  tg.openTelegramLink('https://t.me/your_support_username');
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--tg-theme-button-color, #3b82f6)',
+                color: '#ffffff',
+                border: 'none',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              Написать в поддержку
+            </button>
           </div>
         </div>
       </div>
