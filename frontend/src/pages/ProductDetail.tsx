@@ -237,7 +237,7 @@ const ProductDetail: React.FC = () => {
 
         {/* Description Block */}
         <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '16px', marginBottom: '12px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '12px', margin: 0, marginBottom: '12px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: 0, marginBottom: '12px' }}>
             Описание товара
           </h2>
           <div
@@ -298,7 +298,7 @@ const ProductDetail: React.FC = () => {
         {/* Support Contact Block */}
         <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '16px', marginBottom: '12px' }}>
           <div style={{ textAlign: 'center' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', marginBottom: '12px', margin: 0, marginBottom: '12px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: 0, marginBottom: '12px' }}>
               Остались вопросы?
             </h3>
             <button
