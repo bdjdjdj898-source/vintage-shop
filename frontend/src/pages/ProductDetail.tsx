@@ -20,6 +20,7 @@ const ProductDetail: React.FC = () => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [showQuantityControls, setShowQuantityControls] = useState(false);
+  const [showDescriptionPopup, setShowDescriptionPopup] = useState(false);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -174,6 +175,43 @@ const ProductDetail: React.FC = () => {
               style={{ backgroundColor: 'var(--color-surface)', aspectRatio: '3/4' }}
               {...swipeHandlers}
             >
+              {/* Progress bars at top (like pablomsk) */}
+              {product.images.length > 1 && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    left: '8px',
+                    right: '8px',
+                    display: 'flex',
+                    gap: '4px',
+                    zIndex: 10
+                  }}
+                >
+                  {product.images.map((_, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        flex: 1,
+                        height: '2px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                        borderRadius: '2px',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: index === currentImageIndex ? '100%' : '0%',
+                          height: '100%',
+                          backgroundColor: '#ffffff',
+                          transition: 'width 0.3s ease'
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <img
                 src={product.images[currentImageIndex]}
                 alt={product.title}
@@ -184,40 +222,6 @@ const ProductDetail: React.FC = () => {
                 }}
               />
 
-              {/* Navigation Arrows */}
-              {product.images.length > 1 && (
-                <>
-                  <button
-                    onClick={() => handleImageNavigation('prev')}
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full backdrop-blur-sm transition-all hover:scale-110"
-                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', color: '#ffffff' }}
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => handleImageNavigation('next')}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full backdrop-blur-sm transition-all hover:scale-110"
-                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', color: '#ffffff' }}
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </>
-              )}
-
-              {/* Image Counter */}
-              {product.images.length > 1 && (
-                <div
-                  className="absolute bottom-3 right-3 px-3 py-1 rounded-lg text-sm font-medium backdrop-blur-sm"
-                  style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', color: '#ffffff' }}
-                >
-                  {currentImageIndex + 1} / {product.images.length}
-                </div>
-              )}
-
               {/* Condition Badge */}
               <div
                 className="absolute top-3 right-3 px-3 py-1 rounded-full text-sm font-medium shadow-lg"
@@ -226,31 +230,6 @@ const ProductDetail: React.FC = () => {
                 {getConditionText(product.condition)}
               </div>
             </div>
-
-            {/* Thumbnail Gallery */}
-            {product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                {product.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className="flex-shrink-0 rounded-lg overflow-hidden transition-all"
-                    style={{
-                      width: '80px',
-                      height: '100px',
-                      border: index === currentImageIndex ? '2px solid var(--color-accent)' : '2px solid transparent',
-                      opacity: index === currentImageIndex ? 1 : 0.6
-                    }}
-                  >
-                    <img
-                      src={image}
-                      alt={`${product.title} ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Product Info */}
@@ -311,14 +290,43 @@ const ProductDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Description */}
+            {/* Description - pablomsk style */}
             <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
-                Описание
+              <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--color-text)' }}>
+                Описание товара
               </h2>
-              <p className="leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-                {product.description}
-              </p>
+              <div
+                style={{
+                  color: 'var(--color-text)',
+                  lineHeight: '1.6',
+                  fontSize: '15px',
+                  whiteSpace: 'pre-wrap'
+                }}
+              >
+                {product.description.length > 150 ? (
+                  <>
+                    {product.description.substring(0, 150)}...
+                    <div style={{ marginTop: '12px' }}>
+                      <button
+                        onClick={() => setShowDescriptionPopup(true)}
+                        style={{
+                          color: 'var(--tg-theme-link-color, #2481cc)',
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          fontSize: '15px',
+                          cursor: 'pointer',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        Читать дальше ▼
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  product.description
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -394,6 +402,86 @@ const ProductDetail: React.FC = () => {
             >
               +
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Description Popup (like pablomsk) */}
+      {showDescriptionPopup && (
+        <div
+          onClick={() => setShowDescriptionPopup(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: 'var(--color-bg)',
+              borderRadius: '16px 16px 0 0',
+              padding: '24px',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              animation: 'slideUp 0.3s ease-out'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '600', color: 'var(--color-text)', margin: 0 }}>
+                {product.title}
+              </h2>
+              <button
+                onClick={() => setShowDescriptionPopup(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: 'var(--color-text)',
+                  padding: '4px'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div
+              style={{
+                color: 'var(--color-text)',
+                lineHeight: '1.6',
+                fontSize: '15px',
+                whiteSpace: 'pre-wrap'
+              }}
+            >
+              {product.description}
+            </div>
+            <div style={{ marginTop: '24px' }}>
+              <button
+                onClick={() => setShowDescriptionPopup(false)}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--tg-theme-button-color, #3b82f6)',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Закрыть
+              </button>
+            </div>
           </div>
         </div>
       )}
