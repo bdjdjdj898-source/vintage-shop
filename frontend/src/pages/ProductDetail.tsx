@@ -227,17 +227,17 @@ const ProductDetail: React.FC = () => {
 
         {/* Title and Price Block */}
         <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '16px', marginBottom: '12px' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', marginBottom: '8px', margin: 0 }}>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#111827', margin: 0, marginBottom: '8px' }}>
             {product.title}
           </h1>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: '#111827' }}>
+          <div style={{ fontSize: '28px', fontWeight: '800', color: '#111827' }}>
             {formatCurrency(product.price)}
           </div>
         </div>
 
         {/* Description Block */}
         <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '16px', marginBottom: '12px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: 0, marginBottom: '12px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: 0, marginBottom: '12px' }}>
             Описание товара
           </h2>
           <div
@@ -281,16 +281,16 @@ const ProductDetail: React.FC = () => {
         <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '16px', marginBottom: '12px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
-              <span style={{ color: '#6b7280', fontWeight: '500' }}>Размер</span>
-              <span style={{ color: '#111827', fontWeight: '600' }}>{product.size}</span>
+              <span style={{ color: '#6b7280', fontWeight: 'normal' }}>Размер</span>
+              <span style={{ color: '#111827', fontWeight: 'normal' }}>{product.size}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
-              <span style={{ color: '#6b7280', fontWeight: '500' }}>Цвет</span>
-              <span style={{ color: '#111827', fontWeight: '600' }}>{product.color}</span>
+              <span style={{ color: '#6b7280', fontWeight: 'normal' }}>Цвет</span>
+              <span style={{ color: '#111827', fontWeight: 'normal' }}>{product.color}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
-              <span style={{ color: '#6b7280', fontWeight: '500' }}>Состояние</span>
-              <span style={{ color: '#111827', fontWeight: '600' }}>{product.condition}/10</span>
+              <span style={{ color: '#6b7280', fontWeight: 'normal' }}>Состояние</span>
+              <span style={{ color: '#111827', fontWeight: 'normal' }}>{product.condition}/10</span>
             </div>
           </div>
         </div>
