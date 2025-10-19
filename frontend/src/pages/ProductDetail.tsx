@@ -234,71 +234,25 @@ const ProductDetail: React.FC = () => {
 
           {/* Product Info */}
           <div className="flex flex-col">
-            {/* Brand */}
-            <div className="text-sm font-medium mb-2" style={{ color: 'var(--color-accent)' }}>
-              {product.brand}
-            </div>
-
             {/* Title */}
-            <h1 className="text-2xl font-bold mb-3" style={{ color: 'var(--color-text)' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--color-text)', marginBottom: '8px' }}>
               {product.title}
             </h1>
 
             {/* Price */}
-            <div className="text-3xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>
+            <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--color-text)', marginBottom: '24px' }}>
               {formatCurrency(product.price)}
             </div>
 
-            {/* Details Grid */}
-            <div
-              className="rounded-lg p-4 mb-4"
-              style={{ backgroundColor: 'var(--color-surface)' }}
-            >
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                    Размер
-                  </div>
-                  <div className="font-medium" style={{ color: 'var(--color-text)' }}>
-                    {product.size}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                    Цвет
-                  </div>
-                  <div className="font-medium" style={{ color: 'var(--color-text)' }}>
-                    {product.color}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                    Категория
-                  </div>
-                  <div className="font-medium" style={{ color: 'var(--color-text)' }}>
-                    {product.category}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                    Состояние
-                  </div>
-                  <div className="font-medium" style={{ color: 'var(--color-text)' }}>
-                    {product.condition}/10
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Description - pablomsk style */}
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--color-text)' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--color-text)', marginBottom: '12px' }}>
                 Описание товара
               </h2>
               <div
                 style={{
                   color: 'var(--color-text)',
-                  lineHeight: '1.6',
+                  lineHeight: '1.5',
                   fontSize: '15px',
                   whiteSpace: 'pre-wrap'
                 }}
@@ -316,7 +270,10 @@ const ProductDetail: React.FC = () => {
                           padding: 0,
                           fontSize: '15px',
                           cursor: 'pointer',
-                          textDecoration: 'none'
+                          textDecoration: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
                         }}
                       >
                         Читать дальше ▼
@@ -326,6 +283,19 @@ const ProductDetail: React.FC = () => {
                 ) : (
                   product.description
                 )}
+              </div>
+
+              {/* Product Details (pablomsk style) */}
+              <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
+                  <span style={{ color: 'var(--color-text)' }}>Размер: {product.size}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
+                  <span style={{ color: 'var(--color-text)' }}>Цвет: {product.color}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
+                  <span style={{ color: 'var(--color-text)' }}>Состояние: {product.condition}/10</span>
+                </div>
               </div>
             </div>
           </div>
