@@ -170,42 +170,72 @@ const ProductDetail: React.FC = () => {
           style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#e5e7eb', aspectRatio: '3/4', borderRadius: '12px', marginBottom: '16px' }}
           {...swipeHandlers}
         >
-          {/* Progress bars at top (like pablomsk) */}
-          {product.images.length > 1 && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '8px',
-                left: '8px',
-                right: '8px',
-                display: 'flex',
-                gap: '4px',
-                zIndex: 10
-              }}
-            >
-              {product.images.map((_, index) => (
-                <div
-                  key={index}
-                  style={{
-                    flex: 1,
-                    height: '2px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                    borderRadius: '2px',
-                    overflow: 'hidden'
-                  }}
-                >
-                  <div
-                    style={{
-                      width: index === currentImageIndex ? '100%' : '0%',
-                      height: '100%',
-                      backgroundColor: '#ffffff',
-                      transition: 'width 0.3s ease'
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Progress bars at top (like pablomsk - max 4 visible with sliding window) */}
+          {product.images.length > 1 && (() => {
+            const maxVisibleBars = 4;
+            const totalImages = product.images.length;
+
+            // Calculate visible range (sliding window)
+            let startIndex = 0;
+            let endIndex = totalImages;
+
+            if (totalImages > maxVisibleBars) {
+              // Center current image in the visible range
+              const halfWindow = Math.floor(maxVisibleBars / 2);
+              startIndex = Math.max(0, currentImageIndex - halfWindow);
+              endIndex = Math.min(totalImages, startIndex + maxVisibleBars);
+
+              // Adjust if at the end
+              if (endIndex === totalImages) {
+                startIndex = Math.max(0, totalImages - maxVisibleBars);
+              }
+            }
+
+            const visibleImages = product.images.slice(startIndex, endIndex);
+
+            return (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  left: '8px',
+                  right: '8px',
+                  display: 'flex',
+                  gap: '4px',
+                  zIndex: 10,
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                {visibleImages.map((_, visibleIndex) => {
+                  const actualIndex = startIndex + visibleIndex;
+                  const isActive = actualIndex === currentImageIndex;
+                  const isPassed = actualIndex < currentImageIndex;
+
+                  return (
+                    <div
+                      key={actualIndex}
+                      style={{
+                        flex: 1,
+                        height: '2px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                        borderRadius: '2px',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: isPassed ? '100%' : (isActive ? '100%' : '0%'),
+                          height: '100%',
+                          backgroundColor: '#ffffff',
+                          transition: 'width 0.3s ease'
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           <img
             src={product.images[currentImageIndex]}
