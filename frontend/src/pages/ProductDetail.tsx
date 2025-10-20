@@ -178,6 +178,16 @@ const ProductDetail: React.FC = () => {
 
   const visibleProgressBars = product.images.slice(visibleBarStartIndex, visibleBarEndIndex);
 
+  // DEBUG: Log to console
+  console.log('🔍 Progress bars:', {
+    totalImages,
+    maxVisibleBars,
+    visibleBarStartIndex,
+    visibleBarEndIndex,
+    visibleProgressBarsLength: visibleProgressBars.length,
+    currentImageIndex
+  });
+
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '80px', backgroundColor: '#f5f5f5' }}>
       <Header hideSearch />

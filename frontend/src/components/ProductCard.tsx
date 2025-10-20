@@ -21,6 +21,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const trackRef = useRef<HTMLDivElement | null>(null);
 
+  // Calculate visible dots (max 4 with sliding window) - same as ProductDetail
+  const maxVisibleDots = 4;
+  const totalImages = images.length;
+  let visibleDotStartIndex = 0;
+  let visibleDotEndIndex = totalImages;
+
+  if (totalImages > maxVisibleDots) {
+    const halfWindow = Math.floor(maxVisibleDots / 2);
+    visibleDotStartIndex = Math.max(0, index - halfWindow);
+    visibleDotEndIndex = Math.min(totalImages, visibleDotStartIndex + maxVisibleDots);
+
+    if (visibleDotEndIndex === totalImages) {
+      visibleDotStartIndex = Math.max(0, totalImages - maxVisibleDots);
+    }
+  }
+
+  const visibleDots = images.slice(visibleDotStartIndex, visibleDotEndIndex);
+
   // Drag state
   const startXRef = useRef<number | null>(null);
   const deltaXRef = useRef<number>(0);
@@ -207,33 +225,41 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
           ))}
         </div>
 
-        {/* Dots indicator - always visible */}
-        <div
-          style={{
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            bottom: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}
-        >
-          {images.map((_, i) => (
-            <span
-              key={i}
-              style={{
-                width: i === index ? '8px' : '6px',
-                height: i === index ? '8px' : '6px',
-                backgroundColor: '#ffffff',
-                opacity: i === index ? 1 : 0.5,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                borderRadius: '50%',
-                transition: 'all 150ms',
-              }}
-            />
-          ))}
-        </div>
+        {/* Dots indicator - max 4 visible with sliding window */}
+        {images.length > 1 && (
+          <div
+            style={{
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              bottom: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            {visibleDots.map((_, visibleIndex) => {
+              const actualIndex = visibleDotStartIndex + visibleIndex;
+              const isActive = actualIndex === index;
+              const isPassed = actualIndex < index;
+
+              return (
+                <span
+                  key={actualIndex}
+                  style={{
+                    width: isActive ? '8px' : '6px',
+                    height: isActive ? '8px' : '6px',
+                    backgroundColor: '#ffffff',
+                    opacity: isPassed ? 0.8 : (isActive ? 1 : 0.5),
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                    borderRadius: '50%',
+                    transition: 'all 150ms',
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
 
         {/* Favorite button */}
         <button
