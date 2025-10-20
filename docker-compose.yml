@@ -9,6 +9,8 @@ services:
       - POSTGRES_DB=vintage_shop
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -39,7 +41,7 @@ services:
     ports:
       - "3002:3000"
     environment:
-      - DATABASE_URL=file:./database.db
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/vintage_shop?schema=public
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - ADMIN_TELEGRAM_IDS=${ADMIN_TELEGRAM_IDS}
       - PORT=3000
@@ -54,6 +56,9 @@ services:
       - backend-data:/app/prisma
     networks:
       - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
