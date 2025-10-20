@@ -160,6 +160,24 @@ const ProductDetail: React.FC = () => {
 
   const conditionColors = getConditionColor(product.condition);
 
+  // Calculate visible progress bars (max 4 with sliding window)
+  const maxVisibleBars = 4;
+  const totalImages = product.images.length;
+  let visibleBarStartIndex = 0;
+  let visibleBarEndIndex = totalImages;
+
+  if (totalImages > maxVisibleBars) {
+    const halfWindow = Math.floor(maxVisibleBars / 2);
+    visibleBarStartIndex = Math.max(0, currentImageIndex - halfWindow);
+    visibleBarEndIndex = Math.min(totalImages, visibleBarStartIndex + maxVisibleBars);
+
+    if (visibleBarEndIndex === totalImages) {
+      visibleBarStartIndex = Math.max(0, totalImages - maxVisibleBars);
+    }
+  }
+
+  const visibleProgressBars = product.images.slice(visibleBarStartIndex, visibleBarEndIndex);
+
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '80px', backgroundColor: '#f5f5f5' }}>
       <Header hideSearch />
@@ -171,71 +189,48 @@ const ProductDetail: React.FC = () => {
           {...swipeHandlers}
         >
           {/* Progress bars at top (like pablomsk - max 4 visible with sliding window) */}
-          {product.images.length > 1 && (() => {
-            const maxVisibleBars = 4;
-            const totalImages = product.images.length;
+          {product.images.length > 1 && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '8px',
+                left: '8px',
+                right: '8px',
+                display: 'flex',
+                gap: '4px',
+                zIndex: 10,
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {visibleProgressBars.map((_, visibleIndex) => {
+                const actualIndex = visibleBarStartIndex + visibleIndex;
+                const isActive = actualIndex === currentImageIndex;
+                const isPassed = actualIndex < currentImageIndex;
 
-            // Calculate visible range (sliding window)
-            let startIndex = 0;
-            let endIndex = totalImages;
-
-            if (totalImages > maxVisibleBars) {
-              // Center current image in the visible range
-              const halfWindow = Math.floor(maxVisibleBars / 2);
-              startIndex = Math.max(0, currentImageIndex - halfWindow);
-              endIndex = Math.min(totalImages, startIndex + maxVisibleBars);
-
-              // Adjust if at the end
-              if (endIndex === totalImages) {
-                startIndex = Math.max(0, totalImages - maxVisibleBars);
-              }
-            }
-
-            const visibleImages = product.images.slice(startIndex, endIndex);
-
-            return (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '8px',
-                  left: '8px',
-                  right: '8px',
-                  display: 'flex',
-                  gap: '4px',
-                  zIndex: 10,
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                {visibleImages.map((_, visibleIndex) => {
-                  const actualIndex = startIndex + visibleIndex;
-                  const isActive = actualIndex === currentImageIndex;
-                  const isPassed = actualIndex < currentImageIndex;
-
-                  return (
+                return (
+                  <div
+                    key={actualIndex}
+                    style={{
+                      flex: 1,
+                      height: '2px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                      borderRadius: '2px',
+                      overflow: 'hidden'
+                    }}
+                  >
                     <div
-                      key={actualIndex}
                       style={{
-                        flex: 1,
-                        height: '2px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                        borderRadius: '2px',
-                        overflow: 'hidden'
+                        width: isPassed ? '100%' : (isActive ? '100%' : '0%'),
+                        height: '100%',
+                        backgroundColor: '#ffffff',
+                        transition: 'width 0.3s ease'
                       }}
-                    >
-                      <div
-                        style={{
-                          width: isPassed ? '100%' : (isActive ? '100%' : '0%'),
-                          height: '100%',
-                          backgroundColor: '#ffffff',
-                          transition: 'width 0.3s ease'
-                        }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <img
             src={product.images[currentImageIndex]}
