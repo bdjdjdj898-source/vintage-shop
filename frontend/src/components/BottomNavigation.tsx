@@ -57,7 +57,8 @@ const BottomNavigation: React.FC = () => {
       backgroundColor: 'var(--bg)',
       borderTop: '1px solid var(--border)',
       zIndex: 50,
-      paddingBottom: 'env(safe-area-inset-bottom, 0)'
+      paddingTop: '12px',
+      paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))'
     }}>
       <div style={{
         display: 'grid',

@@ -23,7 +23,10 @@ const Header: React.FC<HeaderProps> = ({ hideSearch = false, showBack = false })
       <div style={{
         maxWidth: '1280px',
         margin: '0 auto',
-        padding: '8px 16px 12px 16px',
+        paddingTop: 'calc(8px + env(safe-area-inset-top, 0px))',
+        paddingLeft: '16px',
+        paddingRight: '16px',
+        paddingBottom: '12px',
         position: 'relative'
       }}>
         {showBack && (
