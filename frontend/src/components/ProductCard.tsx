@@ -20,11 +20,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
   const [isFavorite, setIsFavorite] = useState(false);
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const dotsContainerRef = useRef<HTMLDivElement | null>(null);
-
-  // Parallax indicators config
-  const maxVisibleDots = 4;
-  const totalImages = images.length;
 
   // Swipe state with gesture detection and physics
   const startXRef = useRef<number>(0);
@@ -37,7 +32,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
   const isDraggingRef = useRef(false);
   const gestureDetectedRef = useRef<'horizontal' | 'vertical' | null>(null);
   const widthRef = useRef<number>(0);
-  const progressRef = useRef<number>(0); // Fractional progress (0-1) for smooth indicators
 
   function handlePointerDown(e: React.PointerEvent) {
     const el = trackRef.current;
@@ -45,9 +39,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
 
     // Cancel any ongoing transitions
     el.style.transition = '';
-    if (dotsContainerRef.current) {
-      dotsContainerRef.current.style.transition = '';
-    }
 
     widthRef.current = el.clientWidth;
     startXRef.current = e.clientX;
@@ -108,12 +99,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       lastXRef.current = currentXRef.current;
       lastTimeRef.current = now;
 
-      // Calculate target position with boundaries
-      let targetProgress = index + (-deltaX / widthRef.current);
-
-      // Clamp to valid range [0, totalImages - 1]
-      targetProgress = Math.max(0, Math.min(totalImages - 1, targetProgress));
-
       // Apply resistance at boundaries (rubber band effect)
       let clampedDeltaX = deltaX;
       const maxIndex = images.length - 1;
@@ -126,30 +111,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
         clampedDeltaX = deltaX * 0.3;
       }
 
-      progressRef.current = targetProgress;
-
-      // Update transform - no state change, just visual
-      requestAnimationFrame(() => {
-        if (trackRef.current) {
-          const percent = (clampedDeltaX / widthRef.current) * 100;
-          trackRef.current.style.transform = `translateX(${-index * 100 + percent}%)`;
-        }
-
-        // Update parallax indicators position
-        if (dotsContainerRef.current) {
-          const dotWidth = 14; // 6-8px dot + 6px gap
-          const progress = progressRef.current;
-          const centerOffset = (maxVisibleDots / 2) - 0.5;
-
-          let offset = (progress - centerOffset) * dotWidth;
-          const minOffset = 0;
-          const maxOffset = Math.max(0, (totalImages - maxVisibleDots) * dotWidth);
-          offset = Math.max(minOffset, Math.min(maxOffset, offset));
-
-          dotsContainerRef.current.style.transform = `translateX(${-offset}px)`;
-          dotsContainerRef.current.style.transition = 'none';
-        }
-      });
+      // Update transform - SIMPLIFIED VERSION
+      const percent = (clampedDeltaX / widthRef.current) * 100;
+      trackRef.current.style.transform = `translateX(${-index * 100 + percent}%)`;
     }
   }
 
@@ -199,7 +163,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       }
     }
 
-    // Apply spring animation with easing - always snap to a valid index
+    // Update index state FIRST
+    if (targetIndex !== index) {
+      setIndex(targetIndex);
+    }
+
+    // Then apply spring animation - always snap to a valid index
     if (trackRef.current) {
       trackRef.current.style.transition = 'transform 320ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
       trackRef.current.style.transform = `translateX(${-targetIndex * 100}%)`;
@@ -211,38 +180,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       }, 330);
     }
 
-    // Animate indicators to final position
-    if (dotsContainerRef.current) {
-      const dotWidth = 14;
-      const centerOffset = (maxVisibleDots / 2) - 0.5;
-      let offset = (targetIndex - centerOffset) * dotWidth;
-      const minOffset = 0;
-      const maxOffset = Math.max(0, (totalImages - maxVisibleDots) * dotWidth);
-      offset = Math.max(minOffset, Math.min(maxOffset, offset));
-
-      dotsContainerRef.current.style.transition = 'transform 320ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-      dotsContainerRef.current.style.transform = `translateX(${-offset}px)`;
-    }
-
-    // Update index state
-    if (targetIndex !== index) {
-      setIndex(targetIndex);
-    }
-
     // Reset refs
     velocityRef.current = 0;
-    progressRef.current = targetIndex;
   }
 
-  // Update transform when index changes (non-drag) - only on mount
+  // Update transform when index changes programmatically (not from drag)
   useEffect(() => {
-    if (!trackRef.current) return;
-
-    // Only set initial position, don't interfere with animations
-    if (progressRef.current === 0) {
-      trackRef.current.style.transform = `translateX(${-index * 100}%)`;
-      progressRef.current = index;
-    }
+    if (!trackRef.current || isDraggingRef.current) return;
+    trackRef.current.style.transform = `translateX(${-index * 100}%)`;
   }, [index]);
 
   // Check if product is in favorites
@@ -356,7 +301,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
           ))}
         </div>
 
-        {/* Parallax scrolling indicators - viewport window pattern */}
+        {/* Simple dots indicator */}
         {images.length > 1 && (
           <div
             style={{
@@ -364,41 +309,30 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
               left: '50%',
               transform: 'translateX(-50%)',
               bottom: '8px',
-              width: `${maxVisibleDots * 14}px`, // Fixed viewport window
-              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
-            {/* Container with all dots - moves inside viewport */}
-            <div
-              ref={dotsContainerRef}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                willChange: 'transform',
-              }}
-            >
-              {images.map((_, i) => {
-                const isActive = i === index;
-                const isPassed = i < index;
+            {images.map((_, i) => {
+              const isActive = i === index;
+              const isPassed = i < index;
 
-                return (
-                  <span
-                    key={i}
-                    style={{
-                      width: isActive ? '8px' : '6px',
-                      height: isActive ? '8px' : '6px',
-                      backgroundColor: '#ffffff',
-                      opacity: isPassed ? 0.8 : (isActive ? 1 : 0.5),
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                      borderRadius: '50%',
-                      flexShrink: 0,
-                      transition: 'all 320ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                    }}
-                  />
-                );
-              })}
-            </div>
+              return (
+                <span
+                  key={i}
+                  style={{
+                    width: isActive ? '8px' : '6px',
+                    height: isActive ? '8px' : '6px',
+                    backgroundColor: '#ffffff',
+                    opacity: isPassed ? 0.8 : (isActive ? 1 : 0.5),
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                    borderRadius: '50%',
+                    transition: 'all 150ms',
+                  }}
+                />
+              );
+            })}
           </div>
         )}
 
