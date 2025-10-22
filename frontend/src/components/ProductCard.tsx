@@ -43,6 +43,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     const el = trackRef.current;
     if (!el) return;
 
+    // Cancel any ongoing transitions
+    el.style.transition = '';
+    if (dotsContainerRef.current) {
+      dotsContainerRef.current.style.transition = '';
+    }
+
     widthRef.current = el.clientWidth;
     startXRef.current = e.clientX;
     startYRef.current = e.clientY;
@@ -203,13 +209,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
           trackRef.current.style.transition = '';
         }
       }, 330);
-    } else {
-      // Fallback - ensure transform is set even if ref is null
-      requestAnimationFrame(() => {
-        if (trackRef.current) {
-          trackRef.current.style.transform = `translateX(${-targetIndex * 100}%)`;
-        }
-      });
     }
 
     // Animate indicators to final position
@@ -235,25 +234,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     progressRef.current = targetIndex;
   }
 
-  // Update transform when index changes (non-drag)
+  // Update transform when index changes (non-drag) - only on mount
   useEffect(() => {
     if (!trackRef.current) return;
-    trackRef.current.style.transform = `translateX(${-index * 100}%)`;
 
-    // Sync indicators position
-    if (dotsContainerRef.current) {
-      const dotWidth = 14;
-      const centerOffset = (maxVisibleDots / 2) - 0.5;
-      let offset = (index - centerOffset) * dotWidth;
-      const minOffset = 0;
-      const maxOffset = Math.max(0, (totalImages - maxVisibleDots) * dotWidth);
-      offset = Math.max(minOffset, Math.min(maxOffset, offset));
-
-      dotsContainerRef.current.style.transform = `translateX(${-offset}px)`;
+    // Only set initial position, don't interfere with animations
+    if (progressRef.current === 0) {
+      trackRef.current.style.transform = `translateX(${-index * 100}%)`;
+      progressRef.current = index;
     }
-
-    progressRef.current = index;
-  }, [index, maxVisibleDots, totalImages]);
+  }, [index]);
 
   // Check if product is in favorites
   useEffect(() => {
