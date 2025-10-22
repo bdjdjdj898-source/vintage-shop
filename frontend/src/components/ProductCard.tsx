@@ -20,99 +20,216 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
   const [isFavorite, setIsFavorite] = useState(false);
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const dotsContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Calculate visible dots (max 4 with sliding window) - same as ProductDetail
+  // Parallax indicators config
   const maxVisibleDots = 4;
   const totalImages = images.length;
-  let visibleDotStartIndex = 0;
-  let visibleDotEndIndex = totalImages;
 
-  if (totalImages > maxVisibleDots) {
-    const halfWindow = Math.floor(maxVisibleDots / 2);
-    visibleDotStartIndex = Math.max(0, index - halfWindow);
-    visibleDotEndIndex = Math.min(totalImages, visibleDotStartIndex + maxVisibleDots);
-
-    if (visibleDotEndIndex === totalImages) {
-      visibleDotStartIndex = Math.max(0, totalImages - maxVisibleDots);
-    }
-  }
-
-  const visibleDots = images.slice(visibleDotStartIndex, visibleDotEndIndex);
-
-  // Drag state
-  const startXRef = useRef<number | null>(null);
-  const deltaXRef = useRef<number>(0);
-  const draggingRef = useRef(false);
-  const WIDTH_REF = useRef<number>(0);
+  // Swipe state with gesture detection and physics
+  const startXRef = useRef<number>(0);
+  const startYRef = useRef<number>(0);
+  const currentXRef = useRef<number>(0);
+  const currentYRef = useRef<number>(0);
+  const velocityRef = useRef<number>(0);
+  const lastXRef = useRef<number>(0);
+  const lastTimeRef = useRef<number>(0);
+  const isDraggingRef = useRef(false);
+  const gestureDetectedRef = useRef<'horizontal' | 'vertical' | null>(null);
+  const widthRef = useRef<number>(0);
+  const progressRef = useRef<number>(0); // Fractional progress (0-1) for smooth indicators
 
   function handlePointerDown(e: React.PointerEvent) {
     const el = trackRef.current;
     if (!el) return;
-    WIDTH_REF.current = el.clientWidth;
+
+    widthRef.current = el.clientWidth;
     startXRef.current = e.clientX;
-    deltaXRef.current = 0;
-    draggingRef.current = true;
+    startYRef.current = e.clientY;
+    currentXRef.current = e.clientX;
+    currentYRef.current = e.clientY;
+    lastXRef.current = e.clientX;
+    lastTimeRef.current = Date.now();
+    velocityRef.current = 0;
+    isDraggingRef.current = true;
+    gestureDetectedRef.current = null; // Reset gesture detection
+
     (e.target as Element).setPointerCapture(e.pointerId);
   }
 
   function handlePointerMove(e: React.PointerEvent) {
-    if (!draggingRef.current || startXRef.current === null) return;
-    deltaXRef.current = e.clientX - startXRef.current;
+    if (!isDraggingRef.current || !trackRef.current) return;
 
-    // Prevent page scroll when swiping horizontally
-    if (Math.abs(deltaXRef.current) > 5) {
-      e.preventDefault();
+    currentXRef.current = e.clientX;
+    currentYRef.current = e.clientY;
+
+    const deltaX = currentXRef.current - startXRef.current;
+    const deltaY = currentYRef.current - startYRef.current;
+
+    // Gesture detection - only on first significant movement
+    if (gestureDetectedRef.current === null) {
+      const absDeltaX = Math.abs(deltaX);
+      const absDeltaY = Math.abs(deltaY);
+
+      // Need at least 10px movement to detect
+      if (absDeltaX > 10 || absDeltaY > 10) {
+        // Require 3:1 ratio for horizontal gesture
+        const ratio = absDeltaX / Math.max(absDeltaY, 1);
+        gestureDetectedRef.current = ratio > 3 ? 'horizontal' : 'vertical';
+      } else {
+        // Not enough movement yet, wait
+        return;
+      }
     }
 
-    // Update visual transform — no state change yet
-    requestAnimationFrame(() => {
-      if (trackRef.current) {
-        const percent = (deltaXRef.current / WIDTH_REF.current) * 100;
-        trackRef.current.style.transform = `translateX(${-index * 100 + percent}%)`;
+    // If vertical gesture detected - cancel drag, allow page scroll
+    if (gestureDetectedRef.current === 'vertical') {
+      isDraggingRef.current = false;
+      return;
+    }
+
+    // If horizontal gesture - prevent scroll and update transform
+    if (gestureDetectedRef.current === 'horizontal') {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Calculate velocity for physics (pixels per millisecond)
+      const now = Date.now();
+      const dt = now - lastTimeRef.current;
+      if (dt > 0) {
+        velocityRef.current = (currentXRef.current - lastXRef.current) / dt;
       }
-    });
+      lastXRef.current = currentXRef.current;
+      lastTimeRef.current = now;
+
+      // Update fractional progress for smooth indicators
+      progressRef.current = index + (-deltaX / widthRef.current);
+
+      // Update transform - no state change, just visual
+      requestAnimationFrame(() => {
+        if (trackRef.current) {
+          const percent = (deltaX / widthRef.current) * 100;
+          trackRef.current.style.transform = `translateX(${-index * 100 + percent}%)`;
+        }
+
+        // Update parallax indicators position
+        if (dotsContainerRef.current) {
+          const dotWidth = 14; // 6-8px dot + 6px gap
+          const progress = progressRef.current;
+          const centerOffset = (maxVisibleDots / 2) - 0.5;
+
+          let offset = (progress - centerOffset) * dotWidth;
+          const minOffset = 0;
+          const maxOffset = Math.max(0, (totalImages - maxVisibleDots) * dotWidth);
+          offset = Math.max(minOffset, Math.min(maxOffset, offset));
+
+          dotsContainerRef.current.style.transform = `translateX(${-offset}px)`;
+          dotsContainerRef.current.style.transition = 'none';
+        }
+      });
+    }
   }
 
   function handlePointerUp(e: React.PointerEvent) {
-    draggingRef.current = false;
-    const delta = deltaXRef.current;
-    const threshold = WIDTH_REF.current * 0.18; // 18% swipe threshold
+    if (!isDraggingRef.current) return;
 
-    // Determine if it's a swipe or tap
-    if (Math.abs(delta) > threshold) {
-      // It's a swipe
-      if (delta < 0 && index < images.length - 1) {
-        setIndex(i => i + 1);
-      } else if (delta > 0 && index > 0) {
-        setIndex(i => i - 1);
+    const deltaX = currentXRef.current - startXRef.current;
+    const velocity = velocityRef.current;
+    const wasHorizontalGesture = gestureDetectedRef.current === 'horizontal';
+
+    isDraggingRef.current = false;
+    gestureDetectedRef.current = null;
+
+    // If no horizontal gesture detected, treat as tap
+    if (!wasHorizontalGesture) {
+      if (Math.abs(deltaX) < 6) {
+        // Tap detected -> open product
+        if (onClick) {
+          onClick(product);
+        } else {
+          navigate(`/product/${id}`);
+        }
       }
-    } else if (Math.abs(delta) < 6) {
-      // It's a tap (minimal movement) -> open product
-      if (onClick) {
-        onClick(product);
-      } else {
-        navigate(`/product/${id}`);
+      return;
+    }
+
+    // Calculate target index based on distance + velocity (inertia)
+    const threshold = widthRef.current * 0.18; // 18% threshold
+    const velocityThreshold = 0.3; // pixels per ms (fast swipe)
+
+    let targetIndex = index;
+
+    // Strong velocity = instant swipe
+    if (Math.abs(velocity) > velocityThreshold) {
+      if (velocity < 0 && index < images.length - 1) {
+        targetIndex = index + 1;
+      } else if (velocity > 0 && index > 0) {
+        targetIndex = index - 1;
+      }
+    }
+    // Otherwise check distance threshold
+    else if (Math.abs(deltaX) > threshold) {
+      if (deltaX < 0 && index < images.length - 1) {
+        targetIndex = index + 1;
+      } else if (deltaX > 0 && index > 0) {
+        targetIndex = index - 1;
       }
     }
 
-    // Reset transform with animation
+    // Apply spring animation with easing
     if (trackRef.current) {
-      trackRef.current.style.transition = 'transform 220ms ease';
-      trackRef.current.style.transform = `translateX(${-index * 100}%)`;
+      trackRef.current.style.transition = 'transform 320ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+      trackRef.current.style.transform = `translateX(${-targetIndex * 100}%)`;
+
       setTimeout(() => {
-        if (trackRef.current) trackRef.current.style.transition = '';
-      }, 230);
+        if (trackRef.current) {
+          trackRef.current.style.transition = '';
+        }
+      }, 330);
     }
 
-    startXRef.current = null;
-    deltaXRef.current = 0;
+    // Animate indicators to final position
+    if (dotsContainerRef.current) {
+      const dotWidth = 14;
+      const centerOffset = (maxVisibleDots / 2) - 0.5;
+      let offset = (targetIndex - centerOffset) * dotWidth;
+      const minOffset = 0;
+      const maxOffset = Math.max(0, (totalImages - maxVisibleDots) * dotWidth);
+      offset = Math.max(minOffset, Math.min(maxOffset, offset));
+
+      dotsContainerRef.current.style.transition = 'transform 320ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+      dotsContainerRef.current.style.transform = `translateX(${-offset}px)`;
+    }
+
+    // Update index state
+    if (targetIndex !== index) {
+      setIndex(targetIndex);
+    }
+
+    // Reset refs
+    velocityRef.current = 0;
+    progressRef.current = targetIndex;
   }
 
   // Update transform when index changes (non-drag)
   useEffect(() => {
     if (!trackRef.current) return;
     trackRef.current.style.transform = `translateX(${-index * 100}%)`;
-  }, [index]);
+
+    // Sync indicators position
+    if (dotsContainerRef.current) {
+      const dotWidth = 14;
+      const centerOffset = (maxVisibleDots / 2) - 0.5;
+      let offset = (index - centerOffset) * dotWidth;
+      const minOffset = 0;
+      const maxOffset = Math.max(0, (totalImages - maxVisibleDots) * dotWidth);
+      offset = Math.max(minOffset, Math.min(maxOffset, offset));
+
+      dotsContainerRef.current.style.transform = `translateX(${-offset}px)`;
+    }
+
+    progressRef.current = index;
+  }, [index, maxVisibleDots, totalImages]);
 
   // Check if product is in favorites
   useEffect(() => {
@@ -225,7 +342,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
           ))}
         </div>
 
-        {/* Dots indicator - max 4 visible with sliding window */}
+        {/* Parallax scrolling indicators - viewport window pattern */}
         {images.length > 1 && (
           <div
             style={{
@@ -233,31 +350,41 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
               left: '50%',
               transform: 'translateX(-50%)',
               bottom: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
+              width: `${maxVisibleDots * 14}px`, // Fixed viewport window
+              overflow: 'hidden',
             }}
           >
-            {visibleDots.map((_, visibleIndex) => {
-              const actualIndex = visibleDotStartIndex + visibleIndex;
-              const isActive = actualIndex === index;
-              const isPassed = actualIndex < index;
+            {/* Container with all dots - moves inside viewport */}
+            <div
+              ref={dotsContainerRef}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                willChange: 'transform',
+              }}
+            >
+              {images.map((_, i) => {
+                const isActive = i === index;
+                const isPassed = i < index;
 
-              return (
-                <span
-                  key={actualIndex}
-                  style={{
-                    width: isActive ? '8px' : '6px',
-                    height: isActive ? '8px' : '6px',
-                    backgroundColor: '#ffffff',
-                    opacity: isPassed ? 0.8 : (isActive ? 1 : 0.5),
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                    borderRadius: '50%',
-                    transition: 'all 150ms',
-                  }}
-                />
-              );
-            })}
+                return (
+                  <span
+                    key={i}
+                    style={{
+                      width: isActive ? '8px' : '6px',
+                      height: isActive ? '8px' : '6px',
+                      backgroundColor: '#ffffff',
+                      opacity: isPassed ? 0.8 : (isActive ? 1 : 0.5),
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                      transition: 'all 320ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                    }}
+                  />
+                );
+              })}
+            </div>
           </div>
         )}
 
