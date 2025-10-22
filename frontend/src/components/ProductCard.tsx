@@ -102,13 +102,30 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       lastXRef.current = currentXRef.current;
       lastTimeRef.current = now;
 
-      // Update fractional progress for smooth indicators
-      progressRef.current = index + (-deltaX / widthRef.current);
+      // Calculate target position with boundaries
+      let targetProgress = index + (-deltaX / widthRef.current);
+
+      // Clamp to valid range [0, totalImages - 1]
+      targetProgress = Math.max(0, Math.min(totalImages - 1, targetProgress));
+
+      // Apply resistance at boundaries (rubber band effect)
+      let clampedDeltaX = deltaX;
+      const maxIndex = images.length - 1;
+
+      if (index === 0 && deltaX > 0) {
+        // At first image, swiping right - add resistance
+        clampedDeltaX = deltaX * 0.3;
+      } else if (index === maxIndex && deltaX < 0) {
+        // At last image, swiping left - add resistance
+        clampedDeltaX = deltaX * 0.3;
+      }
+
+      progressRef.current = targetProgress;
 
       // Update transform - no state change, just visual
       requestAnimationFrame(() => {
         if (trackRef.current) {
-          const percent = (deltaX / widthRef.current) * 100;
+          const percent = (clampedDeltaX / widthRef.current) * 100;
           trackRef.current.style.transform = `translateX(${-index * 100 + percent}%)`;
         }
 
@@ -176,7 +193,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       }
     }
 
-    // Apply spring animation with easing
+    // Apply spring animation with easing - always snap to a valid index
     if (trackRef.current) {
       trackRef.current.style.transition = 'transform 320ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
       trackRef.current.style.transform = `translateX(${-targetIndex * 100}%)`;
@@ -186,6 +203,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
           trackRef.current.style.transition = '';
         }
       }, 330);
+    } else {
+      // Fallback - ensure transform is set even if ref is null
+      requestAnimationFrame(() => {
+        if (trackRef.current) {
+          trackRef.current.style.transform = `translateX(${-targetIndex * 100}%)`;
+        }
+      });
     }
 
     // Animate indicators to final position
