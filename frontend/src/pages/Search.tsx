@@ -137,7 +137,7 @@ const Search: React.FC = () => {
                 borderRadius: '8px',
                 backgroundColor: '#f3f4f6',
                 fontSize: '15px',
-                color: 'var(--text)',
+                color: '#111827',
                 outline: 'none'
               }}
             />
