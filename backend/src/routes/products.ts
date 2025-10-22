@@ -63,40 +63,6 @@ router.get('/', optionalAuth, [
       isAdmin: req.user?.role === 'admin'
     });
 
-    // Add case-insensitive search if provided
-    if (search && typeof search === 'string') {
-      const searchLower = search.toLowerCase();
-      where.OR = [
-        {
-          title: {
-            contains: searchLower,
-            mode: 'insensitive' as any // TypeScript workaround - will be ignored by SQLite
-          }
-        },
-        {
-          brand: {
-            contains: searchLower,
-            mode: 'insensitive' as any
-          }
-        }
-      ];
-
-      // For SQLite, we need raw SQL. Let's use a workaround with Prisma:
-      // Add raw where condition for case-insensitive search
-      const rawSearch = `%${searchLower}%`;
-      (where as any).OR = undefined; // Remove the OR condition
-
-      // Use raw SQL condition
-      (where as any).AND = [
-        ...(where.AND || []),
-        {
-          OR: [
-            prisma.$queryRaw`LOWER(title) LIKE ${rawSearch}`,
-            prisma.$queryRaw`LOWER(brand) LIKE ${rawSearch}`
-          ]
-        }
-      ];
-    }
 
     // Compute orderBy based on sort parameter
     let orderBy: any = { createdAt: 'desc' }; // default
