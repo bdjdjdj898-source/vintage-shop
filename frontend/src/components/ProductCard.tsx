@@ -474,8 +474,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
 
   return (
     <article
-      className="overflow-hidden bg-card transition-all duration-150"
+      className="overflow-hidden transition-all duration-150"
       style={{
+        backgroundColor: 'var(--card)',
         borderRadius: '16px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       }}
@@ -619,7 +620,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       {/* Meta */}
       <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'center', textAlign: 'center', minHeight: '110px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-          {brand && <span className="text-xs text-muted font-medium">{brand}</span>}
+          {brand && <span className="text-xs font-medium" style={{ color: 'var(--muted)' }}>{brand}</span>}
           <h3 className="line-clamp-2" style={{ fontSize: '14px', fontWeight: 400, color: 'var(--text)', lineHeight: '1.5', margin: 0 }}>
             {title}
           </h3>

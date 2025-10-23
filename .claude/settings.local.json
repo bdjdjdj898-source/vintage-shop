@@ -10,7 +10,8 @@
       "Bash(scp \"c:\\Users\\Матвишь\\my-vintage-shop\\add-more-photos.js\" root@185.177.216.22:/var/www/my-vintage-shop/)",
       "Read(//c/Users/Матвишь/**)",
       "Bash(git revert 97166f9 --no-edit)",
-      "Bash(git revert f0255ce --no-edit)"
+      "Bash(git revert f0255ce --no-edit)",
+      "Bash(npm run build)"
     ],
     "deny": [],
     "ask": []
