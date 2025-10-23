@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { requireAuth } from '../middleware/telegramAuth';
+import { softAuth } from '../middleware/softTelegramAuth';
 import { ApiResponse } from '../utils/responses';
 import { prisma } from '../lib/prisma';
 import { getAuthenticatedUser } from '../types/auth';
@@ -7,7 +7,7 @@ import { getAuthenticatedUser } from '../types/auth';
 const router = Router();
 
 // GET /api/me - получить профиль текущего пользователя
-router.get('/', requireAuth, async (req: Request, res: Response) => {
+router.get('/', softAuth, async (req: Request, res: Response) => {
   try {
     const authenticatedUser = getAuthenticatedUser(req.user);
 

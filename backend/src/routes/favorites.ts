@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { param } from 'express-validator';
 import { prisma } from '../lib/prisma';
-import { requireAuth } from '../middleware/telegramAuth';
+import { softAuth } from '../middleware/softTelegramAuth';
 import { validateRequest } from '../middleware/validateRequest';
 import { ApiResponse } from '../utils/responses';
 import { toStringArray } from '../utils/normalize';
@@ -11,7 +11,7 @@ import logger from '../lib/logger';
 const router = Router();
 
 // GET /api/favorites - получить избранные товары пользователя
-router.get('/', requireAuth, async (req: Request, res: Response) => {
+router.get('/', softAuth, async (req: Request, res: Response) => {
   try {
     const user = getAuthenticatedUser(req.user);
     const userId = user.id;
@@ -64,7 +64,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 });
 
 // POST /api/favorites/:productId - добавить товар в избранное
-router.post('/:productId', requireAuth, [
+router.post('/:productId', softAuth, [
   param('productId').isInt({ min: 1 }).toInt(),
   validateRequest
 ], async (req: Request, res: Response) => {
@@ -130,7 +130,7 @@ router.post('/:productId', requireAuth, [
 });
 
 // DELETE /api/favorites/:productId - удалить товар из избранного
-router.delete('/:productId', requireAuth, [
+router.delete('/:productId', softAuth, [
   param('productId').isInt({ min: 1 }).toInt(),
   validateRequest
 ], async (req: Request, res: Response) => {
