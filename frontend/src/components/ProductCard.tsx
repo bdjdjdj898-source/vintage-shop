@@ -44,15 +44,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
   const suppressClickRef = useRef<boolean>(false); // Prevent click after drag
 
   // Helper: update visual transforms from progress
-  const updateTransforms = (progress: number, isDragging: boolean = false) => {
+  const updateTransforms = (targetIndex: number, dragOffsetPercent: number = 0) => {
     if (!trackRef.current || !dotsContainerRef.current) return;
 
-    // Track transform - CRITICAL: each slide is 100% of viewport width
-    // So we need translateX(-index * 100%) where index is the current slide
-    // During drag, progress is fractional (e.g., 1.5), so we use it directly
-    // But we need to account for the fact that slides are positioned at index * 100%
-    const trackOffset = progress * 100;
+    // Track transform - CRITICAL FIX:
+    // Track is flex with items that are each 100% width
+    // So track's real width = totalImages * 100%
+    // We position at -index * 100% (each slide position)
+    // During drag, add dragOffsetPercent to show fractional movement
+    const trackOffset = targetIndex * 100 + dragOffsetPercent;
     trackRef.current.style.transform = `translateX(${-trackOffset}%)`;
+
+    // Calculate effective progress for dots (includes drag offset)
+    const effectiveProgress = targetIndex + (dragOffsetPercent / 100);
 
     // Windowed parallax for indicators (pablo.msk style)
     // The dots container only starts scrolling when active dot would leave the 4-dot viewport
@@ -66,9 +70,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       const windowStart = halfWindow - 0.5;
       const windowEnd = totalImages - halfWindow - 0.5;
 
-      if (progress > windowStart) {
+      if (effectiveProgress > windowStart) {
         // Apply parallax slowdown coefficient (0.6 = 60% speed vs track)
-        const scrollProgress = Math.min(progress - windowStart, windowEnd - windowStart);
+        const scrollProgress = Math.min(effectiveProgress - windowStart, windowEnd - windowStart);
         dotsOffset = scrollProgress * dotWidth * 0.6; // Parallax coefficient
       }
 
@@ -180,33 +184,48 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       lastXRef.current = currentXRef.current;
       lastTimeRef.current = now;
 
-      // Calculate raw progress from drag distance
-      let rawDelta = -deltaX / widthRef.current;
-      let targetProgress = index + rawDelta;
+      // Calculate drag offset as percentage of viewport width
+      // dragOffsetPercent represents how far we've dragged relative to current slide
+      let dragOffsetPercent = (-deltaX / widthRef.current) * 100;
 
-      // Apply rubber band resistance at boundaries
+      // Calculate target index and apply rubber band at boundaries
       const maxIndex = totalImages - 1;
-      if (targetProgress < 0) {
-        // Beyond first image - apply resistance
-        const excess = -targetProgress;
-        targetProgress = -Math.pow(excess, 0.7) * 0.4; // Non-linear resistance
-      } else if (targetProgress > maxIndex) {
-        // Beyond last image - apply resistance
-        const excess = targetProgress - maxIndex;
-        targetProgress = maxIndex + Math.pow(excess, 0.7) * 0.4;
+      let targetIndex = index;
+      let effectiveDragPercent = dragOffsetPercent;
+
+      // Determine target index based on drag direction
+      if (dragOffsetPercent > 50 && index > 0) {
+        // Dragging right past 50% - go to previous slide
+        targetIndex = index - 1;
+        effectiveDragPercent = dragOffsetPercent - 100; // Relative to new target
+      } else if (dragOffsetPercent < -50 && index < maxIndex) {
+        // Dragging left past 50% - go to next slide
+        targetIndex = index + 1;
+        effectiveDragPercent = dragOffsetPercent + 100; // Relative to new target
       }
 
-      // Store as single source of truth
-      progressRef.current = targetProgress;
+      // Apply rubber band resistance at boundaries
+      if (index === 0 && dragOffsetPercent > 0) {
+        // At first image, dragging right - apply resistance
+        const excess = dragOffsetPercent / 100;
+        effectiveDragPercent = Math.pow(excess, 0.7) * 40; // Non-linear resistance (40% max)
+      } else if (index === maxIndex && dragOffsetPercent < 0) {
+        // At last image, dragging left - apply resistance
+        const excess = -dragOffsetPercent / 100;
+        effectiveDragPercent = -Math.pow(excess, 0.7) * 40;
+      }
+
+      // Store progress for physics calculations
+      progressRef.current = index + (effectiveDragPercent / 100);
 
       // Deduplicate rAF: cancel previous frame request
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current);
       }
 
-      // Update all visuals from progress
+      // Update all visuals from current index + drag offset
       rafIdRef.current = requestAnimationFrame(() => {
-        updateTransforms(targetProgress);
+        updateTransforms(index, effectiveDragPercent);
         rafIdRef.current = null;
       });
     }
@@ -319,7 +338,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     }
 
     // Now apply the transform - transition will animate it
-    updateTransforms(targetIndex, false);
+    // No drag offset, animate to exact index position
+    updateTransforms(targetIndex, 0);
 
     // Use transitionend listener instead of setTimeout for reliability
     const handleTransitionEnd = () => {
@@ -378,7 +398,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       void trackRef.current.offsetHeight;
     }
 
-    updateTransforms(targetIndex, false);
+    updateTransforms(targetIndex, 0);
 
     // Use transitionend listener
     const handleTransitionEnd = () => {
