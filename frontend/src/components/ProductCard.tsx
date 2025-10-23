@@ -450,19 +450,26 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
   // Check if product is in favorites
   useEffect(() => {
     if (!user) {
+      console.log(`📌 ProductCard ${id}: нет пользователя, isFavorite = false`);
       setIsFavorite(false);
       return;
     }
 
     const checkFavorite = async () => {
       try {
+        console.log(`🔍 ProductCard ${id}: проверяем избранное пользователя`);
         const response = await apiFetch('/api/favorites');
+        console.log(`📦 ProductCard ${id}: получен ответ от /api/favorites:`, response);
         if (response.success) {
           const favoriteIds = response.data.map((item: Product) => item.id);
-          setIsFavorite(favoriteIds.includes(id));
+          const isInFavorites = favoriteIds.includes(id);
+          console.log(`✅ ProductCard ${id}: товар ${isInFavorites ? 'находится' : 'не находится'} в избранном`);
+          setIsFavorite(isInFavorites);
         }
-      } catch (error) {
-        console.error('Error checking favorite:', error);
+      } catch (error: any) {
+        console.error(`❌ ProductCard ${id}: ошибка при проверке избранного:`, error);
+        console.error('Статус:', error.status);
+        console.error('Сообщение:', error.message);
       }
     };
 
@@ -473,6 +480,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     e.stopPropagation();
 
     if (!user) {
+      console.log('❌ Нет пользователя, перенаправляем на профиль');
       navigate('/profile');
       return;
     }
@@ -481,25 +489,44 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
 
     try {
       setIsFavoriteLoading(true);
+      console.log(`🔄 ${isFavorite ? 'Удаляем' : 'Добавляем'} товар ${id} ${isFavorite ? 'из' : 'в'} избранное`);
 
       if (isFavorite) {
         // Remove from favorites
-        await apiFetch(`/api/favorites/${id}`, {
+        const response = await apiFetch(`/api/favorites/${id}`, {
           method: 'DELETE'
         });
+        console.log('✅ Товар удален из избранного:', response);
         setIsFavorite(false);
         if (onFavoriteChange) {
           onFavoriteChange(id);
         }
       } else {
         // Add to favorites
-        await apiFetch(`/api/favorites/${id}`, {
+        const response = await apiFetch(`/api/favorites/${id}`, {
           method: 'POST'
         });
+        console.log('✅ Товар добавлен в избранное:', response);
         setIsFavorite(true);
       }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
+    } catch (error: any) {
+      console.error('❌ Ошибка при изменении избранного:', error);
+      console.error('Статус:', error.status);
+      console.error('Код:', error.code);
+      console.error('Сообщение:', error.message);
+      console.error('Детали:', error.details);
+
+      // Show error message to user
+      if (error.status === 401) {
+        alert('Требуется авторизация через Telegram');
+        navigate('/profile');
+      } else if (error.status === 404) {
+        alert('Товар не найден');
+      } else if (error.message) {
+        alert(`Ошибка: ${error.message}`);
+      } else {
+        alert('Произошла ошибка при добавлении в избранное');
+      }
     } finally {
       setIsFavoriteLoading(false);
     }
