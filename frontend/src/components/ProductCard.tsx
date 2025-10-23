@@ -44,10 +44,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
   const suppressClickRef = useRef<boolean>(false); // Prevent click after drag
 
   // Helper: update visual transforms from progress
-  const updateTransforms = (progress: number) => {
+  const updateTransforms = (progress: number, isDragging: boolean = false) => {
     if (!trackRef.current || !dotsContainerRef.current) return;
 
-    // Track transform
+    // Track transform - CRITICAL: each slide is 100% of viewport width
+    // So we need translateX(-index * 100%) where index is the current slide
+    // During drag, progress is fractional (e.g., 1.5), so we use it directly
+    // But we need to account for the fact that slides are positioned at index * 100%
     const trackOffset = progress * 100;
     trackRef.current.style.transform = `translateX(${-trackOffset}%)`;
 
@@ -91,11 +94,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     }
 
     // CRITICAL: Cancel transitions immediately on touch
-    el.style.transition = '';
+    el.style.transition = 'none';
     if (dotsContainerRef.current) {
-      dotsContainerRef.current.style.transition = '';
+      dotsContainerRef.current.style.transition = 'none';
     }
 
+    // Force reflow to ensure transition is removed before drag starts
+    void el.offsetHeight;
+
+    // Recalculate width on every drag start (handles dynamic layout changes)
     widthRef.current = el.clientWidth;
     startXRef.current = e.clientX;
     startYRef.current = e.clientY;
@@ -287,6 +294,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     // Spring-like easing with slight overshoot (pablo.msk style)
     const springEasing = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
 
+    // Update state first
+    if (targetIndex !== index) {
+      setIndex(targetIndex);
+    }
+
+    // Update progress
+    progressRef.current = targetIndex;
+
     // Apply smooth spring animation to track
     if (trackRef.current) {
       trackRef.current.style.transition = `transform ${duration}ms ${springEasing}`;
@@ -298,19 +313,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       dotsContainerRef.current.style.transition = `transform ${dotsDuration}ms ${springEasing}`;
     }
 
-    // Update to target position
-    progressRef.current = targetIndex;
-    updateTransforms(targetIndex);
-
-    // Update state
-    if (targetIndex !== index) {
-      setIndex(targetIndex);
+    // Force reflow before applying transform (ensures transition is active)
+    if (trackRef.current) {
+      void trackRef.current.offsetHeight;
     }
+
+    // Now apply the transform - transition will animate it
+    updateTransforms(targetIndex, false);
 
     // Use transitionend listener instead of setTimeout for reliability
     const handleTransitionEnd = () => {
-      if (trackRef.current) trackRef.current.style.transition = '';
-      if (dotsContainerRef.current) dotsContainerRef.current.style.transition = '';
+      if (trackRef.current) trackRef.current.style.transition = 'none';
+      if (dotsContainerRef.current) dotsContainerRef.current.style.transition = 'none';
       animationTimeoutRef.current = null;
     };
 
@@ -342,6 +356,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     gestureDetectedRef.current = null;
     activePointerIdRef.current = null;
 
+    if (targetIndex !== index) {
+      setIndex(targetIndex);
+    }
+
+    progressRef.current = targetIndex;
+
     const springEasing = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
 
     // Animate to nearest position
@@ -353,17 +373,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       dotsContainerRef.current.style.transition = `transform ${dotsDuration}ms ${springEasing}`;
     }
 
-    progressRef.current = targetIndex;
-    updateTransforms(targetIndex);
-
-    if (targetIndex !== index) {
-      setIndex(targetIndex);
+    // Force reflow
+    if (trackRef.current) {
+      void trackRef.current.offsetHeight;
     }
+
+    updateTransforms(targetIndex, false);
 
     // Use transitionend listener
     const handleTransitionEnd = () => {
-      if (trackRef.current) trackRef.current.style.transition = '';
-      if (dotsContainerRef.current) dotsContainerRef.current.style.transition = '';
+      if (trackRef.current) trackRef.current.style.transition = 'none';
+      if (dotsContainerRef.current) dotsContainerRef.current.style.transition = 'none';
       animationTimeoutRef.current = null;
     };
 
