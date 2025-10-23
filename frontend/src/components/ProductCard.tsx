@@ -281,11 +281,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
         {/* Track */}
         <div
           ref={trackRef}
-          className="flex h-full w-full"
-          style={{ transform: `translateX(${-index * 100}%)` }}
+          className="flex h-full"
+          style={{
+            width: `${images.length * 100}%`,
+            transform: `translateX(${-index * 100}%)`,
+            willChange: 'transform'
+          }}
         >
           {images.map((src, i) => (
-            <div key={i} className="flex-shrink-0 w-full h-full">
+            <div
+              key={i}
+              className="flex-shrink-0 h-full"
+              style={{ width: `${100 / images.length}%` }}
+            >
               <img
                 src={src}
                 loading="lazy"
