@@ -38,6 +38,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
   const gestureDetectedRef = useRef<'horizontal' | 'vertical' | null>(null);
   const widthRef = useRef<number>(0);
   const progressRef = useRef<number>(0); // Single source of truth for all movement
+  const activePointerIdRef = useRef<number | null>(null); // Multi-touch protection
+  const rafIdRef = useRef<number | null>(null); // Deduplicate rAF
+  const animationTimeoutRef = useRef<number | null>(null); // Track pending timeout
+  const suppressClickRef = useRef<boolean>(false); // Prevent click after drag
 
   // Helper: update visual transforms from progress
   const updateTransforms = (progress: number) => {
@@ -47,13 +51,28 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     const trackOffset = progress * 100;
     trackRef.current.style.transform = `translateX(${-trackOffset}%)`;
 
-    // Indicators transform (parallax with 4-dot window)
+    // Windowed parallax for indicators (pablo.msk style)
+    // The dots container only starts scrolling when active dot would leave the 4-dot viewport
     const dotWidth = 14;
-    const centerOffset = (maxVisibleDots / 2) - 0.5;
-    let dotsOffset = (progress - centerOffset) * dotWidth;
-    const minOffset = 0;
-    const maxOffset = Math.max(0, (totalImages - maxVisibleDots) * dotWidth);
-    dotsOffset = Math.max(minOffset, Math.min(maxOffset, dotsOffset));
+    const halfWindow = maxVisibleDots / 2;
+
+    // Calculate when container should start moving
+    let dotsOffset = 0;
+    if (totalImages > maxVisibleDots) {
+      // Container starts moving when progress exceeds window bounds
+      const windowStart = halfWindow - 0.5;
+      const windowEnd = totalImages - halfWindow - 0.5;
+
+      if (progress > windowStart) {
+        // Apply parallax slowdown coefficient (0.6 = 60% speed vs track)
+        const scrollProgress = Math.min(progress - windowStart, windowEnd - windowStart);
+        dotsOffset = scrollProgress * dotWidth * 0.6; // Parallax coefficient
+      }
+
+      // Clamp to valid range
+      const maxOffset = (totalImages - maxVisibleDots) * dotWidth;
+      dotsOffset = Math.max(0, Math.min(maxOffset, dotsOffset));
+    }
 
     dotsContainerRef.current.style.transform = `translateX(${-dotsOffset}px)`;
   };
@@ -61,6 +80,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
   function handlePointerDown(e: React.PointerEvent) {
     const el = trackRef.current;
     if (!el) return;
+
+    // Multi-touch protection: ignore if already dragging with another pointer
+    if (isDraggingRef.current && activePointerIdRef.current !== null) return;
+
+    // Cancel any pending animation timeouts from previous drag
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = null;
+    }
 
     // CRITICAL: Cancel transitions immediately on touch
     el.style.transition = '';
@@ -78,13 +106,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     velocityRef.current = 0;
     isDraggingRef.current = true;
     gestureDetectedRef.current = null;
+    activePointerIdRef.current = e.pointerId;
     progressRef.current = index; // Initialize from current index
 
-    (e.target as Element).setPointerCapture(e.pointerId);
+    try {
+      (e.target as Element).setPointerCapture(e.pointerId);
+    } catch (err) {
+      // Capture might fail on some browsers
+      console.warn('Failed to set pointer capture:', err);
+    }
   }
 
   function handlePointerMove(e: React.PointerEvent) {
     if (!isDraggingRef.current || !trackRef.current) return;
+
+    // Ignore events from other pointers
+    if (e.pointerId !== activePointerIdRef.current) return;
 
     currentXRef.current = e.clientX;
     currentYRef.current = e.clientY;
@@ -125,9 +162,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       // Calculate velocity (pixels per second, normalized)
       const now = Date.now();
       const dt = now - lastTimeRef.current;
-      if (dt > 0) {
+      // Filter noisy measurements on high-refresh displays (>60Hz)
+      if (dt > 16) {
         const deltaMove = currentXRef.current - lastXRef.current;
-        velocityRef.current = (deltaMove / dt) * 1000; // Convert to px/sec
+        const instantVelocity = (deltaMove / dt) * 1000; // Convert to px/sec
+
+        // Apply EMA (Exponential Moving Average) smoothing - alpha = 0.3
+        velocityRef.current = 0.3 * instantVelocity + 0.7 * velocityRef.current;
       }
       lastXRef.current = currentXRef.current;
       lastTimeRef.current = now;
@@ -151,9 +192,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       // Store as single source of truth
       progressRef.current = targetProgress;
 
+      // Deduplicate rAF: cancel previous frame request
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+
       // Update all visuals from progress
-      requestAnimationFrame(() => {
+      rafIdRef.current = requestAnimationFrame(() => {
         updateTransforms(targetProgress);
+        rafIdRef.current = null;
       });
     }
   }
@@ -161,16 +208,28 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
   function handlePointerUp(e: React.PointerEvent) {
     if (!isDraggingRef.current) return;
 
+    // Ignore events from other pointers
+    if (e.pointerId !== activePointerIdRef.current) return;
+
     const deltaX = currentXRef.current - startXRef.current;
     const velocity = velocityRef.current; // px/sec
     const wasHorizontalGesture = gestureDetectedRef.current === 'horizontal';
 
     isDraggingRef.current = false;
     gestureDetectedRef.current = null;
+    activePointerIdRef.current = null;
+
+    // Release pointer capture
+    try {
+      (e.target as Element).releasePointerCapture(e.pointerId);
+    } catch (err) {
+      // Ignore if capture was already released
+    }
 
     // If not horizontal gesture, treat as tap
     if (!wasHorizontalGesture) {
       if (Math.abs(deltaX) < 6) {
+        suppressClickRef.current = false; // Allow click
         if (onClick) {
           onClick(product);
         } else {
@@ -178,6 +237,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
         }
       }
       return;
+    }
+
+    // Horizontal gesture - suppress click if dragged significantly
+    if (Math.abs(deltaX) > 10) {
+      suppressClickRef.current = true;
+      setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 300);
     }
 
     // Calculate target index with physics-based inertia
@@ -217,12 +284,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     const distance = Math.abs(targetIndex - progressRef.current);
     const duration = Math.min(320, Math.max(180, distance * 280)); // 180-320ms
 
-    // Apply smooth spring animation to both track and indicators
+    // Spring-like easing with slight overshoot (pablo.msk style)
+    const springEasing = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+    // Apply smooth spring animation to track
     if (trackRef.current) {
-      trackRef.current.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+      trackRef.current.style.transition = `transform ${duration}ms ${springEasing}`;
     }
+
+    // Indicators animate slower for parallax depth effect (1.2x slower)
     if (dotsContainerRef.current) {
-      dotsContainerRef.current.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+      const dotsDuration = Math.round(duration * 1.2);
+      dotsContainerRef.current.style.transition = `transform ${dotsDuration}ms ${springEasing}`;
     }
 
     // Update to target position
@@ -234,7 +307,73 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       setIndex(targetIndex);
     }
 
+    // Use transitionend listener instead of setTimeout for reliability
+    const handleTransitionEnd = () => {
+      if (trackRef.current) trackRef.current.style.transition = '';
+      if (dotsContainerRef.current) dotsContainerRef.current.style.transition = '';
+      animationTimeoutRef.current = null;
+    };
+
+    // Listen for transition end on track (primary animation)
+    if (trackRef.current) {
+      trackRef.current.addEventListener('transitionend', handleTransitionEnd, { once: true });
+    }
+
+    // Fallback timeout in case transitionend doesn't fire (safety net)
+    const dotsDuration = Math.round(duration * 1.2);
+    animationTimeoutRef.current = window.setTimeout(() => {
+      handleTransitionEnd();
+    }, dotsDuration + 50);
+
     // Reset refs
+    velocityRef.current = 0;
+  }
+
+  // Handle pointer cancel (incoming call, tab switch, OS gesture)
+  function handlePointerCancel(e: React.PointerEvent) {
+    if (!isDraggingRef.current) return;
+    if (e.pointerId !== activePointerIdRef.current) return;
+
+    // Snap to nearest index (don't complete the gesture)
+    const nearestIndex = Math.round(progressRef.current);
+    const targetIndex = Math.max(0, Math.min(totalImages - 1, nearestIndex));
+
+    isDraggingRef.current = false;
+    gestureDetectedRef.current = null;
+    activePointerIdRef.current = null;
+
+    const springEasing = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+    // Animate to nearest position
+    if (trackRef.current) {
+      trackRef.current.style.transition = `transform 200ms ${springEasing}`;
+    }
+    if (dotsContainerRef.current) {
+      const dotsDuration = 240; // 1.2x slower
+      dotsContainerRef.current.style.transition = `transform ${dotsDuration}ms ${springEasing}`;
+    }
+
+    progressRef.current = targetIndex;
+    updateTransforms(targetIndex);
+
+    if (targetIndex !== index) {
+      setIndex(targetIndex);
+    }
+
+    // Use transitionend listener
+    const handleTransitionEnd = () => {
+      if (trackRef.current) trackRef.current.style.transition = '';
+      if (dotsContainerRef.current) dotsContainerRef.current.style.transition = '';
+      animationTimeoutRef.current = null;
+    };
+
+    if (trackRef.current) {
+      trackRef.current.addEventListener('transitionend', handleTransitionEnd, { once: true });
+    }
+
+    // Fallback timeout
+    animationTimeoutRef.current = window.setTimeout(handleTransitionEnd, 290);
+
     velocityRef.current = 0;
   }
 
@@ -247,6 +386,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       trackRef.current.style.transform = `translateX(${-index * 100}%)`;
       progressRef.current = index;
     }
+  }, [index]);
+
+  // Handle window resize / orientation change
+  useEffect(() => {
+    const handleResize = () => {
+      if (!trackRef.current || isDraggingRef.current) return;
+
+      // Update width and recalculate transforms
+      widthRef.current = trackRef.current.clientWidth;
+      updateTransforms(index);
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, [index]);
 
   // Check if product is in favorites
@@ -331,17 +489,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       }}
     >
       <div
-        className="relative w-full overflow-hidden touch-pan-y"
-        style={{ aspectRatio: '4 / 5', borderRadius: '12px' }}
+        className="relative w-full overflow-hidden"
+        style={{ aspectRatio: '4 / 5', borderRadius: '12px', touchAction: 'pan-y' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onLostPointerCapture={handlePointerCancel}
       >
         {/* Track */}
         <div
           ref={trackRef}
           className="flex h-full w-full"
-          style={{ transform: `translateX(${-index * 100}%)` }}
+          style={{
+            transform: `translateX(${-index * 100}%)`,
+            willChange: 'transform',
+            transitionProperty: 'transform'
+          }}
         >
           {images.map((src, i) => (
             <div key={i} className="flex-shrink-0 w-full h-full">
@@ -380,6 +544,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
                 alignItems: 'center',
                 gap: '6px',
                 willChange: 'transform',
+                transitionProperty: 'transform'
               }}
             >
               {images.map((_, i) => {
