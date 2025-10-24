@@ -27,22 +27,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
   const maxVisibleDots = 4;
   const totalImages = images.length;
 
-  // Swipe state with gesture detection and physics
+  // Swipe state - discrete model (1 swipe = ±1 index)
   const startXRef = useRef<number>(0);
   const startYRef = useRef<number>(0);
   const currentXRef = useRef<number>(0);
   const currentYRef = useRef<number>(0);
-  const velocityRef = useRef<number>(0); // px/sec (normalized)
-  const lastXRef = useRef<number>(0);
-  const lastTimeRef = useRef<number>(0);
   const isDraggingRef = useRef(false);
   const gestureDetectedRef = useRef<'horizontal' | 'vertical' | null>(null);
   const widthRef = useRef<number>(0);
-  const progressRef = useRef<number>(0); // Single source of truth for all movement
-  const activePointerIdRef = useRef<number | null>(null); // Multi-touch protection
-  const rafIdRef = useRef<number | null>(null); // Deduplicate rAF
-  const animationTimeoutRef = useRef<number | null>(null); // Track pending timeout
-  const suppressClickRef = useRef<boolean>(false); // Prevent click after drag
+  const activePointerIdRef = useRef<number | null>(null);
+  const suppressClickRef = useRef<boolean>(false);
+
+  // Gesture detection thresholds
+  const MIN_SWIPE_DISTANCE = 30; // px - минимальное горизонтальное движение для свайпа
+  const HORIZONTAL_RATIO = 2.5; // |Δx| / |Δy| > 2.5 для горизонтального свайпа
+  const SWIPE_DURATION = 250; // ms - длительность анимации перелистывания
+  const PARALLAX_DURATION = 300; // ms - длительность анимации индикаторов (1.2x slower)
+  const SPRING_EASING = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
 
   // Helper: update visual transforms from progress
   const updateTransforms = (targetIndex: number, dragOffsetPercent: number = 0) => {
@@ -464,7 +465,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
           setIsFavorite(isInFavorites);
         }
       } catch (error: any) {
-        addDebugLog(`❌ Проверка избранного: ${error.status || 'ошибка'}`, 'error');
+        addDebugLog(`❌ Ошибка проверки избранного: ${error.message || error.status}`, 'error');
       }
     };
 
@@ -511,7 +512,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       } else if (error.message) {
         addDebugLog(`❌ ${error.message}`, 'error');
       } else {
-        addDebugLog(`❌ Ошибка ${error.status || 'неизвестная'}`, 'error');
+        addDebugLog(`❌ Ошибка ${error.status}`, 'error');
       }
     } finally {
       setIsFavoriteLoading(false);

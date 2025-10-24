@@ -18,6 +18,7 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import RequireAuth from "./components/guards/RequireAuth";
 import RequireAdmin from "./components/guards/RequireAdmin";
+import DebugLog from "./components/DebugLog";
 
 function AppContent() {
   const { isLoading } = useAuth();
@@ -62,6 +63,7 @@ function AppContent() {
           <Route path="/admin/users" element={<RequireAdmin><AdminUsers /></RequireAdmin>} />
           <Route path="/admin/analytics" element={<RequireAdmin><AdminAnalytics /></RequireAdmin>} />
         </Routes>
+        <DebugLog />
       </BrowserRouter>
     </CartProvider>
     </SearchProvider>
