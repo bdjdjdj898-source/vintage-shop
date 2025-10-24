@@ -27,112 +27,92 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
   const maxVisibleDots = 4;
   const totalImages = images.length;
 
-  // Swipe state with gesture detection and physics
+  // Swipe state - DISCRETE MODEL (1 swipe = ±1 index)
   const startXRef = useRef<number>(0);
   const startYRef = useRef<number>(0);
   const currentXRef = useRef<number>(0);
   const currentYRef = useRef<number>(0);
-  const velocityRef = useRef<number>(0); // px/sec (normalized)
-  const lastXRef = useRef<number>(0);
-  const lastTimeRef = useRef<number>(0);
   const isDraggingRef = useRef(false);
   const gestureDetectedRef = useRef<'horizontal' | 'vertical' | null>(null);
   const widthRef = useRef<number>(0);
-  const progressRef = useRef<number>(0); // Single source of truth for all movement
-  const activePointerIdRef = useRef<number | null>(null); // Multi-touch protection
-  const rafIdRef = useRef<number | null>(null); // Deduplicate rAF
-  const animationTimeoutRef = useRef<number | null>(null); // Track pending timeout
-  const suppressClickRef = useRef<boolean>(false); // Prevent click after drag
+  const activePointerIdRef = useRef<number | null>(null);
+  const suppressClickRef = useRef<boolean>(false);
 
-  // Helper: update visual transforms from progress
-  const updateTransforms = (targetIndex: number, dragOffsetPercent: number = 0) => {
+  // Gesture detection thresholds
+  const MIN_SWIPE_DISTANCE = 30; // px
+  const HORIZONTAL_RATIO = 2.5; // |Δx| / |Δy|
+  const SWIPE_DURATION = 250; // ms
+  const PARALLAX_DURATION = 300; // ms (1.2x slower)
+  const SPRING_EASING = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+  // Update visuals - GPU accelerated, discrete positioning
+  const updateTransforms = (targetIndex: number, dragProgress: number = 0, animated: boolean = false) => {
     if (!trackRef.current || !dotsContainerRef.current) return;
 
-    // Track transform - CRITICAL FIX:
-    // Track is flex with items that are each 100% width
-    // So track's real width = totalImages * 100%
-    // We position at -index * 100% (each slide position)
-    // During drag, add dragOffsetPercent to show fractional movement
-    const trackOffset = targetIndex * 100 + dragOffsetPercent;
-    trackRef.current.style.transform = `translateX(${-trackOffset}%)`;
+    // Track: GPU-accelerated, always multiples of 100%
+    const trackOffset = targetIndex * 100 + dragProgress;
+    trackRef.current.style.transform = `translate3d(${-trackOffset}%, 0, 0)`;
+    trackRef.current.style.transition = animated
+      ? `transform ${SWIPE_DURATION}ms ${SPRING_EASING}`
+      : 'none';
 
-    // Calculate effective progress for dots (includes drag offset)
-    const effectiveProgress = targetIndex + (dragOffsetPercent / 100);
+    // Effective progress for dots (includes drag)
+    const effectiveProgress = targetIndex + (dragProgress / 100);
 
-    // Windowed parallax for indicators (pablo.msk style)
-    // The dots container only starts scrolling when active dot would leave the 4-dot viewport
+    // Parallax for indicators (4-dot window, 60% speed)
     const dotWidth = 14;
-    const halfWindow = maxVisibleDots / 2;
-
-    // Calculate when container should start moving
+    const gapWidth = 4;
+    const dotStep = dotWidth + gapWidth;
     let dotsOffset = 0;
+
     if (totalImages > maxVisibleDots) {
-      // Container starts moving when progress exceeds window bounds
+      const halfWindow = maxVisibleDots / 2;
       const windowStart = halfWindow - 0.5;
       const windowEnd = totalImages - halfWindow - 0.5;
 
       if (effectiveProgress > windowStart) {
-        // Apply parallax slowdown coefficient (0.6 = 60% speed vs track)
         const scrollProgress = Math.min(effectiveProgress - windowStart, windowEnd - windowStart);
-        dotsOffset = scrollProgress * dotWidth * 0.6; // Parallax coefficient
+        dotsOffset = scrollProgress * dotStep * 0.6; // Parallax: 60% speed
       }
 
-      // Clamp to valid range
-      const maxOffset = (totalImages - maxVisibleDots) * dotWidth;
+      const maxOffset = (totalImages - maxVisibleDots) * dotStep;
       dotsOffset = Math.max(0, Math.min(maxOffset, dotsOffset));
     }
 
-    dotsContainerRef.current.style.transform = `translateX(${-dotsOffset}px)`;
+    dotsContainerRef.current.style.transform = `translate3d(${-dotsOffset}px, 0, 0)`;
+    dotsContainerRef.current.style.transition = animated
+      ? `transform ${PARALLAX_DURATION}ms ${SPRING_EASING}`
+      : 'none';
   };
 
   function handlePointerDown(e: React.PointerEvent) {
-    const el = trackRef.current;
-    if (!el) return;
+    if (!trackRef.current) return;
 
-    // Multi-touch protection: ignore if already dragging with another pointer
+    // Multi-touch protection
     if (isDraggingRef.current && activePointerIdRef.current !== null) return;
 
-    // Cancel any pending animation timeouts from previous drag
-    if (animationTimeoutRef.current) {
-      clearTimeout(animationTimeoutRef.current);
-      animationTimeoutRef.current = null;
-    }
-
-    // CRITICAL: Cancel transitions immediately on touch
-    el.style.transition = 'none';
-    if (dotsContainerRef.current) {
-      dotsContainerRef.current.style.transition = 'none';
-    }
-
-    // Force reflow to ensure transition is removed before drag starts
-    void el.offsetHeight;
-
-    // Recalculate width on every drag start (handles dynamic layout changes)
-    widthRef.current = el.clientWidth;
+    // Store width and positions
+    widthRef.current = trackRef.current.clientWidth;
     startXRef.current = e.clientX;
     startYRef.current = e.clientY;
     currentXRef.current = e.clientX;
     currentYRef.current = e.clientY;
-    lastXRef.current = e.clientX;
-    lastTimeRef.current = Date.now();
-    velocityRef.current = 0;
     isDraggingRef.current = true;
     gestureDetectedRef.current = null;
     activePointerIdRef.current = e.pointerId;
-    progressRef.current = index; // Initialize from current index
+
+    // Cancel transitions immediately
+    updateTransforms(index, 0, false);
 
     try {
       (e.target as Element).setPointerCapture(e.pointerId);
     } catch (err) {
-      // Capture might fail on some browsers
-      console.warn('Failed to set pointer capture:', err);
+      // Ignore
     }
   }
 
   function handlePointerMove(e: React.PointerEvent) {
     if (!isDraggingRef.current || !trackRef.current) return;
-
-    // Ignore events from other pointers
     if (e.pointerId !== activePointerIdRef.current) return;
 
     currentXRef.current = e.clientX;
@@ -141,122 +121,65 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     const deltaX = currentXRef.current - startXRef.current;
     const deltaY = currentYRef.current - startYRef.current;
 
-    // Gesture detection - only on first significant movement
+    // Gesture detection - только один раз
     if (gestureDetectedRef.current === null) {
       const absDeltaX = Math.abs(deltaX);
       const absDeltaY = Math.abs(deltaY);
 
       if (absDeltaX > 10 || absDeltaY > 10) {
+        // Horizontal if ratio > 2.5
         const ratio = absDeltaX / Math.max(absDeltaY, 1);
-        gestureDetectedRef.current = ratio > 3 ? 'horizontal' : 'vertical';
+        gestureDetectedRef.current = ratio > HORIZONTAL_RATIO ? 'horizontal' : 'vertical';
 
-        // Only preventDefault AFTER gesture confirmed
         if (gestureDetectedRef.current === 'horizontal') {
           e.preventDefault();
           e.stopPropagation();
         }
       } else {
-        return; // Not enough movement yet
+        return; // Not enough movement
       }
     }
 
-    // Vertical gesture - allow page scroll
+    // Vertical - allow scroll
     if (gestureDetectedRef.current === 'vertical') {
       isDraggingRef.current = false;
       return;
     }
 
-    // Horizontal gesture confirmed
+    // Horizontal - update visuals
     if (gestureDetectedRef.current === 'horizontal') {
       e.preventDefault();
       e.stopPropagation();
 
-      // Calculate velocity (pixels per second, normalized)
-      const now = Date.now();
-      const dt = now - lastTimeRef.current;
-      // Filter noisy measurements on high-refresh displays (>60Hz)
-      if (dt > 16) {
-        const deltaMove = currentXRef.current - lastXRef.current;
-        const instantVelocity = (deltaMove / dt) * 1000; // Convert to px/sec
+      // Drag as percentage (-100 to +100)
+      const dragProgress = (-deltaX / widthRef.current) * 100;
 
-        // Apply EMA (Exponential Moving Average) smoothing - alpha = 0.3
-        velocityRef.current = 0.3 * instantVelocity + 0.7 * velocityRef.current;
-      }
-      lastXRef.current = currentXRef.current;
-      lastTimeRef.current = now;
-
-      // Calculate drag offset as percentage of viewport width
-      // dragOffsetPercent represents how far we've dragged relative to current slide
-      let dragOffsetPercent = (-deltaX / widthRef.current) * 100;
-
-      // Calculate target index and apply rubber band at boundaries
-      const maxIndex = totalImages - 1;
-      let targetIndex = index;
-      let effectiveDragPercent = dragOffsetPercent;
-
-      // Determine target index based on drag direction
-      if (dragOffsetPercent > 50 && index > 0) {
-        // Dragging right past 50% - go to previous slide
-        targetIndex = index - 1;
-        effectiveDragPercent = dragOffsetPercent - 100; // Relative to new target
-      } else if (dragOffsetPercent < -50 && index < maxIndex) {
-        // Dragging left past 50% - go to next slide
-        targetIndex = index + 1;
-        effectiveDragPercent = dragOffsetPercent + 100; // Relative to new target
-      }
-
-      // Apply rubber band resistance at boundaries
-      if (index === 0 && dragOffsetPercent > 0) {
-        // At first image, dragging right - apply resistance
-        const excess = dragOffsetPercent / 100;
-        effectiveDragPercent = Math.pow(excess, 0.7) * 40; // Non-linear resistance (40% max)
-      } else if (index === maxIndex && dragOffsetPercent < 0) {
-        // At last image, dragging left - apply resistance
-        const excess = -dragOffsetPercent / 100;
-        effectiveDragPercent = -Math.pow(excess, 0.7) * 40;
-      }
-
-      // Store progress for physics calculations
-      progressRef.current = index + (effectiveDragPercent / 100);
-
-      // Deduplicate rAF: cancel previous frame request
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
-
-      // Update all visuals from current index + drag offset
-      rafIdRef.current = requestAnimationFrame(() => {
-        updateTransforms(index, effectiveDragPercent);
-        rafIdRef.current = null;
-      });
+      // Update immediately (no rAF needed)
+      updateTransforms(index, dragProgress, false);
     }
   }
 
   function handlePointerUp(e: React.PointerEvent) {
     if (!isDraggingRef.current) return;
-
-    // Ignore events from other pointers
     if (e.pointerId !== activePointerIdRef.current) return;
 
     const deltaX = currentXRef.current - startXRef.current;
-    const velocity = velocityRef.current; // px/sec
     const wasHorizontalGesture = gestureDetectedRef.current === 'horizontal';
 
     isDraggingRef.current = false;
     gestureDetectedRef.current = null;
     activePointerIdRef.current = null;
 
-    // Release pointer capture
     try {
       (e.target as Element).releasePointerCapture(e.pointerId);
     } catch (err) {
-      // Ignore if capture was already released
+      // Ignore
     }
 
-    // If not horizontal gesture, treat as tap
+    // If not horizontal, treat as tap
     if (!wasHorizontalGesture) {
       if (Math.abs(deltaX) < 6) {
-        suppressClickRef.current = false; // Allow click
+        suppressClickRef.current = false;
         if (onClick) {
           onClick(product);
         } else {
@@ -266,7 +189,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       return;
     }
 
-    // Horizontal gesture - suppress click if dragged significantly
+    // Suppress click if dragged
     if (Math.abs(deltaX) > 10) {
       suppressClickRef.current = true;
       setTimeout(() => {
@@ -274,94 +197,27 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       }, 300);
     }
 
-    // Calculate target index with physics-based inertia
-    const width = widthRef.current;
-    const normalizedVelocity = velocity / width; // velocity as fraction of width per second
+    // DISCRETE MODEL: >= 30px = change index
+    const absDeltaX = Math.abs(deltaX);
+    let targetIndex = index;
 
-    // Thresholds
-    const distanceThreshold = 0.25; // 25% of width
-    const velocityThreshold = 1.2; // 1.2x width per second (fast swipe)
-
-    let targetIndex = Math.round(progressRef.current); // Start with nearest
-
-    // Strong velocity overrides position
-    if (Math.abs(normalizedVelocity) > velocityThreshold) {
-      if (normalizedVelocity < 0 && index < totalImages - 1) {
+    if (absDeltaX >= MIN_SWIPE_DISTANCE) {
+      if (deltaX < 0 && index < totalImages - 1) {
+        // Swiped left → next
         targetIndex = index + 1;
-      } else if (normalizedVelocity > 0 && index > 0) {
+      } else if (deltaX > 0 && index > 0) {
+        // Swiped right → previous
         targetIndex = index - 1;
       }
     }
-    // Otherwise check distance threshold
-    else {
-      const dragDistance = progressRef.current - index;
-      if (Math.abs(dragDistance) > distanceThreshold) {
-        if (dragDistance > 0 && index < totalImages - 1) {
-          targetIndex = index + 1;
-        } else if (dragDistance < 0 && index > 0) {
-          targetIndex = index - 1;
-        }
-      }
-    }
 
-    // Clamp to valid range
-    targetIndex = Math.max(0, Math.min(totalImages - 1, targetIndex));
-
-    // Calculate animation duration based on distance (physics-based)
-    const distance = Math.abs(targetIndex - progressRef.current);
-    const duration = Math.min(320, Math.max(180, distance * 280)); // 180-320ms
-
-    // Spring-like easing with slight overshoot (pablo.msk style)
-    const springEasing = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
-
-    // Update state first
+    // Update state if changed
     if (targetIndex !== index) {
       setIndex(targetIndex);
     }
 
-    // Update progress
-    progressRef.current = targetIndex;
-
-    // Apply smooth spring animation to track
-    if (trackRef.current) {
-      trackRef.current.style.transition = `transform ${duration}ms ${springEasing}`;
-    }
-
-    // Indicators animate slower for parallax depth effect (1.2x slower)
-    if (dotsContainerRef.current) {
-      const dotsDuration = Math.round(duration * 1.2);
-      dotsContainerRef.current.style.transition = `transform ${dotsDuration}ms ${springEasing}`;
-    }
-
-    // Force reflow before applying transform (ensures transition is active)
-    if (trackRef.current) {
-      void trackRef.current.offsetHeight;
-    }
-
-    // Now apply the transform - transition will animate it
-    // No drag offset, animate to exact index position
-    updateTransforms(targetIndex, 0);
-
-    // Use transitionend listener instead of setTimeout for reliability
-    const handleTransitionEnd = () => {
-      if (trackRef.current) trackRef.current.style.transition = 'none';
-      if (dotsContainerRef.current) dotsContainerRef.current.style.transition = 'none';
-      animationTimeoutRef.current = null;
-    };
-
-    // Listen for transition end on track (primary animation)
-    if (trackRef.current) {
-      trackRef.current.addEventListener('transitionend', handleTransitionEnd, { once: true });
-    }
-
-    // Fallback timeout in case transitionend doesn't fire (safety net)
-    const dotsDuration = Math.round(duration * 1.2);
-    animationTimeoutRef.current = window.setTimeout(() => {
-      handleTransitionEnd();
-    }, dotsDuration + 50);
-
-    // Reset refs
-    velocityRef.current = 0;
+    // Animate with spring easing
+    updateTransforms(targetIndex, 0, true);
   }
 
   // Handle pointer cancel (incoming call, tab switch, OS gesture)
@@ -369,74 +225,27 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     if (!isDraggingRef.current) return;
     if (e.pointerId !== activePointerIdRef.current) return;
 
-    // Snap to nearest index (don't complete the gesture)
-    const nearestIndex = Math.round(progressRef.current);
-    const targetIndex = Math.max(0, Math.min(totalImages - 1, nearestIndex));
-
     isDraggingRef.current = false;
     gestureDetectedRef.current = null;
     activePointerIdRef.current = null;
 
-    if (targetIndex !== index) {
-      setIndex(targetIndex);
-    }
-
-    progressRef.current = targetIndex;
-
-    const springEasing = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
-
-    // Animate to nearest position
-    if (trackRef.current) {
-      trackRef.current.style.transition = `transform 200ms ${springEasing}`;
-    }
-    if (dotsContainerRef.current) {
-      const dotsDuration = 240; // 1.2x slower
-      dotsContainerRef.current.style.transition = `transform ${dotsDuration}ms ${springEasing}`;
-    }
-
-    // Force reflow
-    if (trackRef.current) {
-      void trackRef.current.offsetHeight;
-    }
-
-    updateTransforms(targetIndex, 0);
-
-    // Use transitionend listener
-    const handleTransitionEnd = () => {
-      if (trackRef.current) trackRef.current.style.transition = 'none';
-      if (dotsContainerRef.current) dotsContainerRef.current.style.transition = 'none';
-      animationTimeoutRef.current = null;
-    };
-
-    if (trackRef.current) {
-      trackRef.current.addEventListener('transitionend', handleTransitionEnd, { once: true });
-    }
-
-    // Fallback timeout
-    animationTimeoutRef.current = window.setTimeout(handleTransitionEnd, 290);
-
-    velocityRef.current = 0;
+    // Return to current index (cancel gesture)
+    updateTransforms(index, 0, true);
   }
 
-  // Update transform when index changes (non-drag) - only on mount
+  // Set initial position on mount
   useEffect(() => {
-    if (!trackRef.current) return;
-
-    // Only set initial position, don't interfere with animations
-    if (progressRef.current === 0) {
-      trackRef.current.style.transform = `translateX(${-index * 100}%)`;
-      progressRef.current = index;
+    if (trackRef.current) {
+      updateTransforms(0, 0, false);
     }
-  }, [index]);
+  }, []);
 
   // Handle window resize / orientation change
   useEffect(() => {
     const handleResize = () => {
       if (!trackRef.current || isDraggingRef.current) return;
-
-      // Update width and recalculate transforms
       widthRef.current = trackRef.current.clientWidth;
-      updateTransforms(index);
+      updateTransforms(index, 0, false);
     };
 
     window.addEventListener('resize', handleResize);
@@ -556,9 +365,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
           ref={trackRef}
           className="flex h-full w-full"
           style={{
-            transform: `translateX(${-index * 100}%)`,
-            willChange: 'transform',
-            transitionProperty: 'transform'
+            willChange: 'transform'
           }}
         >
           {images.map((src, i) => (
