@@ -23,6 +23,8 @@ const AdminProducts: React.FC = () => {
     condition: 8,
     description: '',
     price: 0,
+    quantity: 1,
+    discount: 0,
     images: []
   });
 
@@ -97,7 +99,7 @@ const AdminProducts: React.FC = () => {
     const { name, value } = e.target;
     setNewProduct(prev => ({
       ...prev,
-      [name]: name === 'price' || name === 'condition' ? Number(value) : value
+      [name]: name === 'price' || name === 'condition' || name === 'quantity' || name === 'discount' ? Number(value) : value
     }));
   };
 
@@ -283,6 +285,8 @@ const AdminProducts: React.FC = () => {
           condition: 8,
           description: '',
           price: 0,
+          quantity: 1,
+          discount: 0,
           images: []
         });
         setUploadProgress([]);
@@ -549,7 +553,7 @@ const AdminProducts: React.FC = () => {
                       />
                     </div>
 
-                    <div className="md:col-span-2">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Цена (₽) *
                       </label>
@@ -560,6 +564,39 @@ const AdminProducts: React.FC = () => {
                         onChange={handleInputChange}
                         min="0"
                         step="0.01"
+                        required
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Количество *
+                      </label>
+                      <input
+                        type="number"
+                        name="quantity"
+                        value={newProduct.quantity}
+                        onChange={handleInputChange}
+                        min="0"
+                        step="1"
+                        required
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Скидка (%) *
+                      </label>
+                      <input
+                        type="number"
+                        name="discount"
+                        value={newProduct.discount}
+                        onChange={handleInputChange}
+                        min="0"
+                        max="100"
+                        step="1"
                         required
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
