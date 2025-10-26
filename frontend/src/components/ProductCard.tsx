@@ -6,6 +6,7 @@ import { apiFetch } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import type { Product } from '../types/api';
 import { addDebugLog } from './DebugLog';
+import { getDiscountedPrice, hasDiscount } from '../utils/product';
 
 interface ProductCardProps {
   product: Product;
@@ -485,7 +486,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
             {title}
           </h3>
         </div>
-        <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)' }}>{formatCurrency(price)}</span>
+        {/* Цена с учетом скидки */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)' }}>
+            {formatCurrency(hasDiscount(product) ? getDiscountedPrice(product) : price)}
+          </span>
+          {hasDiscount(product) && (
+            <span style={{
+              fontSize: '15px',
+              fontWeight: 400,
+              color: '#9ca3af',
+              textDecoration: 'line-through'
+            }}>
+              {formatCurrency(price)}
+            </span>
+          )}
+        </div>
       </div>
     </article>
   );

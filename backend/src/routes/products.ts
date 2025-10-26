@@ -187,6 +187,8 @@ router.post('/', requireAdmin, [
   body('price').isFloat({ min: 0 }),
   body('images').isArray({ min: 1, max: 10 }).withMessage('Количество изображений должно быть от 1 до 10'),
   body('images.*').isURL(),
+  body('quantity').isInt({ min: 0 }).withMessage('Количество должно быть >= 0'),
+  body('discount').optional().isInt({ min: 0, max: 100 }).withMessage('Скидка должна быть от 0 до 100%'),
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
@@ -199,7 +201,9 @@ router.post('/', requireAdmin, [
       condition,
       description,
       price,
-      images
+      images,
+      quantity,
+      discount
     } = req.body;
 
     // Deduplicate image URLs and stringify for database
@@ -216,7 +220,9 @@ router.post('/', requireAdmin, [
         description,
         price,
         images: stringifyJson(uniqueImages),
-        isActive: true
+        isActive: true,
+        quantity,
+        discount: discount || null
       }
     });
 
@@ -247,6 +253,8 @@ router.put('/:id', requireAdmin, [
   body('images').optional().isArray({ min: 1, max: 10 }).withMessage('Количество изображений должно быть от 1 до 10'),
   body('images.*').optional().isURL(),
   body('isActive').optional().isBoolean(),
+  body('quantity').optional().isInt({ min: 0 }).withMessage('Количество должно быть >= 0'),
+  body('discount').optional().isInt({ min: 0, max: 100 }).withMessage('Скидка должна быть от 0 до 100%'),
   validateRequest
 ], async (req: Request, res: Response) => {
   try {
@@ -264,7 +272,7 @@ router.put('/:id', requireAdmin, [
     const updateData: any = {};
     const allowedFields = [
       'title', 'brand', 'category', 'size', 'color',
-      'condition', 'description', 'price', 'isActive'
+      'condition', 'description', 'price', 'isActive', 'quantity', 'discount'
     ];
 
     // Only update provided fields

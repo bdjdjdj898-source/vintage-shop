@@ -116,9 +116,19 @@ router.post('/', [
         throw new Error('PRODUCT_UNAVAILABLE');
       }
 
-      // Вычисляем общую сумму заказа
-      const totalAmount = cart.items.reduce((sum: number, item: { product: { price: number }; quantity: number }) => {
-        return sum + (item.product.price * item.quantity);
+      // Проверяем наличие товаров на складе
+      for (const item of cart.items) {
+        if (item.quantity > item.product.quantity) {
+          throw new Error(`INSUFFICIENT_STOCK:${item.product.title}`);
+        }
+      }
+
+      // Вычисляем общую сумму заказа (с учётом скидок)
+      const totalAmount = cart.items.reduce((sum: number, item: { product: { price: number; discount: number | null }; quantity: number }) => {
+        const price = item.product.discount && item.product.discount > 0
+          ? Math.round(item.product.price * (1 - item.product.discount / 100))
+          : item.product.price;
+        return sum + (price * item.quantity);
       }, 0);
 
       // Prepare minimal Telegram data
@@ -140,28 +150,37 @@ router.post('/', [
         }
       });
 
-      // Создаем элементы заказа
+      // Создаем элементы заказа (сохраняем цену с учётом скидки)
       const orderItems = await Promise.all(
-        cart.items.map((item: { productId: number; quantity: number; product: { price: number } }) =>
-          prisma.orderItem.create({
+        cart.items.map((item: { productId: number; quantity: number; product: { price: number; discount: number | null } }) => {
+          const price = item.product.discount && item.product.discount > 0
+            ? Math.round(item.product.price * (1 - item.product.discount / 100))
+            : item.product.price;
+
+          return prisma.orderItem.create({
             data: {
               orderId: order.id,
               productId: item.productId,
               quantity: item.quantity,
-              price: item.product.price // Сохраняем цену на момент заказа
+              price // Сохраняем цену на момент заказа (с учётом скидки)
             }
-          })
-        )
+          });
+        })
       );
 
-      // Помечаем товары как недоступные (inventory management)
+      // Уменьшаем количество товаров на складе
       await Promise.all(
-        cart.items.map((item: { productId: number }) =>
-          prisma.product.update({
+        cart.items.map((item: { productId: number; quantity: number; product: { quantity: number } }) => {
+          const newQuantity = item.product.quantity - item.quantity;
+          return prisma.product.update({
             where: { id: item.productId },
-            data: { isActive: false }
-          })
-        )
+            data: {
+              quantity: newQuantity,
+              // Автоматически деактивируем товар если количество стало 0
+              isActive: newQuantity > 0 ? undefined : false
+            }
+          });
+        })
       );
 
       // Очищаем корзину
@@ -226,6 +245,14 @@ router.post('/', [
     }
     if (error instanceof Error && error.message === 'PRODUCT_UNAVAILABLE') {
       return ApiResponse.businessError(res, ErrorCode.PRODUCT_UNAVAILABLE, 'Товар больше недоступен');
+    }
+    if (error instanceof Error && error.message.startsWith('INSUFFICIENT_STOCK:')) {
+      const productTitle = error.message.split(':')[1];
+      return ApiResponse.businessError(
+        res,
+        ErrorCode.PRODUCT_UNAVAILABLE,
+        `Недостаточно товара "${productTitle}" на складе`
+      );
     }
     return ApiResponse.internalError(res, 'Ошибка сервера при создании заказа');
   }

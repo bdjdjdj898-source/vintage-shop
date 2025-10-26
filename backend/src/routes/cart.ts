@@ -102,12 +102,24 @@ router.post('/items', [
       }
     });
 
+    // Проверяем наличие товара на складе
+    const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+    const newTotalQuantity = currentQuantityInCart + quantity;
+
+    if (newTotalQuantity > product.quantity) {
+      return ApiResponse.businessError(
+        res,
+        ErrorCode.PRODUCT_UNAVAILABLE,
+        `В наличии только ${product.quantity} шт. В корзине уже ${currentQuantityInCart} шт.`
+      );
+    }
+
     let cartItem;
     if (existingItem) {
       // Увеличиваем количество
       cartItem = await prisma.cartItem.update({
         where: { id: existingItem.id },
-        data: { quantity: existingItem.quantity + quantity },
+        data: { quantity: newTotalQuantity },
         include: { product: true }
       });
     } else {
@@ -167,6 +179,15 @@ router.put('/items/:id', [
     // Проверяем, активен ли товар
     if (!cartItem.product.isActive) {
       return ApiResponse.businessError(res, ErrorCode.PRODUCT_UNAVAILABLE, 'Товар больше недоступен');
+    }
+
+    // Проверяем наличие товара на складе
+    if (quantity > cartItem.product.quantity) {
+      return ApiResponse.businessError(
+        res,
+        ErrorCode.PRODUCT_UNAVAILABLE,
+        `В наличии только ${cartItem.product.quantity} шт.`
+      );
     }
 
     // Обновляем количество

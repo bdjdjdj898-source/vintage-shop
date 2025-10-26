@@ -40,6 +40,8 @@ model Product {
   price       Float
   images      String   // JSON строка с массивом URL изображений
   isActive    Boolean  @default(true)
+  quantity    Int      @default(1)  // Количество товара на складе
+  discount    Int?     // Скидка в процентах (0-100), опционально
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

@@ -25,6 +25,8 @@ export interface Product {
   price: number;
   images: string[];
   isActive: boolean;
+  quantity: number; // Количество товара на складе
+  discount?: number; // Скидка в процентах (0-100), опционально
   createdAt: string;
   updatedAt: string;
 }
@@ -158,6 +160,8 @@ export interface CreateProductData {
   description: string;
   price: number;
   images: string[];
+  quantity: number;
+  discount?: number;
 }
 
 export interface UpdateProductData extends Partial<CreateProductData> {
