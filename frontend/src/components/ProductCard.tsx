@@ -2,8 +2,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
-import { apiFetch } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
+import { useFavorites } from '../contexts/FavoritesContext';
 import type { Product } from '../types/api';
 import { addDebugLog } from './DebugLog';
 import { getDiscountedPrice, hasDiscount } from '../utils/product';
@@ -17,9 +17,9 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteChange }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isFavorite: checkIsFavorite, toggleFavorite } = useFavorites();
   const { images, brand, title, price, id } = product;
   const [index, setIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const dotsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -258,28 +258,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
     };
   }, [index]);
 
-  // Check if product is in favorites
-  useEffect(() => {
-    if (!user) {
-      setIsFavorite(false);
-      return;
-    }
-
-    const checkFavorite = async () => {
-      try {
-        const response = await apiFetch('/api/favorites');
-        if (response.success) {
-          const favoriteIds = response.data.map((item: Product) => item.id);
-          const isInFavorites = favoriteIds.includes(id);
-          setIsFavorite(isInFavorites);
-        }
-      } catch (error: any) {
-        addDebugLog(`❌ Проверка избранного: ${error.status || 'ошибка'}`, 'error');
-      }
-    };
-
-    checkFavorite();
-  }, [user, id]);
+  // Get favorite status from context
+  const isFavorite = user ? checkIsFavorite(id) : false;
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -296,21 +276,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
       setIsFavoriteLoading(true);
       addDebugLog(`🔄 ${isFavorite ? 'Удаляем' : 'Добавляем'} из избранного...`, 'info');
 
-      if (isFavorite) {
-        await apiFetch(`/api/favorites/${id}`, {
-          method: 'DELETE'
-        });
-        setIsFavorite(false);
-        addDebugLog('✅ Удалено из избранного', 'success');
-        if (onFavoriteChange) {
-          onFavoriteChange(id);
-        }
-      } else {
-        await apiFetch(`/api/favorites/${id}`, {
-          method: 'POST'
-        });
-        setIsFavorite(true);
-        addDebugLog('✅ Добавлено в избранное', 'success');
+      await toggleFavorite(id);
+
+      addDebugLog(`✅ ${isFavorite ? 'Удалено из' : 'Добавлено в'} избранное`, 'success');
+
+      if (isFavorite && onFavoriteChange) {
+        onFavoriteChange(id);
       }
     } catch (error: any) {
       if (error.status === 401) {

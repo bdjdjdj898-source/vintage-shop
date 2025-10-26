@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { FavoritesProvider } from './contexts/FavoritesContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SearchProvider } from './contexts/SearchContext';
 import Home from "./pages/Home";
@@ -41,7 +42,8 @@ function AppContent() {
 
   return (
     <SearchProvider>
-      <CartProvider>
+      <FavoritesProvider>
+        <CartProvider>
         {isMockMode && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 text-xs text-center">
             🔧 Dev Mode: Mock Telegram Data
@@ -65,7 +67,8 @@ function AppContent() {
         </Routes>
         <DebugLog />
       </BrowserRouter>
-    </CartProvider>
+        </CartProvider>
+      </FavoritesProvider>
     </SearchProvider>
   );
 }
