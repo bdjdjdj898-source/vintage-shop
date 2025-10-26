@@ -108,6 +108,8 @@ router.get('/', optionalAuth, [
           price: true,
           images: true,
           isActive: true,
+          quantity: true,
+          discount: true,
           createdAt: true,
           updatedAt: true
         }
