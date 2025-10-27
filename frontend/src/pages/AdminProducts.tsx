@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Product, CreateProductData, UploadProgress, CloudinarySignature } from '../types/api';
+import Header from '../components/Header';
+import BottomNavigation from '../components/BottomNavigation';
+import { useTelegramBackButton } from '../hooks/useTelegramUI';
 
 const AdminProducts: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -13,6 +18,10 @@ const AdminProducts: React.FC = () => {
   const [createError, setCreateError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState('');
+
+  // Telegram Back Button
+  useTelegramBackButton(() => navigate(-1));
 
   const [newProduct, setNewProduct] = useState<CreateProductData>({
     title: '',
@@ -29,6 +38,21 @@ const AdminProducts: React.FC = () => {
   });
 
   const categories = ['Куртки', 'Толстовки', 'Джинсы', 'Аксессуары', 'Обувь', 'Свитеры'];
+
+  // Local search filter - filters only loaded products
+  const filteredProducts = products.filter(product => {
+    if (!localSearchQuery.trim()) return true;
+
+    const query = localSearchQuery.toLowerCase();
+    return (
+      product.title.toLowerCase().includes(query) ||
+      product.brand.toLowerCase().includes(query) ||
+      product.category.toLowerCase().includes(query) ||
+      product.color.toLowerCase().includes(query) ||
+      product.size.toLowerCase().includes(query) ||
+      product.description.toLowerCase().includes(query)
+    );
+  });
 
   useEffect(() => {
     fetchProducts();
@@ -302,10 +326,27 @@ const AdminProducts: React.FC = () => {
 
   if (user?.role !== 'admin') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Доступ запрещен</h2>
-          <p className="text-gray-600">У вас нет прав для просмотра этой страницы</p>
+      <div style={{
+        minHeight: '100vh',
+        background: 'var(--bg)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{
+            fontSize: '1.25rem',
+            fontWeight: '600',
+            color: 'var(--text)',
+            marginBottom: '0.5rem'
+          }}>
+            Доступ запрещен
+          </h2>
+          <p style={{
+            color: 'var(--text-secondary)'
+          }}>
+            У вас нет прав для просмотра этой страницы
+          </p>
         </div>
       </div>
     );
@@ -313,123 +354,353 @@ const AdminProducts: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto p-4">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-lg">Загрузка товаров...</div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'var(--bg)'
+      }}>
+        <Header hideSearch={true} />
+        <div style={{
+          maxWidth: '640px',
+          margin: '0 auto',
+          padding: '1rem'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '16rem'
+          }}>
+            <div style={{
+              fontSize: '1.125rem',
+              color: 'var(--text)'
+            }}>
+              Загрузка товаров...
+            </div>
           </div>
         </div>
+        <BottomNavigation />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto p-4">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-lg text-red-600">{error}</div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'var(--bg)'
+      }}>
+        <Header hideSearch={true} />
+        <div style={{
+          maxWidth: '640px',
+          margin: '0 auto',
+          padding: '1rem'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '16rem'
+          }}>
+            <div style={{
+              fontSize: '1.125rem',
+              color: '#ef4444'
+            }}>
+              {error}
+            </div>
           </div>
         </div>
+        <BottomNavigation />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Управление товарами</h1>
+    <div style={{
+      minHeight: '100vh',
+      background: 'var(--bg)',
+      paddingBottom: '80px'
+    }}>
+      <Header />
+      <div style={{
+        maxWidth: '640px',
+        margin: '0 auto',
+        padding: '1rem'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1.5rem'
+        }}>
+          <h1 style={{
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            color: 'var(--text)'
+          }}>
+            Управление товарами
+          </h1>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            style={{
+              background: '#3b82f6',
+              color: 'white',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
           >
             Добавить товар
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gray-50">
+        {/* Local search input */}
+        <div style={{ marginBottom: '1rem' }}>
+          <input
+            type="text"
+            placeholder="Поиск по товарам (локальный поиск)"
+            value={localSearchQuery}
+            onChange={(e) => setLocalSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: '1px solid var(--border)',
+              borderRadius: '0.5rem',
+              backgroundColor: 'var(--card)',
+              color: 'var(--text)',
+              fontSize: '0.875rem',
+              outline: 'none',
+              transition: 'border-color 0.2s'
+            }}
+            onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+            onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+          />
+          {localSearchQuery && (
+            <div style={{
+              fontSize: '0.75rem',
+              color: 'var(--text-secondary)',
+              marginTop: '0.5rem'
+            }}>
+              Найдено: {filteredProducts.length} из {products.length} товаров
+            </div>
+          )}
+        </div>
+
+        <div style={{
+          background: 'var(--card)',
+          borderRadius: '0.5rem',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          overflow: 'hidden'
+        }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{
+              minWidth: '100%',
+              borderCollapse: 'collapse'
+            }}>
+              <thead style={{ background: 'var(--bg)' }}>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th style={{
+                    padding: '0.75rem 1.5rem',
+                    textAlign: 'left',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
                     Товар
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th style={{
+                    padding: '0.75rem 1.5rem',
+                    textAlign: 'left',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
                     Категория
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th style={{
+                    padding: '0.75rem 1.5rem',
+                    textAlign: 'left',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
                     Цена
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th style={{
+                    padding: '0.75rem 1.5rem',
+                    textAlign: 'left',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
                     Состояние
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th style={{
+                    padding: '0.75rem 1.5rem',
+                    textAlign: 'left',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
                     Статус
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th style={{
+                    padding: '0.75rem 1.5rem',
+                    textAlign: 'left',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
                     Действия
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {products.map((product) => (
-                  <tr key={product.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
+              <tbody style={{
+                background: 'var(--card)'
+              }}>
+                {filteredProducts.map((product) => (
+                  <tr key={product.id} style={{
+                    borderTop: '1px solid var(--border)'
+                  }}>
+                    <td style={{
+                      padding: '1rem 1.5rem',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
                         {product.images.length > 0 && (
                           <img
                             src={product.images[0]}
                             alt={product.title}
-                            className="h-10 w-10 rounded-lg object-cover mr-3"
+                            style={{
+                              height: '2.5rem',
+                              width: '2.5rem',
+                              borderRadius: '0.5rem',
+                              objectFit: 'cover',
+                              marginRight: '0.75rem'
+                            }}
                           />
                         )}
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          <div style={{
+                            fontSize: '0.875rem',
+                            fontWeight: '500',
+                            color: 'var(--text)'
+                          }}>
                             {product.title}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div style={{
+                            fontSize: '0.875rem',
+                            color: 'var(--text-secondary)'
+                          }}>
                             {product.brand} • {product.size} • {product.color}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td style={{
+                      padding: '1rem 1.5rem',
+                      whiteSpace: 'nowrap',
+                      fontSize: '0.875rem',
+                      color: 'var(--text)'
+                    }}>
                       {product.category}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td style={{
+                      padding: '1rem 1.5rem',
+                      whiteSpace: 'nowrap',
+                      fontSize: '0.875rem',
+                      color: 'var(--text)'
+                    }}>
                       {product.price.toLocaleString('ru-RU')} ₽
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.condition}/10</div>
+                    <td style={{
+                      padding: '1rem 1.5rem',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      <div style={{
+                        fontSize: '0.875rem',
+                        color: 'var(--text)'
+                      }}>
+                        {product.condition}/10
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 text-xs font-semibold rounded-full ${
-                        product.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
+                    <td style={{
+                      padding: '1rem 1.5rem',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        padding: '0.125rem 0.5rem',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        borderRadius: '9999px',
+                        background: product.isActive ? '#d1fae5' : '#fee2e2',
+                        color: product.isActive ? '#065f46' : '#991b1b'
+                      }}>
                         {product.isActive ? 'Активен' : 'Неактивен'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => toggleProductStatus(product.id, product.isActive)}
-                        className={`px-3 py-1 rounded text-xs ${
-                          product.isActive
-                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                            : 'bg-green-100 text-green-800 hover:bg-green-200'
-                        }`}
-                      >
-                        {product.isActive ? 'Скрыть' : 'Показать'}
-                      </button>
-                      <button
-                        onClick={() => deleteProduct(product.id)}
-                        className="px-3 py-1 bg-red-100 text-red-800 hover:bg-red-200 rounded text-xs"
-                      >
-                        Удалить
-                      </button>
+                    <td style={{
+                      padding: '1rem 1.5rem',
+                      whiteSpace: 'nowrap',
+                      fontSize: '0.875rem',
+                      fontWeight: '500'
+                    }}>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => toggleProductStatus(product.id, product.isActive)}
+                          style={{
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '0.25rem',
+                            fontSize: '0.75rem',
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: product.isActive ? '#fef3c7' : '#d1fae5',
+                            color: product.isActive ? '#92400e' : '#065f46',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = product.isActive ? '#fde68a' : '#a7f3d0';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = product.isActive ? '#fef3c7' : '#d1fae5';
+                          }}
+                        >
+                          {product.isActive ? 'Скрыть' : 'Показать'}
+                        </button>
+                        <button
+                          onClick={() => deleteProduct(product.id)}
+                          style={{
+                            padding: '0.25rem 0.75rem',
+                            background: '#fee2e2',
+                            color: '#991b1b',
+                            borderRadius: '0.25rem',
+                            fontSize: '0.75rem',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
+                        >
+                          Удалить
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -438,7 +709,11 @@ const AdminProducts: React.FC = () => {
           </div>
 
           {products.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div style={{
+              textAlign: 'center',
+              padding: '2rem',
+              color: 'var(--text-secondary)'
+            }}>
               Товары не найдены
             </div>
           )}
@@ -446,27 +721,73 @@ const AdminProducts: React.FC = () => {
 
         {/* Create Product Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">Добавить товар</h2>
+          <div style={{
+            position: 'fixed',
+            inset: '0',
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            zIndex: '50'
+          }}>
+            <div style={{
+              background: 'var(--card)',
+              borderRadius: '0.5rem',
+              maxWidth: '42rem',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}>
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <h2 style={{
+                    fontSize: '1.25rem',
+                    fontWeight: 'bold',
+                    color: 'var(--text)'
+                  }}>
+                    Добавить товар
+                  </h2>
                   <button
                     onClick={() => {
                       setIsModalOpen(false);
                       setUploadProgress([]);
                       setCreateError(null);
                     }}
-                    className="text-gray-500 hover:text-gray-700"
+                    style={{
+                      color: 'var(--text-secondary)',
+                      background: 'transparent',
+                      border: 'none',
+                      fontSize: '1.5rem',
+                      cursor: 'pointer',
+                      transition: 'color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
                   >
                     ✕
                   </button>
                 </div>
 
-                <form onSubmit={handleCreateProduct} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                    gap: '1rem'
+                  }}>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem'
+                      }}>
                         Название *
                       </label>
                       <input
@@ -475,12 +796,28 @@ const AdminProducts: React.FC = () => {
                         value={newProduct.title}
                         onChange={handleInputChange}
                         required
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                          width: '100%',
+                          border: '1px solid var(--border)',
+                          borderRadius: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: 'var(--bg)',
+                          color: 'var(--text)',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px #3b82f6'}
+                        onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem'
+                      }}>
                         Бренд *
                       </label>
                       <input
@@ -489,19 +826,45 @@ const AdminProducts: React.FC = () => {
                         value={newProduct.brand}
                         onChange={handleInputChange}
                         required
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                          width: '100%',
+                          border: '1px solid var(--border)',
+                          borderRadius: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: 'var(--bg)',
+                          color: 'var(--text)',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px #3b82f6'}
+                        onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem'
+                      }}>
                         Категория *
                       </label>
                       <select
                         name="category"
                         value={newProduct.category}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                          width: '100%',
+                          border: '1px solid var(--border)',
+                          borderRadius: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: 'var(--bg)',
+                          color: 'var(--text)',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px #3b82f6'}
+                        onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
                       >
                         {categories.map(cat => (
                           <option key={cat} value={cat}>{cat}</option>
@@ -510,7 +873,13 @@ const AdminProducts: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem'
+                      }}>
                         Размер *
                       </label>
                       <input
@@ -519,12 +888,28 @@ const AdminProducts: React.FC = () => {
                         value={newProduct.size}
                         onChange={handleInputChange}
                         required
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                          width: '100%',
+                          border: '1px solid var(--border)',
+                          borderRadius: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: 'var(--bg)',
+                          color: 'var(--text)',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px #3b82f6'}
+                        onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem'
+                      }}>
                         Цвет *
                       </label>
                       <input
@@ -533,12 +918,28 @@ const AdminProducts: React.FC = () => {
                         value={newProduct.color}
                         onChange={handleInputChange}
                         required
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                          width: '100%',
+                          border: '1px solid var(--border)',
+                          borderRadius: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: 'var(--bg)',
+                          color: 'var(--text)',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px #3b82f6'}
+                        onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem'
+                      }}>
                         Состояние (1-10) *
                       </label>
                       <input
@@ -549,12 +950,28 @@ const AdminProducts: React.FC = () => {
                         min="1"
                         max="10"
                         required
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                          width: '100%',
+                          border: '1px solid var(--border)',
+                          borderRadius: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: 'var(--bg)',
+                          color: 'var(--text)',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px #3b82f6'}
+                        onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem'
+                      }}>
                         Цена (₽) *
                       </label>
                       <input
@@ -565,12 +982,28 @@ const AdminProducts: React.FC = () => {
                         min="0"
                         step="0.01"
                         required
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                          width: '100%',
+                          border: '1px solid var(--border)',
+                          borderRadius: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: 'var(--bg)',
+                          color: 'var(--text)',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px #3b82f6'}
+                        onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem'
+                      }}>
                         Количество *
                       </label>
                       <input
@@ -581,12 +1014,28 @@ const AdminProducts: React.FC = () => {
                         min="0"
                         step="1"
                         required
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                          width: '100%',
+                          border: '1px solid var(--border)',
+                          borderRadius: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: 'var(--bg)',
+                          color: 'var(--text)',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px #3b82f6'}
+                        onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem'
+                      }}>
                         Скидка (%) *
                       </label>
                       <input
@@ -598,12 +1047,28 @@ const AdminProducts: React.FC = () => {
                         max="100"
                         step="1"
                         required
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                          width: '100%',
+                          border: '1px solid var(--border)',
+                          borderRadius: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: 'var(--bg)',
+                          color: 'var(--text)',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px #3b82f6'}
+                        onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
                       />
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem'
+                      }}>
                         Описание *
                       </label>
                       <textarea
@@ -612,37 +1077,76 @@ const AdminProducts: React.FC = () => {
                         onChange={handleInputChange}
                         rows={3}
                         required
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                          width: '100%',
+                          border: '1px solid var(--border)',
+                          borderRadius: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: 'var(--bg)',
+                          color: 'var(--text)',
+                          outline: 'none',
+                          resize: 'vertical'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px #3b82f6'}
+                        onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
                       />
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem'
+                      }}>
                         Изображения
                       </label>
 
                       {/* File Upload */}
-                      <div className="space-y-4">
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{
+                          border: '2px dashed var(--border)',
+                          borderRadius: '0.5rem',
+                          padding: '1.5rem',
+                          textAlign: 'center',
+                          transition: 'border-color 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isUploading) {
+                            e.currentTarget.style.borderColor = '#3b82f6';
+                          }
+                        }}
+                        onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+                        >
                           <input
                             type="file"
                             multiple
                             accept="image/jpeg,image/jpg,image/png,image/webp"
                             onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-                            className="hidden"
+                            style={{ display: 'none' }}
                             id="file-upload"
                             disabled={isUploading}
                           />
                           <label
                             htmlFor="file-upload"
-                            className={`cursor-pointer ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            style={{
+                              cursor: isUploading ? 'not-allowed' : 'pointer',
+                              opacity: isUploading ? '0.5' : '1'
+                            }}
                           >
-                            <div className="space-y-2">
-                              <div className="text-4xl text-gray-400">📷</div>
-                              <div className="text-sm text-gray-600">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              <div style={{ fontSize: '2.25rem' }}>📷</div>
+                              <div style={{
+                                fontSize: '0.875rem',
+                                color: 'var(--text-secondary)'
+                              }}>
                                 {isUploading ? 'Загрузка...' : 'Нажмите для выбора файлов или перетащите их сюда'}
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--text-secondary)'
+                              }}>
                                 Поддерживаются: JPG, PNG, WebP (до 5 МБ каждый)
                               </div>
                             </div>
@@ -651,35 +1155,75 @@ const AdminProducts: React.FC = () => {
 
                         {/* Upload Progress */}
                         {uploadProgress.length > 0 && (
-                          <div className="space-y-2">
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             {uploadProgress.map((upload, index) => (
-                              <div key={index} className="bg-gray-50 rounded-lg p-3">
-                                <div className="flex justify-between items-center mb-2">
-                                  <span className="text-sm font-medium text-gray-700 truncate">
+                              <div key={index} style={{
+                                background: 'var(--bg)',
+                                borderRadius: '0.5rem',
+                                padding: '0.75rem'
+                              }}>
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  marginBottom: '0.5rem'
+                                }}>
+                                  <span style={{
+                                    fontSize: '0.875rem',
+                                    fontWeight: '500',
+                                    color: 'var(--text)',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
+                                  }}>
                                     {upload.fileName}
                                   </span>
-                                  <span className={`text-xs px-2 py-1 rounded-full ${
-                                    upload.status === 'completed'
-                                      ? 'bg-green-100 text-green-800'
+                                  <span style={{
+                                    fontSize: '0.75rem',
+                                    padding: '0.25rem 0.5rem',
+                                    borderRadius: '9999px',
+                                    background: upload.status === 'completed'
+                                      ? '#d1fae5'
                                       : upload.status === 'error'
-                                      ? 'bg-red-100 text-red-800'
-                                      : 'bg-blue-100 text-blue-800'
-                                  }`}>
+                                      ? '#fee2e2'
+                                      : '#dbeafe',
+                                    color: upload.status === 'completed'
+                                      ? '#065f46'
+                                      : upload.status === 'error'
+                                      ? '#991b1b'
+                                      : '#1e40af'
+                                  }}>
                                     {upload.status === 'completed' ? 'Готово'
                                       : upload.status === 'error' ? 'Ошибка'
                                       : 'Загрузка...'}
                                   </span>
                                 </div>
                                 {upload.status === 'uploading' && (
-                                  <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div style={{
+                                    width: '100%',
+                                    background: '#e5e7eb',
+                                    borderRadius: '9999px',
+                                    height: '0.5rem'
+                                  }}>
                                     <div
-                                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                      style={{ width: `${upload.progress}%` }}
+                                      style={{
+                                        background: '#3b82f6',
+                                        height: '0.5rem',
+                                        borderRadius: '9999px',
+                                        transition: 'width 0.3s',
+                                        width: `${upload.progress}%`
+                                      }}
                                     ></div>
                                   </div>
                                 )}
                                 {upload.error && (
-                                  <div className="text-red-600 text-xs mt-1">{upload.error}</div>
+                                  <div style={{
+                                    color: '#ef4444',
+                                    fontSize: '0.75rem',
+                                    marginTop: '0.25rem'
+                                  }}>
+                                    {upload.error}
+                                  </div>
                                 )}
                               </div>
                             ))}
@@ -689,16 +1233,35 @@ const AdminProducts: React.FC = () => {
                         {/* Current Images */}
                         {newProduct.images.filter(img => img.trim()).length > 0 && (
                           <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Загруженные изображения:</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <h4 style={{
+                              fontSize: '0.875rem',
+                              fontWeight: '500',
+                              color: 'var(--text)',
+                              marginBottom: '0.5rem'
+                            }}>
+                              Загруженные изображения:
+                            </h4>
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                              gap: '0.75rem'
+                            }}>
                               {newProduct.images
                                 .filter(img => img.trim())
                                 .map((image, index) => (
-                                  <div key={index} className="relative group">
+                                  <div key={index} style={{
+                                    position: 'relative'
+                                  }}>
                                     <img
                                       src={image}
                                       alt={`Product ${index + 1}`}
-                                      className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                                      style={{
+                                        width: '100%',
+                                        height: '6rem',
+                                        objectFit: 'cover',
+                                        borderRadius: '0.5rem',
+                                        border: '1px solid var(--border)'
+                                      }}
                                     />
                                     <button
                                       type="button"
@@ -708,7 +1271,33 @@ const AdminProducts: React.FC = () => {
                                           images: prev.images.filter(u => u.trim() && u !== image)
                                         }));
                                       }}
-                                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                      style={{
+                                        position: 'absolute',
+                                        top: '0.25rem',
+                                        right: '0.25rem',
+                                        background: '#ef4444',
+                                        color: 'white',
+                                        borderRadius: '9999px',
+                                        width: '1.5rem',
+                                        height: '1.5rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '0.75rem',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        opacity: '0',
+                                        transition: 'opacity 0.2s'
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        const parent = e.currentTarget.parentElement;
+                                        if (parent) {
+                                          const btn = parent.querySelector('button');
+                                          if (btn instanceof HTMLElement) {
+                                            btn.style.opacity = '1';
+                                          }
+                                        }
+                                      }}
                                     >
                                       ✕
                                     </button>
@@ -719,16 +1308,36 @@ const AdminProducts: React.FC = () => {
                         )}
 
                         {/* Manual URL Input (fallback) */}
-                        <details className="mt-4">
-                          <summary className="text-sm text-gray-600 cursor-pointer hover:text-blue-600">
+                        <details style={{ marginTop: '1rem' }}>
+                          <summary style={{
+                            fontSize: '0.875rem',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.color = '#3b82f6'}
+                          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                          >
                             Добавить изображение по URL (дополнительно)
                           </summary>
-                          <div className="mt-2 space-y-2">
-                            <div className="flex gap-2">
+                          <div style={{
+                            marginTop: '0.5rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.5rem'
+                          }}>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
                               <input
                                 type="url"
                                 placeholder="https://example.com/image.jpg"
-                                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style={{
+                                  flex: '1',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: '0.5rem',
+                                  padding: '0.5rem 0.75rem',
+                                  background: 'var(--bg)',
+                                  color: 'var(--text)',
+                                  outline: 'none'
+                                }}
                                 onKeyPress={(e) => {
                                   if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                                     const url = e.currentTarget.value.trim();
@@ -739,6 +1348,8 @@ const AdminProducts: React.FC = () => {
                                     e.currentTarget.value = '';
                                   }
                                 }}
+                                onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px #3b82f6'}
+                                onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
                               />
                             </div>
                           </div>
@@ -748,10 +1359,20 @@ const AdminProducts: React.FC = () => {
                   </div>
 
                   {createError && (
-                    <div className="text-red-600 text-sm">{createError}</div>
+                    <div style={{
+                      color: '#ef4444',
+                      fontSize: '0.875rem'
+                    }}>
+                      {createError}
+                    </div>
                   )}
 
-                  <div className="flex justify-end space-x-3 pt-4">
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: '0.75rem',
+                    paddingTop: '1rem'
+                  }}>
                     <button
                       type="button"
                       onClick={() => {
@@ -759,14 +1380,39 @@ const AdminProducts: React.FC = () => {
                         setUploadProgress([]);
                         setCreateError(null);
                       }}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                      style={{
+                        padding: '0.5rem 1rem',
+                        border: '1px solid var(--border)',
+                        borderRadius: '0.5rem',
+                        background: 'transparent',
+                        color: 'var(--text)',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
                       Отмена
                     </button>
                     <button
                       type="submit"
                       disabled={isCreating}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                      style={{
+                        padding: '0.5rem 1rem',
+                        background: '#3b82f6',
+                        color: 'white',
+                        borderRadius: '0.5rem',
+                        border: 'none',
+                        cursor: isCreating ? 'not-allowed' : 'pointer',
+                        opacity: isCreating ? '0.5' : '1',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isCreating) {
+                          e.currentTarget.style.background = '#2563eb';
+                        }
+                      }}
+                      onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
                     >
                       {isCreating ? 'Создание...' : 'Создать товар'}
                     </button>
@@ -777,6 +1423,7 @@ const AdminProducts: React.FC = () => {
           </div>
         )}
       </div>
+      <BottomNavigation />
     </div>
   );
 };

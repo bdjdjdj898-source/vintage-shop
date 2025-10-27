@@ -2,14 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Order, OrderStatus, ORDER_STATUS_META } from '../types/api';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useTelegramBackButton } from '../hooks/useTelegramUI';
 
 const Orders: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Telegram Back Button
+  useTelegramBackButton(() => navigate(-1));
 
   useEffect(() => {
     fetchOrders();

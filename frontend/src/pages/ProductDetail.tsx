@@ -25,26 +25,26 @@ const ProductDetail: React.FC = () => {
   const handleAddToCart = async () => {
     if (!product) return;
 
-    // If quantity controls not shown, show them first
+    // If quantity controls not shown, show them AND add to cart immediately
     if (!showQuantityControls) {
       setShowQuantityControls(true);
+      // Сразу добавляем товар в корзину
+      try {
+        console.log('🔵 Первое нажатие: показываем регулятор И добавляем в корзину, товар:', product.id, 'количество:', quantity);
+        setIsAddingToCart(true);
+        await addItem(product.id, quantity);
+        console.log('✅ Товар добавлен в корзину');
+        setIsAddingToCart(false);
+      } catch (err) {
+        console.error('❌ Ошибка при добавлении в корзину:', err);
+        setIsAddingToCart(false);
+      }
       return;
     }
 
-    // Otherwise, add to cart
-    try {
-      console.log('🔵 Кнопка добавления в корзину нажата, товар:', product.id, 'количество:', quantity);
-      setIsAddingToCart(true);
-      await addItem(product.id, quantity);
-      console.log('✅ Товар добавлен, переходим в корзину через 500мс');
-      // Show success feedback
-      setTimeout(() => {
-        navigate('/cart');
-      }, 500);
-    } catch (err) {
-      console.error('❌ Ошибка при добавлении в корзину:', err);
-      setIsAddingToCart(false);
-    }
+    // If quantity controls already shown, just navigate to cart
+    console.log('🔵 Второе нажатие: переходим в корзину');
+    navigate('/cart');
   };
 
   useEffect(() => {
@@ -70,6 +70,21 @@ const ProductDetail: React.FC = () => {
 
     fetchProduct();
   }, [id]);
+
+  // Обновляем количество в корзине когда пользователь меняет регулятор
+  useEffect(() => {
+    if (showQuantityControls && product) {
+      const updateQuantity = async () => {
+        try {
+          console.log('🔄 Обновляем количество в корзине:', product.id, 'новое количество:', quantity);
+          await addItem(product.id, quantity);
+        } catch (err) {
+          console.error('❌ Ошибка при обновлении количества:', err);
+        }
+      };
+      updateQuantity();
+    }
+  }, [quantity, showQuantityControls, product, addItem]);
 
   // Telegram UI кнопки
   useTelegramBackButton(() => navigate(-1));
@@ -372,50 +387,71 @@ const ProductDetail: React.FC = () => {
             position: 'fixed',
             left: 0,
             right: 0,
-            bottom: '80px',
-            padding: '12px 16px',
-            backgroundColor: 'var(--color-bg)',
-            borderTop: '1px solid var(--color-border)',
-            zIndex: 40
+            bottom: '70px',
+            padding: '16px',
+            backgroundColor: 'var(--tg-theme-bg-color, #ffffff)',
+            borderTop: '1px solid var(--tg-theme-section-separator-color, #e5e7eb)',
+            zIndex: 40,
+            boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)'
           }}
         >
+          <div style={{ marginBottom: '8px', textAlign: 'center' }}>
+            <span style={{ fontSize: '14px', color: 'var(--tg-theme-hint-color, #6b7280)', fontWeight: '500' }}>
+              Количество
+            </span>
+          </div>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: '#ffffff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
+              backgroundColor: 'var(--tg-theme-section-bg-color, #f9fafb)',
+              border: '1px solid var(--tg-theme-section-separator-color, #e5e7eb)',
+              borderRadius: '12px',
               overflow: 'hidden',
-              maxWidth: '200px',
-              margin: '0 auto'
+              maxWidth: '180px',
+              margin: '0 auto',
+              height: '48px'
             }}
           >
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
               disabled={quantity <= 1}
               style={{
-                padding: '0 20px',
-                height: '50px',
-                fontSize: '24px',
+                flex: 1,
+                height: '100%',
+                fontSize: '20px',
                 fontWeight: 'bold',
-                color: quantity <= 1 ? '#d1d5db' : '#111827',
+                color: quantity <= 1 ? 'var(--tg-theme-hint-color, #d1d5db)' : 'var(--tg-theme-button-color, #3b82f6)',
                 backgroundColor: 'transparent',
                 border: 'none',
-                cursor: quantity <= 1 ? 'not-allowed' : 'pointer'
+                cursor: quantity <= 1 ? 'not-allowed' : 'pointer',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseDown={(e) => {
+                if (quantity > 1) {
+                  e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                }
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
               −
             </button>
             <div
               style={{
-                padding: '0 20px',
-                fontSize: '18px',
+                padding: '0 16px',
+                fontSize: '17px',
                 fontWeight: '600',
-                color: '#111827',
-                minWidth: '60px',
-                textAlign: 'center'
+                color: 'var(--tg-theme-text-color, #111827)',
+                minWidth: '50px',
+                textAlign: 'center',
+                borderLeft: '1px solid var(--tg-theme-section-separator-color, #e5e7eb)',
+                borderRight: '1px solid var(--tg-theme-section-separator-color, #e5e7eb)'
               }}
             >
               {quantity}
@@ -423,14 +459,24 @@ const ProductDetail: React.FC = () => {
             <button
               onClick={() => setQuantity(quantity + 1)}
               style={{
-                padding: '0 20px',
-                height: '50px',
-                fontSize: '24px',
+                flex: 1,
+                height: '100%',
+                fontSize: '20px',
                 fontWeight: 'bold',
-                color: '#111827',
+                color: 'var(--tg-theme-button-color, #3b82f6)',
                 backgroundColor: 'transparent',
                 border: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
               +
