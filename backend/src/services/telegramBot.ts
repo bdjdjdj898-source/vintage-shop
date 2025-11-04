@@ -39,8 +39,14 @@ export class TelegramBotService {
     try {
       this.bot = new TelegramBot(this.botToken, { polling: true });
 
+      // Обработчик ошибок polling
+      this.bot.on('polling_error', (error) => {
+        console.error('Telegram Bot polling error:', error);
+      });
+
       // Обработчик команды /start
       this.bot.onText(/\/start/, (msg) => {
+        console.log('Получена команда /start от:', msg.from?.username || msg.from?.first_name);
         const chatId = msg.chat.id;
         const firstName = msg.from?.first_name || 'друг';
 
@@ -74,7 +80,9 @@ export class TelegramBotService {
           }
         };
 
-        this.bot?.sendMessage(chatId, welcomeMessage, options);
+        this.bot?.sendMessage(chatId, welcomeMessage, options)
+          .then(() => console.log('Сообщение отправлено успешно'))
+          .catch((err) => console.error('Ошибка отправки сообщения:', err));
       });
 
       console.log('Telegram Bot успешно запущен и обрабатывает команды');
