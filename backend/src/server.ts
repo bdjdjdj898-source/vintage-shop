@@ -105,6 +105,18 @@ app.post('/api/log-error', express.json(), (req, res) => {
   res.status(200).json({ logged: true });
 });
 
+// Telegram webhook endpoint (before rate limiter)
+app.post('/api/telegram/webhook', express.json(), async (req, res) => {
+  try {
+    logger.info('Telegram webhook received', { update_id: req.body.update_id });
+    await telegramBot.processUpdate(req.body);
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    logger.error('Telegram webhook error', { error: error instanceof Error ? error.message : error });
+    res.status(500).json({ ok: false });
+  }
+});
+
 // Health check endpoint (before rate limiter to avoid any limits)
 app.get('/health', async (req, res) => {
   let dbStatus: 'up' | 'down' = 'down';

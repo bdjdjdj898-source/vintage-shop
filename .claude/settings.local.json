@@ -27,7 +27,8 @@
       "Bash(npm install:*)",
       "Bash(npx tsc)",
       "Bash(npx typescript:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

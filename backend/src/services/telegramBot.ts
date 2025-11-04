@@ -33,24 +33,37 @@ export class TelegramBotService {
   }
 
   /**
-   * Инициализация бота с обработчиками команд
+   * Инициализация бота без polling (используем webhook)
    */
   private initializeBot(): void {
     try {
-      this.bot = new TelegramBot(this.botToken, { polling: true });
+      // Инициализируем бота БЕЗ polling - будем использовать webhook
+      this.bot = new TelegramBot(this.botToken, { polling: false });
 
-      // Обработчик ошибок polling
-      this.bot.on('polling_error', (error) => {
-        console.error('Telegram Bot polling error:', error);
-      });
+      console.log('Telegram Bot инициализирован для работы с webhook');
+    } catch (error) {
+      console.error('Ошибка инициализации Telegram Bot:', error);
+    }
+  }
 
-      // Обработчик команды /start
-      this.bot.onText(/\/start/, (msg) => {
-        console.log('Получена команда /start от:', msg.from?.username || msg.from?.first_name);
+  /**
+   * Обработка входящего update от Telegram (вызывается из webhook endpoint)
+   */
+  async processUpdate(update: any): Promise<void> {
+    try {
+      // Обработка текстовых сообщений
+      if (update.message && update.message.text) {
+        const msg = update.message;
         const chatId = msg.chat.id;
-        const firstName = msg.from?.first_name || 'друг';
+        const text = msg.text;
 
-        const welcomeMessage = `
+        console.log('Получено сообщение:', text, 'от:', msg.from?.username || msg.from?.first_name);
+
+        // Обработка команды /start
+        if (text === '/start') {
+          const firstName = msg.from?.first_name || 'друг';
+
+          const welcomeMessage = `
 Привет, ${firstName}! 👋
 
 Добро пожаловать в наш винтажный магазин! 🛍️
@@ -65,29 +78,27 @@ export class TelegramBotService {
 Все товары тщательно отобраны и находятся в отличном состоянии!
 
 Нажмите кнопку ниже, чтобы открыть магазин 👇
-        `.trim();
+          `.trim();
 
-        const options = {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: '🛍️ Открыть магазин',
-                  web_app: { url: this.webAppUrl }
-                }
+          const options = {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: '🛍️ Открыть магазин',
+                    web_app: { url: this.webAppUrl }
+                  }
+                ]
               ]
-            ]
-          }
-        };
+            }
+          };
 
-        this.bot?.sendMessage(chatId, welcomeMessage, options)
-          .then(() => console.log('Сообщение отправлено успешно'))
-          .catch((err) => console.error('Ошибка отправки сообщения:', err));
-      });
-
-      console.log('Telegram Bot успешно запущен и обрабатывает команды');
+          await this.bot?.sendMessage(chatId, welcomeMessage, options);
+          console.log('Приветственное сообщение отправлено успешно');
+        }
+      }
     } catch (error) {
-      console.error('Ошибка инициализации Telegram Bot:', error);
+      console.error('Ошибка обработки update:', error);
     }
   }
 
