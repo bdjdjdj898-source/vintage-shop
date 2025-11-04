@@ -3,23 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import BottomNavigation from '../components/BottomNavigation';
+import { useTelegramBackButton } from '../hooks/useTelegramUI';
 
 const Profile: React.FC = () => {
   const { user, telegramUser } = useAuth();
   const navigate = useNavigate();
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    }) + ' г.';
-  };
-
-  const handleLogout = () => {
-    // Telegram WebApp doesn't really need logout, but we can navigate to home
-    navigate('/');
-  };
+  // Telegram Back Button для выхода (возврат на главную)
+  useTelegramBackButton(() => navigate('/'));
 
   return (
     <div style={{
@@ -227,100 +218,6 @@ const Profile: React.FC = () => {
             </button>
           )}
         </div>
-
-        {/* User Info Card */}
-        <div style={{
-          backgroundColor: 'var(--card)',
-          borderRadius: '12px',
-          padding: '16px',
-          marginBottom: '16px'
-        }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <tbody>
-              <tr>
-                <td style={{
-                  padding: '12px 0',
-                  fontSize: '14px',
-                  color: 'var(--text-secondary)',
-                  borderBottom: '1px solid var(--border)'
-                }}>
-                  Telegram ID
-                </td>
-                <td style={{
-                  padding: '12px 0',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: 'var(--text)',
-                  textAlign: 'right',
-                  borderBottom: '1px solid var(--border)'
-                }}>
-                  {telegramUser?.id || user?.telegramId || '—'}
-                </td>
-              </tr>
-              {user?.createdAt && (
-                <tr>
-                  <td style={{
-                    padding: '12px 0',
-                    fontSize: '14px',
-                    color: 'var(--text-secondary)',
-                    borderBottom: '1px solid var(--border)'
-                  }}>
-                    Дата регистрации
-                  </td>
-                  <td style={{
-                    padding: '12px 0',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: 'var(--text)',
-                    textAlign: 'right',
-                    borderBottom: '1px solid var(--border)'
-                  }}>
-                    {formatDate(user.createdAt)}
-                  </td>
-                </tr>
-              )}
-              <tr>
-                <td style={{
-                  padding: '12px 0',
-                  fontSize: '14px',
-                  color: 'var(--text-secondary)'
-                }}>
-                  Роль
-                </td>
-                <td style={{
-                  padding: '12px 0',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: 'var(--text)',
-                  textAlign: 'right'
-                }}>
-                  {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          style={{
-            width: '100%',
-            backgroundColor: '#ef4444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '12px',
-            padding: '16px',
-            fontSize: '16px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'background-color 0.2s'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ef4444'}
-        >
-          Выйти
-        </button>
       </div>
 
       <BottomNavigation />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api/client';
 import { useCart } from '../contexts/CartContext';
@@ -11,7 +11,7 @@ import { formatCurrency } from '../utils/format';
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addItem } = useCart();
+  const { addItem, removeItem, cart } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,6 +45,29 @@ const ProductDetail: React.FC = () => {
     // If quantity controls already shown, just navigate to cart
     console.log('🔵 Второе нажатие: переходим в корзину');
     navigate('/cart');
+  };
+
+  const handleDecreaseQuantity = async () => {
+    if (!product) return;
+
+    if (quantity === 1) {
+      // При quantity=1 удаляем товар из корзины и скрываем регулятор
+      console.log('🔵 Отмена добавления в корзину');
+      const cartItem = cart?.items.find(item => item.productId === product.id);
+      if (cartItem) {
+        try {
+          await removeItem(cartItem.id);
+          console.log('✅ Товар удален из корзины');
+        } catch (err) {
+          console.error('❌ Ошибка при удалении из корзины:', err);
+        }
+      }
+      setShowQuantityControls(false);
+      setQuantity(1);
+    } else {
+      // Просто уменьшаем количество
+      setQuantity(quantity - 1);
+    }
   };
 
   useEffect(() => {
@@ -87,7 +110,11 @@ const ProductDetail: React.FC = () => {
   }, [quantity, showQuantityControls, product, addItem]);
 
   // Telegram UI кнопки
-  useTelegramBackButton(() => navigate(-1));
+  const handleBackButton = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
+
+  useTelegramBackButton(handleBackButton);
   useTelegramSettingsButton(() => console.log('Settings clicked'));
 
   // Telegram Main Button для добавления в корзину
@@ -387,8 +414,8 @@ const ProductDetail: React.FC = () => {
             position: 'fixed',
             left: 0,
             right: 0,
-            bottom: '70px',
-            padding: '16px',
+            bottom: '60px',
+            padding: '12px 16px',
             backgroundColor: 'var(--tg-theme-bg-color, #ffffff)',
             borderTop: '1px solid var(--tg-theme-section-separator-color, #e5e7eb)',
             zIndex: 40,
@@ -415,23 +442,20 @@ const ProductDetail: React.FC = () => {
             }}
           >
             <button
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              disabled={quantity <= 1}
+              onClick={handleDecreaseQuantity}
               style={{
                 flex: 1,
                 height: '100%',
                 fontSize: '20px',
                 fontWeight: 'bold',
-                color: quantity <= 1 ? 'var(--tg-theme-hint-color, #d1d5db)' : 'var(--tg-theme-button-color, #3b82f6)',
+                color: 'var(--tg-theme-button-color, #3b82f6)',
                 backgroundColor: 'transparent',
                 border: 'none',
-                cursor: quantity <= 1 ? 'not-allowed' : 'pointer',
+                cursor: 'pointer',
                 transition: 'background-color 0.2s'
               }}
               onMouseDown={(e) => {
-                if (quantity > 1) {
-                  e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-                }
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
               }}
               onMouseUp={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent';

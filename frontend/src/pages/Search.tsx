@@ -4,6 +4,7 @@ import { Search as SearchIcon, X, Clock, Trash2 } from 'lucide-react';
 import { useSearch } from '../contexts/SearchContext';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
+import { useTelegramBackButton } from '../hooks/useTelegramUI';
 
 interface SearchHistoryItem {
   id: number;
@@ -18,6 +19,9 @@ const Search: React.FC = () => {
   const [localQuery, setLocalQuery] = useState(searchQuery);
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Telegram Back Button
+  useTelegramBackButton(() => navigate(-1));
 
   useEffect(() => {
     if (user) {

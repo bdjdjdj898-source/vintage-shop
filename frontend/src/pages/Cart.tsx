@@ -10,17 +10,11 @@ const Cart: React.FC = () => {
   const { user } = useAuth();
   const { cart, isLoading, error, removeItem, updateQuantity, getTotalAmount } = useCart();
   const navigate = useNavigate();
-  const { showMainButton, hideMainButton, showBackButton, hideBackButton, hapticFeedback } = useTelegram();
+  const { showMainButton, hideMainButton, hapticFeedback } = useTelegram();
   const [unavailableProducts, setUnavailableProducts] = useState<number[]>([]);
   const [quantityError, setQuantityError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Show back button
-    showBackButton(() => {
-      hapticFeedback.impact('light');
-      navigate('/');
-    });
-
     // Show main button if cart has items
     if (cart && cart.items.length > 0) {
       showMainButton('Оформить заказ', () => {
@@ -32,18 +26,36 @@ const Cart: React.FC = () => {
     }
 
     return () => {
-      hideBackButton();
       hideMainButton();
     };
-  }, [cart, showMainButton, hideMainButton, showBackButton, hideBackButton, hapticFeedback, navigate]);
+  }, [cart, showMainButton, hideMainButton, hapticFeedback, navigate]);
 
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', width: '100%', overflowX: 'hidden' }}>
-        <div style={{ width: '100%', maxWidth: '100%', padding: '16px' }}>
-          <div className="flex justify-center items-center h-64">
-            <div className="text-lg">Загрузка корзины...</div>
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg)',
+        width: '100%',
+        overflowX: 'hidden'
+      }}>
+        <div style={{
+          width: '100%',
+          maxWidth: '100%',
+          padding: '16px'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '256px'
+          }}>
+            <div style={{
+              fontSize: '18px',
+              color: 'var(--text)'
+            }}>
+              Загрузка корзины...
+            </div>
           </div>
         </div>
       </div>
@@ -52,12 +64,75 @@ const Cart: React.FC = () => {
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', width: '100%', overflowX: 'hidden' }}>
-        <div style={{ width: '100%', maxWidth: '100%', padding: '16px' }}>
-          <div className="flex justify-center items-center h-64">
-            <div className="text-lg text-red-600">{error}</div>
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg)',
+        width: '100%',
+        overflowX: 'hidden',
+        paddingBottom: '80px'
+      }}>
+        <div style={{
+          width: '100%',
+          maxWidth: '640px',
+          margin: '0 auto',
+          padding: '16px'
+        }}>
+          <h1 style={{
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: 'var(--text)',
+            marginBottom: '24px'
+          }}>
+            Корзина
+          </h1>
+
+          <div style={{
+            backgroundColor: 'var(--card)',
+            borderRadius: '12px',
+            padding: '32px',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              fontSize: '48px',
+              marginBottom: '16px'
+            }}>
+              🛒
+            </div>
+            <h2 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              color: 'var(--text)',
+              marginBottom: '8px'
+            }}>
+              {user ? 'Ошибка загрузки корзины' : 'Требуется авторизация'}
+            </h2>
+            <p style={{
+              color: 'var(--text-secondary)',
+              marginBottom: '24px'
+            }}>
+              {user ? error : 'Откройте приложение через Telegram для доступа к корзине'}
+            </p>
+            <Link
+              to="/"
+              style={{
+                display: 'inline-block',
+                backgroundColor: '#2563eb',
+                color: '#ffffff',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                fontSize: '16px',
+                fontWeight: '500',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+            >
+              Вернуться к покупкам
+            </Link>
           </div>
         </div>
+        <BottomNavigation />
       </div>
     );
   }
@@ -102,25 +177,67 @@ const Cart: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', paddingBottom: '80px', width: '100%', overflowX: 'hidden' }}>
-      <div style={{ width: '100%', maxWidth: '100%', padding: '16px' }}>
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Корзина</h1>
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: 'var(--bg)',
+      paddingBottom: '80px',
+      width: '100%',
+      overflowX: 'hidden'
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '100%',
+        padding: '16px'
+      }}>
+        <h1 style={{
+          fontSize: '24px',
+          fontWeight: 'bold',
+          color: 'var(--text)',
+          marginBottom: '24px'
+        }}>
+          Корзина
+        </h1>
 
         {/* Error Banner */}
         {quantityError && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <div className="flex">
-              <div className="flex-1">
+          <div style={{
+            backgroundColor: '#fee2e2',
+            border: '1px solid #f87171',
+            color: '#b91c1c',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            marginBottom: '16px'
+          }}>
+            <div style={{
+              display: 'flex'
+            }}>
+              <div style={{
+                flex: '1'
+              }}>
                 <p>{quantityError}</p>
                 {unavailableProducts.length > 0 && (
-                  <p className="text-sm mt-1">
+                  <p style={{
+                    fontSize: '14px',
+                    marginTop: '4px'
+                  }}>
                     Товары, которые больше недоступны, помечены серым цветом.
                   </p>
                 )}
               </div>
               <button
                 onClick={() => setQuantityError(null)}
-                className="ml-4 text-red-700 hover:text-red-900"
+                style={{
+                  marginLeft: '16px',
+                  color: '#b91c1c',
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '16px',
+                  padding: '0',
+                  lineHeight: '1'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#7f1d1d'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#b91c1c'}
               >
                 ✕
               </button>
@@ -129,68 +246,181 @@ const Cart: React.FC = () => {
         )}
 
         {!cart || cart.items.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-gray-600 mb-4">Ваша корзина пуста</p>
+          <div style={{
+            backgroundColor: 'var(--card)',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+            padding: '24px',
+            textAlign: 'center'
+          }}>
+            <p style={{
+              color: 'var(--text-secondary)',
+              marginBottom: '16px'
+            }}>
+              Ваша корзина пуста
+            </p>
             <Link
               to="/"
-              className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              style={{
+                display: 'inline-block',
+                backgroundColor: '#2563eb',
+                color: '#ffffff',
+                padding: '8px 24px',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
             >
               Перейти к покупкам
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
             {cart.items.map((item) => {
               const isUnavailable = !item.product.isActive || unavailableProducts.includes(item.product.id);
               return (
                 <div
                   key={item.id}
-                  className={`bg-white rounded-lg shadow p-6 ${isUnavailable ? 'opacity-60' : ''}`}
+                  style={{
+                    backgroundColor: 'var(--card)',
+                    borderRadius: '12px',
+                    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                    padding: '16px',
+                    opacity: isUnavailable ? '0.6' : '1'
+                  }}
                 >
-                  <div className="flex items-center space-x-4">
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    flexWrap: 'wrap'
+                  }}>
                     {item.product.images.length > 0 && (
                       <img
                         src={item.product.images[0]}
                         alt={item.product.title}
-                        className={`w-20 h-20 object-cover rounded-lg ${isUnavailable ? 'grayscale' : ''}`}
+                        style={{
+                          width: '80px',
+                          height: '80px',
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          filter: isUnavailable ? 'grayscale(100%)' : 'none',
+                          flexShrink: 0
+                        }}
                       />
                     )}
-                    <div className="flex-1">
-                      <h3 className={`text-lg font-semibold ${isUnavailable ? 'text-gray-500' : 'text-gray-800'}`}>
+                    <div style={{
+                      flex: '1',
+                      minWidth: '150px'
+                    }}>
+                      <h3 style={{
+                        fontSize: '18px',
+                        fontWeight: '600',
+                        color: isUnavailable ? '#9ca3af' : 'var(--text)',
+                        marginBottom: '4px'
+                      }}>
                         {item.product.title}
                         {isUnavailable && (
-                          <span className="ml-2 text-sm text-red-600 font-normal">
+                          <span style={{
+                            marginLeft: '8px',
+                            fontSize: '14px',
+                            color: '#ef4444',
+                            fontWeight: 'normal'
+                          }}>
                             (Недоступен)
                           </span>
                         )}
                       </h3>
-                      <p className="text-gray-600">
+                      <p style={{
+                        color: 'var(--text-secondary)',
+                        fontSize: '14px',
+                        marginBottom: '4px'
+                      }}>
                         {item.product.brand} • {item.product.size} • {item.product.color}
                       </p>
-                      <p className={`text-lg font-bold ${isUnavailable ? 'text-gray-500' : 'text-gray-900'}`}>
+                      <p style={{
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        color: isUnavailable ? '#9ca3af' : 'var(--text)'
+                      }}>
                         {item.product.price.toLocaleString('ru-RU')} ₽
                       </p>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
                       <button
                         onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                         disabled={item.quantity <= 1 || isUnavailable}
-                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          backgroundColor: '#e5e7eb',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: 'none',
+                          cursor: (item.quantity <= 1 || isUnavailable) ? 'not-allowed' : 'pointer',
+                          opacity: (item.quantity <= 1 || isUnavailable) ? '0.5' : '1',
+                          fontSize: '18px',
+                          color: '#374151'
+                        }}
                       >
                         -
                       </button>
-                      <span className="w-8 text-center">{item.quantity}</span>
+                      <span style={{
+                        width: '32px',
+                        textAlign: 'center',
+                        color: 'var(--text)',
+                        fontWeight: '500'
+                      }}>
+                        {item.quantity}
+                      </span>
                       <button
                         onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                         disabled={isUnavailable}
-                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          backgroundColor: '#e5e7eb',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: 'none',
+                          cursor: isUnavailable ? 'not-allowed' : 'pointer',
+                          opacity: isUnavailable ? '0.5' : '1',
+                          fontSize: '18px',
+                          color: '#374151'
+                        }}
                       >
                         +
                       </button>
                     </div>
                     <button
                       onClick={() => handleRemoveItem(item.id)}
-                      className="text-red-600 hover:text-red-700 px-3 py-1 rounded"
+                      style={{
+                        color: '#ef4444',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: 'none',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#dc2626'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = '#ef4444'}
                     >
                       Удалить
                     </button>
@@ -199,14 +429,40 @@ const Cart: React.FC = () => {
               );
             })}
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-center text-xl font-bold">
+            <div style={{
+              backgroundColor: 'var(--card)',
+              borderRadius: '12px',
+              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+              padding: '24px'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: 'var(--text)'
+              }}>
                 <span>Итого:</span>
                 <span>{getTotalAmount().toLocaleString('ru-RU')} ₽</span>
               </div>
               <Link
                 to="/checkout"
-                className="w-full mt-4 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors text-center block"
+                style={{
+                  width: '100%',
+                  marginTop: '16px',
+                  backgroundColor: '#10b981',
+                  color: '#ffffff',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  textAlign: 'center',
+                  display: 'block',
+                  textDecoration: 'none',
+                  fontWeight: '500',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#059669'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#10b981'}
               >
                 Оформить заказ
               </Link>

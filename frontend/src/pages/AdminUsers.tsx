@@ -1,385 +1,624 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api/client';
-
-interface User {
-  id: number;
-  telegramId: string;
-  username?: string;
-  firstName?: string;
-  lastName?: string;
-  role: string;
-  isBanned: boolean;
-  createdAt: string;
-  _count: {
-    orders: number;
-  };
-}
-
-interface UsersResponse {
-  success: boolean;
-  data: User[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
-}
+import { User } from '../types/api';
+import Header from '../components/Header';
+import BottomNavigation from '../components/BottomNavigation';
+import { useTelegramBackButton } from '../hooks/useTelegramUI';
 
 const AdminUsers: React.FC = () => {
-  const { user } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    total: 0,
-    pages: 1
-  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'banned'>('all');
+  const [updatingUserId, setUpdatingUserId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
 
-  // Redirect if not admin
-  if (user?.role !== 'admin') {
+  // Telegram Back Button
+  useTelegramBackButton(() => navigate(-1));
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    filterUsers();
+  }, [users, searchQuery, roleFilter, statusFilter]);
+
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await apiFetch('/api/admin/users');
+      if (response.success) {
+        setUsers(response.data);
+      }
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError('Ошибка загрузки пользователей');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filterUsers = () => {
+    let filtered = [...users];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(user => {
+        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase();
+        const username = (user.username || '').toLowerCase();
+        const telegramId = user.telegramId.toLowerCase();
+        return fullName.includes(query) || username.includes(query) || telegramId.includes(query);
+      });
+    }
+
+    // Role filter
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(user => user.role === roleFilter);
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(user => statusFilter === 'banned' ? user.isBanned : !user.isBanned);
+    }
+
+    setFilteredUsers(filtered);
+    setCurrentPage(1);
+  };
+
+  const toggleUserBan = async (userId: number, currentBanStatus: boolean) => {
+    try {
+      setUpdatingUserId(userId);
+      const response = await apiFetch(`/api/admin/users/${userId}/ban`, {
+        method: 'PUT',
+        body: JSON.stringify({ isBanned: !currentBanStatus })
+      });
+
+      if (response.success) {
+        // Update local state
+        setUsers(prevUsers =>
+          prevUsers.map(user =>
+            user.id === userId
+              ? { ...user, isBanned: !currentBanStatus }
+              : user
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Error updating user ban status:', err);
+      alert('Ошибка обновления статуса пользователя');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const changeUserRole = async (userId: number, newRole: 'admin' | 'user') => {
+    try {
+      setUpdatingUserId(userId);
+      const response = await apiFetch(`/api/admin/users/${userId}/role`, {
+        method: 'PUT',
+        body: JSON.stringify({ role: newRole })
+      });
+
+      if (response.success) {
+        // Update local state
+        setUsers(prevUsers =>
+          prevUsers.map(user =>
+            user.id === userId
+              ? { ...user, role: newRole }
+              : user
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Error updating user role:', err);
+      alert('Ошибка обновления роли пользователя');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const getUserDisplayName = (user: User) => {
+    if (user.firstName || user.lastName) {
+      return `${user.firstName || ''} ${user.lastName || ''}`.trim();
+    }
+    return user.username || `User #${user.telegramId}`;
+  };
+
+  // Pagination
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Доступ запрещен</h2>
-          <p className="text-gray-600">У вас нет прав для просмотра этой страницы</p>
-          <Link
-            to="/admin"
-            className="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Вернуться в админ-панель
-          </Link>
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg)',
+        paddingBottom: '80px'
+      }}>
+        <Header hideSearch={true} />
+        <div style={{ maxWidth: '640px', margin: '0 auto', padding: '16px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '256px'
+          }}>
+            <div style={{ fontSize: '18px', color: 'var(--text)' }}>
+              Загрузка пользователей...
+            </div>
+          </div>
         </div>
+        <BottomNavigation />
       </div>
     );
   }
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '20'
-      });
-
-      if (search.trim()) {
-        params.append('search', search.trim());
-      }
-
-      const response = await apiFetch(`/api/admin/users?${params}`) as UsersResponse;
-
-      if (response.success) {
-        setUsers(response.data);
-        setPagination(response.pagination);
-      } else {
-        setError('Ошибка загрузки пользователей');
-      }
-    } catch (err) {
-      console.error('Ошибка загрузки пользователей:', err);
-      setError('Ошибка сервера при загрузке пользователей');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, [page]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    fetchUsers();
-  };
-
-  const handleBanUser = async (userId: number) => {
-    try {
-      const response = await apiFetch(`/api/admin/users/${userId}/ban`, {
-        method: 'PUT'
-      });
-
-      if (response.success) {
-        // Optimistic UI update
-        setUsers(prev => prev.map(u =>
-          u.id === userId ? { ...u, isBanned: true } : u
-        ));
-      } else {
-        alert('Ошибка блокировки пользователя');
-      }
-    } catch (err) {
-      console.error('Ошибка блокировки пользователя:', err);
-      alert('Ошибка сервера при блокировке пользователя');
-    }
-  };
-
-  const handleUnbanUser = async (userId: number) => {
-    try {
-      const response = await apiFetch(`/api/admin/users/${userId}/unban`, {
-        method: 'PUT'
-      });
-
-      if (response.success) {
-        // Optimistic UI update
-        setUsers(prev => prev.map(u =>
-          u.id === userId ? { ...u, isBanned: false } : u
-        ));
-      } else {
-        alert('Ошибка разблокировки пользователя');
-      }
-    } catch (err) {
-      console.error('Ошибка разблокировки пользователя:', err);
-      alert('Ошибка сервера при разблокировке пользователя');
-    }
-  };
-
-  const formatUserName = (user: User) => {
-    if (user.username) {
-      return `@${user.username}`;
-    }
-    return [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Без имени';
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU');
-  };
+  if (error) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg)',
+        paddingBottom: '80px'
+      }}>
+        <Header hideSearch={true} />
+        <div style={{ maxWidth: '640px', margin: '0 auto', padding: '16px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '256px'
+          }}>
+            <div style={{ fontSize: '18px', color: '#ef4444' }}>
+              {error}
+            </div>
+          </div>
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Управление пользователями</h1>
-            <p className="text-gray-600 mt-1">Просмотр и модерация пользователей</p>
-          </div>
-          <Link
-            to="/admin"
-            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-          >
-            ← Назад в админ-панель
-          </Link>
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: 'var(--bg)',
+      paddingBottom: '80px'
+    }}>
+      <Header hideSearch={true} showBack={true} />
+
+      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '16px' }}>
+        {/* Page Title */}
+        <h1 style={{
+          fontSize: '24px',
+          fontWeight: 'bold',
+          color: 'var(--text)',
+          marginBottom: '16px',
+          marginTop: 0
+        }}>
+          Управление пользователями
+        </h1>
+
+        {/* Search Bar */}
+        <div style={{ marginBottom: '16px' }}>
+          <input
+            type="text"
+            placeholder="Поиск по имени, username или Telegram ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: '1px solid var(--border)',
+              backgroundColor: 'var(--card)',
+              color: 'var(--text)',
+              fontSize: '14px',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+          />
         </div>
 
-        {/* Search */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <form onSubmit={handleSearch} className="flex gap-4">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск по имени, username или Telegram ID..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+        {/* Role Filter */}
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          overflowX: 'auto',
+          marginBottom: '12px',
+          paddingBottom: '8px',
+          WebkitOverflowScrolling: 'touch'
+        }}>
+          {(['all', 'admin', 'user'] as const).map((role) => (
             <button
-              type="submit"
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              key={role}
+              onClick={() => setRoleFilter(role)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '20px',
+                border: 'none',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                backgroundColor: roleFilter === role ? 'var(--text)' : 'var(--card)',
+                color: roleFilter === role ? 'var(--bg)' : 'var(--text)',
+                transition: 'all 0.2s'
+              }}
             >
-              Найти
+              {role === 'all' ? 'Все роли' : role === 'admin' ? 'Администраторы' : 'Пользователи'}
             </button>
-            {search && (
-              <button
-                type="button"
-                onClick={() => { setSearch(''); setPage(1); fetchUsers(); }}
-                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Очистить
-              </button>
-            )}
-          </form>
+          ))}
         </div>
 
-        {/* Users Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          {loading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Загрузка пользователей...</p>
-            </div>
-          ) : error ? (
-            <div className="p-8 text-center">
-              <p className="text-red-600 mb-4">{error}</p>
-              <button
-                onClick={fetchUsers}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Попробовать снова
-              </button>
-            </div>
-          ) : users.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-gray-600">Пользователи не найдены</p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Пользователь
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Telegram ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Роль
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Заказы
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Регистрация
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Статус
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Действия
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {users.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {formatUserName(user)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {user.telegramId}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            user.role === 'admin'
-                              ? 'bg-purple-100 text-purple-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {user.role === 'admin' ? 'Администратор' : 'Пользователь'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {user._count.orders}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(user.createdAt)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            user.isBanned
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-green-100 text-green-800'
-                          }`}>
-                            {user.isBanned ? 'Заблокирован' : 'Активен'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          {user.role === 'admin' ? (
-                            <span className="text-gray-400">Нет действий</span>
-                          ) : (
-                            <div className="flex gap-2">
-                              {user.isBanned ? (
-                                <button
-                                  onClick={() => handleUnbanUser(user.id)}
-                                  className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
-                                >
-                                  Разблокировать
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => handleBanUser(user.id)}
-                                  className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
-                                >
-                                  Заблокировать
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        {/* Status Filter */}
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          overflowX: 'auto',
+          marginBottom: '20px',
+          paddingBottom: '8px',
+          WebkitOverflowScrolling: 'touch'
+        }}>
+          {(['all', 'active', 'banned'] as const).map((status) => (
+            <button
+              key={status}
+              onClick={() => setStatusFilter(status)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '20px',
+                border: 'none',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                backgroundColor: statusFilter === status ? 'var(--text)' : 'var(--card)',
+                color: statusFilter === status ? 'var(--bg)' : 'var(--text)',
+                transition: 'all 0.2s'
+              }}
+            >
+              {status === 'all' ? 'Все статусы' : status === 'active' ? 'Активные' : 'Заблокированные'}
+            </button>
+          ))}
+        </div>
+
+        {/* Stats */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '16px',
+          padding: '12px 16px',
+          backgroundColor: 'var(--card)',
+          borderRadius: '12px',
+          border: '1px solid var(--border)'
+        }}>
+          <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+            Найдено пользователей:
+          </span>
+          <span style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text)' }}>
+            {filteredUsers.length}
+          </span>
+        </div>
+
+        {/* Users List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {currentUsers.map((user) => (
+            <div
+              key={user.id}
+              style={{
+                backgroundColor: 'var(--card)',
+                borderRadius: '12px',
+                padding: '16px',
+                border: '1px solid var(--border)'
+              }}
+            >
+              {/* User Header */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '16px'
+              }}>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: 'var(--text)',
+                    margin: '0 0 4px 0'
+                  }}>
+                    {getUserDisplayName(user)}
+                  </h3>
+                  <p style={{
+                    fontSize: '14px',
+                    color: 'var(--text-secondary)',
+                    margin: 0
+                  }}>
+                    {user.username ? `@${user.username}` : `ID: ${user.telegramId}`}
+                  </p>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  alignItems: 'flex-end'
+                }}>
+                  {/* Role Badge */}
+                  <span style={{
+                    padding: '4px 12px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    backgroundColor: user.role === 'admin' ? '#dbeafe' : '#f3f4f6',
+                    color: user.role === 'admin' ? '#3b82f6' : '#6b7280'
+                  }}>
+                    {user.role === 'admin' ? 'Админ' : 'Пользователь'}
+                  </span>
+                  {/* Ban Badge */}
+                  {user.isBanned && (
+                    <span style={{
+                      padding: '4px 12px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      backgroundColor: '#fee2e2',
+                      color: '#ef4444'
+                    }}>
+                      Заблокирован
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {/* Pagination */}
-              {pagination.pages > 1 && (
-                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                  <div className="flex-1 flex justify-between sm:hidden">
-                    <button
-                      onClick={() => setPage(page - 1)}
-                      disabled={page <= 1}
-                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Предыдущая
-                    </button>
-                    <button
-                      onClick={() => setPage(page + 1)}
-                      disabled={page >= pagination.pages}
-                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Следующая
-                    </button>
+              {/* User Info */}
+              <div style={{
+                backgroundColor: 'var(--bg)',
+                borderRadius: '8px',
+                padding: '12px',
+                marginBottom: '16px'
+              }}>
+                <div style={{
+                  fontSize: '14px',
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  <div>
+                    <strong style={{ color: 'var(--text)' }}>Telegram ID:</strong> {user.telegramId}
                   </div>
-                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  {user.username && (
                     <div>
-                      <p className="text-sm text-gray-700">
-                        Показано <span className="font-medium">{((page - 1) * pagination.limit) + 1}</span> до{' '}
-                        <span className="font-medium">{Math.min(page * pagination.limit, pagination.total)}</span> из{' '}
-                        <span className="font-medium">{pagination.total}</span> результатов
-                      </p>
+                      <strong style={{ color: 'var(--text)' }}>Username:</strong> @{user.username}
                     </div>
+                  )}
+                  {user.firstName && (
                     <div>
-                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                        <button
-                          onClick={() => setPage(page - 1)}
-                          disabled={page <= 1}
-                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          ←
-                        </button>
-
-                        {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
-                          const pageNum = i + 1;
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => setPage(pageNum)}
-                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                page === pageNum
-                                  ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                              }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        })}
-
-                        <button
-                          onClick={() => setPage(page + 1)}
-                          disabled={page >= pagination.pages}
-                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          →
-                        </button>
-                      </nav>
+                      <strong style={{ color: 'var(--text)' }}>Имя:</strong> {user.firstName}
                     </div>
+                  )}
+                  {user.lastName && (
+                    <div>
+                      <strong style={{ color: 'var(--text)' }}>Фамилия:</strong> {user.lastName}
+                    </div>
+                  )}
+                  <div>
+                    <strong style={{ color: 'var(--text)' }}>Зарегистрирован:</strong>{' '}
+                    {new Date(user.createdAt).toLocaleDateString('ru-RU', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
                   </div>
                 </div>
-              )}
-            </>
-          )}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* Role Selector */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: 'var(--text)',
+                    marginBottom: '8px'
+                  }}>
+                    Роль:
+                  </label>
+                  <select
+                    value={user.role}
+                    onChange={(e) => changeUserRole(user.id, e.target.value as 'admin' | 'user')}
+                    disabled={updatingUserId === user.id}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border)',
+                      backgroundColor: 'var(--bg)',
+                      color: 'var(--text)',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: updatingUserId === user.id ? 'not-allowed' : 'pointer',
+                      opacity: updatingUserId === user.id ? 0.6 : 1
+                    }}
+                  >
+                    <option value="user">Пользователь</option>
+                    <option value="admin">Администратор</option>
+                  </select>
+                </div>
+
+                {/* Ban/Unban Button */}
+                <button
+                  onClick={() => toggleUserBan(user.id, user.isBanned)}
+                  disabled={updatingUserId === user.id}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: updatingUserId === user.id ? 'not-allowed' : 'pointer',
+                    backgroundColor: user.isBanned ? '#10b981' : '#ef4444',
+                    color: '#ffffff',
+                    opacity: updatingUserId === user.id ? 0.6 : 1,
+                    transition: 'opacity 0.2s'
+                  }}
+                >
+                  {updatingUserId === user.id
+                    ? 'Обновление...'
+                    : user.isBanned
+                      ? 'Разблокировать пользователя'
+                      : 'Заблокировать пользователя'}
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
+
+        {/* Empty State */}
+        {filteredUsers.length === 0 && (
+          <div style={{
+            backgroundColor: 'var(--card)',
+            borderRadius: '12px',
+            padding: '48px 32px',
+            textAlign: 'center',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{
+              fontSize: '48px',
+              marginBottom: '16px'
+            }}>
+              👥
+            </div>
+            <p style={{
+              fontSize: '16px',
+              color: 'var(--text-secondary)',
+              margin: 0
+            }}>
+              {searchQuery
+                ? 'Пользователи не найдены'
+                : 'Пользователей пока нет'}
+            </p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '24px',
+            flexWrap: 'wrap'
+          }}>
+            <button
+              onClick={() => paginate(currentPage - 1)}
+              disabled={currentPage === 1}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--card)',
+                color: 'var(--text)',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                opacity: currentPage === 1 ? 0.5 : 1
+              }}
+            >
+              ← Назад
+            </button>
+
+            {/* Page Numbers */}
+            <div style={{
+              display: 'flex',
+              gap: '4px',
+              alignItems: 'center'
+            }}>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  // Show first page, last page, current page, and pages around current
+                  if (page === 1 || page === totalPages) return true;
+                  if (Math.abs(page - currentPage) <= 1) return true;
+                  return false;
+                })
+                .map((page, index, array) => {
+                  // Add ellipsis
+                  const prevPage = array[index - 1];
+                  const showEllipsis = prevPage && page - prevPage > 1;
+
+                  return (
+                    <React.Fragment key={page}>
+                      {showEllipsis && (
+                        <span style={{
+                          padding: '8px 4px',
+                          color: 'var(--text-secondary)',
+                          fontSize: '14px'
+                        }}>
+                          ...
+                        </span>
+                      )}
+                      <button
+                        onClick={() => paginate(page)}
+                        style={{
+                          minWidth: '36px',
+                          padding: '8px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border)',
+                          backgroundColor: currentPage === page ? 'var(--text)' : 'var(--card)',
+                          color: currentPage === page ? 'var(--bg)' : 'var(--text)',
+                          fontSize: '14px',
+                          fontWeight: currentPage === page ? '600' : '500',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {page}
+                      </button>
+                    </React.Fragment>
+                  );
+                })}
+            </div>
+
+            <button
+              onClick={() => paginate(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--card)',
+                color: 'var(--text)',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                opacity: currentPage === totalPages ? 0.5 : 1
+              }}
+            >
+              Вперед →
+            </button>
+          </div>
+        )}
       </div>
+
+      <BottomNavigation />
     </div>
   );
 };
