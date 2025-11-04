@@ -4,13 +4,13 @@ const prisma = new PrismaClient();
 
 const products = [
   {
-    title: 'Винтажная джинсовая куртка Levi's',
-    brand: "Levi's",
+    title: 'Винтажная джинсовая куртка Levi\'s',
+    brand: 'Levi\'s',
     category: 'Куртки',
     size: 'L',
     color: 'Синий',
     condition: 9,
-    description: 'Классическая джинсовая куртка Levi's в отличном состоянии. Винтажная модель 80-х годов.',
+    description: 'Классическая джинсовая куртка Levi\'s в отличном состоянии. Винтажная модель 80-х годов.',
     price: 8500,
     quantity: 1,
     discount: null,
