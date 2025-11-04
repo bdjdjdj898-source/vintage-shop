@@ -23,7 +23,11 @@
       "Bash(sed:*)",
       "Bash(curl:*)",
       "Bash(git fetch:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc)",
+      "Bash(npx typescript:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

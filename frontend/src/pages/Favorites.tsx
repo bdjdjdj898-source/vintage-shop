@@ -33,7 +33,7 @@ const Favorites: React.FC = () => {
           </h2>
 
           {/* Skeleton grid - 6 cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', width: '100%' }}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <ProductCardSkeleton key={i} />
             ))}
@@ -115,7 +115,7 @@ const Favorites: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', width: '100%' }}>
             {favoriteProducts.map((product) => (
               <ProductCard
                 key={product.id}

@@ -1,3 +1,4 @@
+import TelegramBot from 'node-telegram-bot-api';
 import { TelegramUser } from '../utils/telegram';
 
 /**
@@ -6,6 +7,8 @@ import { TelegramUser } from '../utils/telegram';
 export class TelegramBotService {
   private readonly botToken: string;
   private readonly adminIds: string[];
+  private bot: TelegramBot | null = null;
+  private readonly webAppUrl: string;
 
   constructor() {
     this.botToken = process.env.TELEGRAM_BOT_TOKEN || '';
@@ -13,6 +16,7 @@ export class TelegramBotService {
       .split(',')
       .map(s => s.trim())
       .filter(Boolean);
+    this.webAppUrl = process.env.WEBAPP_URL || 'https://t.me/myvintageshop_bot/shop';
 
     if (!this.botToken) {
       console.warn('TELEGRAM_BOT_TOKEN не задан, уведомления отключены');
@@ -20,6 +24,62 @@ export class TelegramBotService {
 
     if (this.adminIds.length === 0) {
       console.warn('ADMIN_TELEGRAM_IDS не заданы, уведомления админам недоступны');
+    }
+
+    // Инициализируем бота для обработки команд
+    if (this.botToken) {
+      this.initializeBot();
+    }
+  }
+
+  /**
+   * Инициализация бота с обработчиками команд
+   */
+  private initializeBot(): void {
+    try {
+      this.bot = new TelegramBot(this.botToken, { polling: true });
+
+      // Обработчик команды /start
+      this.bot.onText(/\/start/, (msg) => {
+        const chatId = msg.chat.id;
+        const firstName = msg.from?.first_name || 'друг';
+
+        const welcomeMessage = `
+Привет, ${firstName}! 👋
+
+Добро пожаловать в наш винтажный магазин! 🛍️
+
+Здесь вы найдете уникальные винтажные вещи:
+• Куртки и толстовки
+• Джинсы и брюки
+• Свитеры
+• Аксессуары
+• Обувь
+
+Все товары тщательно отобраны и находятся в отличном состоянии!
+
+Нажмите кнопку ниже, чтобы открыть магазин 👇
+        `.trim();
+
+        const options = {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: '🛍️ Открыть магазин',
+                  web_app: { url: this.webAppUrl }
+                }
+              ]
+            ]
+          }
+        };
+
+        this.bot?.sendMessage(chatId, welcomeMessage, options);
+      });
+
+      console.log('Telegram Bot успешно запущен и обрабатывает команды');
+    } catch (error) {
+      console.error('Ошибка инициализации Telegram Bot:', error);
     }
   }
 

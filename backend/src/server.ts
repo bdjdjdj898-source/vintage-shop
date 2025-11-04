@@ -20,6 +20,9 @@ import { requestIdMiddleware } from './middleware/requestId';
 import logger, { loggerStream } from './lib/logger';
 import { prisma } from './lib/prisma';
 
+// Services
+import { telegramBot } from './services/telegramBot';
+
 dotenv.config();
 
 const app = express();
@@ -170,6 +173,8 @@ app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
   logger.info(`Health check: http://localhost:${PORT}/health`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  // Bot инициализируется автоматически при импорте telegramBot
+  logger.info(`Telegram Bot: ${process.env.TELEGRAM_BOT_TOKEN ? 'Активен' : 'Отключен'}`);
 });
 
 export default app;

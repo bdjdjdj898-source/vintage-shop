@@ -293,13 +293,6 @@ const ProductDetail: React.FC = () => {
               target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=1000&fit=crop&auto=format';
             }}
           />
-
-          {/* Condition Badge */}
-          <div
-            style={{ position: 'absolute', top: '12px', right: '12px', padding: '4px 12px', borderRadius: '9999px', fontSize: '14px', fontWeight: '500', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', backgroundColor: conditionColors.bg, color: conditionColors.text }}
-          >
-            {getConditionText(product.condition)}
-          </div>
         </div>
 
         {/* Title and Price Block */}
