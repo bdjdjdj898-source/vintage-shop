@@ -47,14 +47,6 @@ function buildProductWhere(filters, options = {}) {
         where.size = size;
     if (color)
         where.color = color;
-    if (search) {
-        where.OR = [
-            { title: { contains: search, mode: 'insensitive' } },
-            { brand: { contains: search, mode: 'insensitive' } },
-            { description: { contains: search, mode: 'insensitive' } },
-            { category: { contains: search, mode: 'insensitive' } }
-        ];
-    }
     if (minCondition || maxCondition) {
         where.condition = {};
         if (minCondition)

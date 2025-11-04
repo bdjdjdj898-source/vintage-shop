@@ -42,7 +42,7 @@ router.get('/', optionalAuth_1.optionalAuth, [
             maxCondition,
             minPrice,
             maxPrice,
-            search,
+            search: undefined,
             includeInactive
         }, {
             isAdmin: req.user?.role === 'admin'
@@ -60,7 +60,15 @@ router.get('/', optionalAuth_1.optionalAuth, [
         else if (sort === 'brand_asc') {
             orderBy = { brand: 'asc' };
         }
-        const [products, totalCount] = await Promise.all([
+        let products;
+        let totalCount;
+        if (search && typeof search === 'string') {
+            where.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { brand: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+        [products, totalCount] = await Promise.all([
             prisma_1.prisma.product.findMany({
                 where,
                 orderBy,
@@ -78,6 +86,8 @@ router.get('/', optionalAuth_1.optionalAuth, [
                     price: true,
                     images: true,
                     isActive: true,
+                    quantity: true,
+                    discount: true,
                     createdAt: true,
                     updatedAt: true
                 }
@@ -147,10 +157,12 @@ router.post('/', requireAdmin_1.requireAdmin, [
     (0, express_validator_1.body)('price').isFloat({ min: 0 }),
     (0, express_validator_1.body)('images').isArray({ min: 1, max: 10 }).withMessage('Количество изображений должно быть от 1 до 10'),
     (0, express_validator_1.body)('images.*').isURL(),
+    (0, express_validator_1.body)('quantity').isInt({ min: 0 }).withMessage('Количество должно быть >= 0'),
+    (0, express_validator_1.body)('discount').optional().isInt({ min: 0, max: 100 }).withMessage('Скидка должна быть от 0 до 100%'),
     validateRequest_1.validateRequest
 ], async (req, res) => {
     try {
-        const { title, brand, category, size, color, condition, description, price, images } = req.body;
+        const { title, brand, category, size, color, condition, description, price, images, quantity, discount } = req.body;
         const uniqueImages = [...new Set(images)];
         const product = await prisma_1.prisma.product.create({
             data: {
@@ -163,7 +175,9 @@ router.post('/', requireAdmin_1.requireAdmin, [
                 description,
                 price,
                 images: (0, normalize_1.stringifyJson)(uniqueImages),
-                isActive: true
+                isActive: true,
+                quantity,
+                discount: discount || null
             }
         });
         const productWithImages = {
@@ -190,6 +204,8 @@ router.put('/:id', requireAdmin_1.requireAdmin, [
     (0, express_validator_1.body)('images').optional().isArray({ min: 1, max: 10 }).withMessage('Количество изображений должно быть от 1 до 10'),
     (0, express_validator_1.body)('images.*').optional().isURL(),
     (0, express_validator_1.body)('isActive').optional().isBoolean(),
+    (0, express_validator_1.body)('quantity').optional().isInt({ min: 0 }).withMessage('Количество должно быть >= 0'),
+    (0, express_validator_1.body)('discount').optional().isInt({ min: 0, max: 100 }).withMessage('Скидка должна быть от 0 до 100%'),
     validateRequest_1.validateRequest
 ], async (req, res) => {
     try {
@@ -203,7 +219,7 @@ router.put('/:id', requireAdmin_1.requireAdmin, [
         const updateData = {};
         const allowedFields = [
             'title', 'brand', 'category', 'size', 'color',
-            'condition', 'description', 'price', 'isActive'
+            'condition', 'description', 'price', 'isActive', 'quantity', 'discount'
         ];
         for (const field of allowedFields) {
             if (req.body[field] !== undefined) {

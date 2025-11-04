@@ -200,7 +200,7 @@ const AdminUsers: React.FC = () => {
       backgroundColor: 'var(--bg)',
       paddingBottom: '80px'
     }}>
-      <Header hideSearch={true} showBack={true} />
+      <Header hideSearch={true} />
 
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '16px' }}>
         {/* Page Title */}

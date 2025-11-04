@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import BottomNavigation from '../components/BottomNavigation';
+import { useTelegramBackButton } from '../hooks/useTelegramUI';
 
 const Admin: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Telegram Back Button
+  useTelegramBackButton(() => navigate('/profile'));
 
   if (user?.role !== 'admin') {
     return (
@@ -100,21 +104,6 @@ const Admin: React.FC = () => {
           alignItems: 'center',
           marginBottom: '24px'
         }}>
-          <button
-            onClick={() => navigate('/profile')}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '8px',
-              marginLeft: '-8px',
-              marginRight: '8px'
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
           <h1 style={{
             fontSize: '20px',
             fontWeight: 'bold',

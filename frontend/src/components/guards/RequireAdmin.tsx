@@ -11,16 +11,53 @@ const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center p-6 max-w-md">
-          <div className="text-blue-500 text-xl mb-4">🔐</div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">Требуется авторизация</h2>
-          <p className="text-gray-600 mb-4">
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px'
+      }}>
+        <div style={{
+          textAlign: 'center',
+          padding: '24px',
+          maxWidth: '400px'
+        }}>
+          <div style={{
+            fontSize: '48px',
+            marginBottom: '16px'
+          }}>
+            🔐
+          </div>
+          <h2 style={{
+            fontSize: '20px',
+            fontWeight: '600',
+            color: 'var(--text)',
+            marginBottom: '8px'
+          }}>
+            Требуется авторизация
+          </h2>
+          <p style={{
+            fontSize: '14px',
+            color: 'var(--text-secondary)',
+            marginBottom: '24px'
+          }}>
             Для доступа к этой странице необходимо войти через Telegram.
           </p>
           <Link
             to="/"
-            className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            style={{
+              display: 'inline-block',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontSize: '14px',
+              fontWeight: '600',
+              transition: 'background-color 0.2s'
+            }}
           >
             Вернуться к каталогу
           </Link>
@@ -31,16 +68,53 @@ const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
 
   if (user.role !== 'admin') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center p-6 max-w-md">
-          <div className="text-red-500 text-xl mb-4">⚠️</div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">Доступ запрещен</h2>
-          <p className="text-gray-600 mb-4">
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px'
+      }}>
+        <div style={{
+          textAlign: 'center',
+          padding: '24px',
+          maxWidth: '400px'
+        }}>
+          <div style={{
+            fontSize: '48px',
+            marginBottom: '16px'
+          }}>
+            ⚠️
+          </div>
+          <h2 style={{
+            fontSize: '20px',
+            fontWeight: '600',
+            color: 'var(--text)',
+            marginBottom: '8px'
+          }}>
+            Доступ запрещен
+          </h2>
+          <p style={{
+            fontSize: '14px',
+            color: 'var(--text-secondary)',
+            marginBottom: '24px'
+          }}>
             У вас нет прав администратора для доступа к этой странице.
           </p>
           <Link
             to="/"
-            className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            style={{
+              display: 'inline-block',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontSize: '14px',
+              fontWeight: '600',
+              transition: 'background-color 0.2s'
+            }}
           >
             Вернуться к каталогу
           </Link>

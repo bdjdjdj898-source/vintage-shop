@@ -47,6 +47,8 @@ const cart_1 = __importDefault(require("./routes/cart"));
 const orders_1 = __importDefault(require("./routes/orders"));
 const admin_1 = __importDefault(require("./routes/admin"));
 const me_1 = __importDefault(require("./routes/me"));
+const favorites_1 = __importDefault(require("./routes/favorites"));
+const searchHistory_1 = __importDefault(require("./routes/searchHistory"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const requestId_1 = require("./middleware/requestId");
 const logger_1 = __importStar(require("./lib/logger"));
@@ -129,6 +131,8 @@ app.use('/api/cart', cart_1.default);
 app.use('/api/orders', orders_1.default);
 app.use('/api/admin', admin_1.default);
 app.use('/api/me', me_1.default);
+app.use('/api/favorites', favorites_1.default);
+app.use('/api/search-history', searchHistory_1.default);
 app.get('/api/*', (req, res) => {
     res.status(404).json({
         error: 'API роут не найден',

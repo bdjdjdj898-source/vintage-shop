@@ -34,5 +34,9 @@ EXPOSE 3000
 # Set working directory to backend for runtime
 WORKDIR /app/backend
 
-# Start the application with migration
-CMD ["sh", "-c", "npx prisma db push --schema=../prisma/schema.prisma --accept-data-loss && npm start"]
+# Copy entrypoint script
+COPY backend/docker-entrypoint.sh .
+RUN chmod +x docker-entrypoint.sh
+
+# Start the application with migration and seed
+CMD ["./docker-entrypoint.sh"]

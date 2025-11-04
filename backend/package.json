@@ -12,6 +12,7 @@
     "db:migrate": "prisma migrate dev --schema=../prisma/schema.prisma",
     "db:reset": "prisma migrate reset --schema=../prisma/schema.prisma",
     "db:seed": "ts-node prisma/seed.ts",
+    "seed:products": "ts-node src/scripts/seedProducts.ts",
     "lint": "eslint src/**/*.ts",
     "clean": "rimraf dist",
     "test": "vitest",

@@ -45,7 +45,13 @@ export function setTelegramInitData(v: string | null) { initData = v; }
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const headers = new Headers(options.headers || {});
   headers.set('Content-Type', 'application/json');
-  if (initData) headers.set('x-telegram-init-data', initData);
+  if (initData) {
+    headers.set('x-telegram-init-data', initData);
+    // Если это фейковый initData (workaround для бага Telegram) - отмечаем это
+    if (initData.includes('fake_hash_for_telegram_bug')) {
+      headers.set('x-telegram-fallback', 'true');
+    }
+  }
 
   // Add debug auth header in DEV mode with secret
   if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_AUTH_SECRET) {

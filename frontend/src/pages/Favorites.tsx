@@ -1,46 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { apiFetch } from '../api/client';
+import React, { useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import Header from '../components/Header';
 import BottomNavigation from '../components/BottomNavigation';
-import { Product } from '../types/api';
 import { Heart } from 'lucide-react';
+import { useProducts } from '../contexts/ProductsContext';
 
 const Favorites: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { favoriteProducts, isLoadingFavorites, errorFavorites, fetchFavorites, removeFavoriteFromCache } = useProducts();
 
   useEffect(() => {
     fetchFavorites();
-  }, []);
-
-  const fetchFavorites = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await apiFetch('/api/favorites');
-      console.log('📦 Favorites response:', response);
-
-      if (response.success) {
-        setProducts(response.data);
-      }
-    } catch (err) {
-      console.error('❌ Error fetching favorites:', err);
-      setError(`Ошибка загрузки избранного: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [fetchFavorites]);
 
   const handleFavoriteRemoved = (productId: number) => {
-    // Remove product from list when unfavorited
-    setProducts(prev => prev.filter(p => p.id !== productId));
+    // Remove product from cache when unfavorited
+    removeFavoriteFromCache(productId);
   };
 
-  if (isLoading) {
+  if (isLoadingFavorites) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
         <Header hideSearch />
@@ -66,7 +44,7 @@ const Favorites: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (errorFavorites) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
         <Header hideSearch />
@@ -80,7 +58,7 @@ const Favorites: React.FC = () => {
             Избранное
           </h2>
           <div className="flex justify-center items-center h-64">
-            <div className="text-center text-sm mt-4" style={{ color: 'var(--color-error)' }}>{error}</div>
+            <div className="text-center text-sm mt-4" style={{ color: 'var(--color-error)' }}>{errorFavorites}</div>
           </div>
         </div>
         <BottomNavigation />
@@ -102,7 +80,7 @@ const Favorites: React.FC = () => {
         </h2>
 
         {/* Product Grid */}
-        {products.length === 0 ? (
+        {!favoriteProducts || favoriteProducts.length === 0 ? (
           <div style={{
             display: 'flex',
             flexDirection: 'column',
@@ -138,7 +116,7 @@ const Favorites: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map((product) => (
+            {favoriteProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}

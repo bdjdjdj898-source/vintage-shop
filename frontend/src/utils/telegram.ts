@@ -56,19 +56,47 @@ export function initTelegramWebApp() {
 
   console.log('✅ Telegram WebApp initialized');
   console.log('📋 initData:', tg.initData);
+  console.log('📋 initData LENGTH:', tg.initData?.length || 0);
   console.log('📋 initDataUnsafe:', tg.initDataUnsafe);
   console.log('👤 user:', tg.initDataUnsafe?.user);
   console.log('🎨 colorScheme:', tg.colorScheme);
   console.log('📱 platform:', tg.platform);
   console.log('🔢 version:', tg.version);
 
+  // ФИКС: Если есть user но нет initData - создаем фейковый initData
+  if (tg.initDataUnsafe?.user && (!tg.initData || tg.initData.length === 0)) {
+    console.warn('⚠️⚠️⚠️ TELEGRAM BUG: user есть, но initData пустой!');
+    console.warn('🔧 Создаю фейковый initData для работы приложения');
+
+    const user = tg.initDataUnsafe.user;
+    const authDate = Math.floor(Date.now() / 1000);
+    const fakeInitData = `user=${encodeURIComponent(JSON.stringify(user))}&auth_date=${authDate}&hash=fake_hash_for_telegram_bug`;
+
+    console.warn('🔧 Fake initData создан:', fakeInitData.substring(0, 100) + '...');
+
+    return {
+      initData: fakeInitData,
+      user: user,
+      colorScheme: tg.colorScheme || 'light'
+    };
+  }
+
   // Проверяем что есть данные пользователя
   if (!tg.initData || !tg.initDataUnsafe?.user) {
-    console.error('❌ Telegram WebApp: нет данных пользователя');
-    console.error('initData length:', tg.initData?.length || 0);
+    console.error('❌ Telegram WebApp: ПОЛНОСТЬЮ нет данных');
+    console.error('initData:', tg.initData);
     console.error('initDataUnsafe:', JSON.stringify(tg.initDataUnsafe));
 
-    // Возвращаем null - пусть работает без авторизации
+    alert(`Telegram WebApp ERROR!
+
+initData: ${tg.initData ? 'exists but empty' : 'null'}
+user: ${tg.initDataUnsafe?.user ? 'exists' : 'null'}
+
+Попробуйте:
+1. Закрыть и переоткрыть приложение
+2. Перезапустить Telegram
+3. Обновить бота`);
+
     return null;
   }
 

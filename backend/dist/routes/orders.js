@@ -97,8 +97,16 @@ router.post('/', [
             if (unavailableProducts.length > 0) {
                 throw new Error('PRODUCT_UNAVAILABLE');
             }
+            for (const item of cart.items) {
+                if (item.quantity > item.product.quantity) {
+                    throw new Error(`INSUFFICIENT_STOCK:${item.product.title}`);
+                }
+            }
             const totalAmount = cart.items.reduce((sum, item) => {
-                return sum + (item.product.price * item.quantity);
+                const price = item.product.discount && item.product.discount > 0
+                    ? Math.round(item.product.price * (1 - item.product.discount / 100))
+                    : item.product.price;
+                return sum + (price * item.quantity);
             }, 0);
             const telegramData = {
                 telegramId: user.telegramId,
@@ -115,18 +123,29 @@ router.post('/', [
                     status: 'pending'
                 }
             });
-            const orderItems = await Promise.all(cart.items.map((item) => prisma.orderItem.create({
-                data: {
-                    orderId: order.id,
-                    productId: item.productId,
-                    quantity: item.quantity,
-                    price: item.product.price
-                }
-            })));
-            await Promise.all(cart.items.map((item) => prisma.product.update({
-                where: { id: item.productId },
-                data: { isActive: false }
-            })));
+            const orderItems = await Promise.all(cart.items.map((item) => {
+                const price = item.product.discount && item.product.discount > 0
+                    ? Math.round(item.product.price * (1 - item.product.discount / 100))
+                    : item.product.price;
+                return prisma.orderItem.create({
+                    data: {
+                        orderId: order.id,
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        price
+                    }
+                });
+            }));
+            await Promise.all(cart.items.map((item) => {
+                const newQuantity = item.product.quantity - item.quantity;
+                return prisma.product.update({
+                    where: { id: item.productId },
+                    data: {
+                        quantity: newQuantity,
+                        isActive: newQuantity > 0 ? undefined : false
+                    }
+                });
+            }));
             await prisma.cartItem.deleteMany({
                 where: { cartId: cart.id }
             });
@@ -176,6 +195,10 @@ router.post('/', [
         }
         if (error instanceof Error && error.message === 'PRODUCT_UNAVAILABLE') {
             return responses_1.ApiResponse.businessError(res, responses_1.ErrorCode.PRODUCT_UNAVAILABLE, 'Товар больше недоступен');
+        }
+        if (error instanceof Error && error.message.startsWith('INSUFFICIENT_STOCK:')) {
+            const productTitle = error.message.split(':')[1];
+            return responses_1.ApiResponse.businessError(res, responses_1.ErrorCode.PRODUCT_UNAVAILABLE, `Недостаточно товара "${productTitle}" на складе`);
         }
         return responses_1.ApiResponse.internalError(res, 'Ошибка сервера при создании заказа');
     }

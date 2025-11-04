@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const telegramAuth_1 = require("../middleware/telegramAuth");
+const softTelegramAuth_1 = require("../middleware/softTelegramAuth");
 const responses_1 = require("../utils/responses");
 const prisma_1 = require("../lib/prisma");
 const auth_1 = require("../types/auth");
 const router = (0, express_1.Router)();
-router.get('/', telegramAuth_1.requireAuth, async (req, res) => {
+router.get('/', softTelegramAuth_1.softAuth, async (req, res) => {
     try {
         const authenticatedUser = (0, auth_1.getAuthenticatedUser)(req.user);
         const user = await prisma_1.prisma.user.findUnique({

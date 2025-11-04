@@ -21,7 +21,9 @@
       "Bash(python3:*)",
       "Bash(md5sum:*)",
       "Bash(sed:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git fetch:*)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []

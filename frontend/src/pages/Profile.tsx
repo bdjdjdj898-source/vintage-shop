@@ -3,14 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import BottomNavigation from '../components/BottomNavigation';
-import { useTelegramBackButton } from '../hooks/useTelegramUI';
 
 const Profile: React.FC = () => {
   const { user, telegramUser } = useAuth();
   const navigate = useNavigate();
-
-  // Telegram Back Button для выхода (возврат на главную)
-  useTelegramBackButton(() => navigate('/'));
 
   return (
     <div style={{

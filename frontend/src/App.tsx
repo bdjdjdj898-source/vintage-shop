@@ -4,6 +4,7 @@ import { CartProvider } from './contexts/CartContext';
 import { FavoritesProvider } from './contexts/FavoritesContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SearchProvider } from './contexts/SearchContext';
+import { ProductsProvider } from './contexts/ProductsContext';
 import Home from "./pages/Home";
 import ProductDetail from "./pages/ProductDetail";
 import Search from "./pages/Search";
@@ -42,8 +43,9 @@ function AppContent() {
 
   return (
     <SearchProvider>
-      <FavoritesProvider>
-        <CartProvider>
+      <ProductsProvider>
+        <FavoritesProvider>
+          <CartProvider>
         {isMockMode && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 text-xs text-center">
             🔧 Dev Mode: Mock Telegram Data
@@ -67,8 +69,9 @@ function AppContent() {
         </Routes>
         <DebugLog />
       </BrowserRouter>
-        </CartProvider>
-      </FavoritesProvider>
+          </CartProvider>
+        </FavoritesProvider>
+      </ProductsProvider>
     </SearchProvider>
   );
 }

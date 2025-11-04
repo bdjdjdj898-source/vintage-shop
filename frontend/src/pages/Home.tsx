@@ -1,5 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { apiFetch } from '../api/client';
+import React, { useEffect, useState, useMemo } from 'react';
 import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import Header from '../components/Header';
@@ -7,12 +6,11 @@ import CategoryTabs from '../components/CategoryTabs';
 import BottomNavigation from '../components/BottomNavigation';
 import { Product } from '../types/api';
 import { useSearch } from '../contexts/SearchContext';
+import { useProducts } from '../contexts/ProductsContext';
 
 const Home: React.FC = () => {
   const { searchQuery } = useSearch();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { allProducts, isLoadingAll, errorAll, fetchAllProducts } = useProducts();
   const [filters, setFilters] = useState({
     category: '',
     brand: '',
@@ -26,62 +24,102 @@ const Home: React.FC = () => {
     sort: 'newest'
   });
 
-  const [categories, setCategories] = useState<string[]>([]);
-  const [brands, setBrands] = useState<string[]>([]);
-  const [sizes, setSizes] = useState<string[]>([]);
-  const [colors, setColors] = useState<string[]>([]);
-
-  const fetchProducts = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (filters.category) params.append('category', filters.category);
-      if (filters.brand) params.append('brand', filters.brand);
-      if (filters.size) params.append('size', filters.size);
-      if (filters.color) params.append('color', filters.color);
-      if (filters.minCondition) params.append('minCondition', filters.minCondition);
-      if (filters.maxCondition) params.append('maxCondition', filters.maxCondition);
-      if (filters.minPrice) params.append('minPrice', filters.minPrice);
-      if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
-      if (filters.search) params.append('search', filters.search);
-      if (filters.sort) params.append('sort', filters.sort);
-
-      const queryString = params.toString();
-      const url = `/api/products${queryString ? `?${queryString}` : ''}`;
-
-      console.log('🔍 Fetching products from:', url);
-      const response = await apiFetch(url);
-      console.log('📦 API Response:', response);
-      if (response.success) {
-        console.log('✅ Products loaded:', response.data.length);
-        setProducts(response.data);
-
-        // Extract unique options for filter dropdowns
-        const uniqueCategories = [...new Set(response.data.map((p: Product) => p.category))].sort();
-        const uniqueBrands = [...new Set(response.data.map((p: Product) => p.brand))].sort();
-        const uniqueSizes = [...new Set(response.data.map((p: Product) => p.size))].sort();
-        const uniqueColors = [...new Set(response.data.map((p: Product) => p.color))].sort();
-
-        setCategories(uniqueCategories);
-        setBrands(uniqueBrands);
-        setSizes(uniqueSizes);
-        setColors(uniqueColors);
-        console.log('📊 Фильтры установлены:', { categories: uniqueCategories, brands: uniqueBrands, sizes: uniqueSizes, colors: uniqueColors });
-      }
-    } catch (err) {
-      console.error('❌ Error fetching products:', err);
-      setError(`Ошибка загрузки товаров: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters]);
-
+  // Fetch all products once on mount
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    fetchAllProducts();
+  }, [fetchAllProducts]);
+
+  // Extract unique filter options from all products
+  const categories = useMemo(() => {
+    if (!allProducts) return [];
+    return [...new Set(allProducts.map(p => p.category))].sort();
+  }, [allProducts]);
+
+  const brands = useMemo(() => {
+    if (!allProducts) return [];
+    return [...new Set(allProducts.map(p => p.brand))].sort();
+  }, [allProducts]);
+
+  const sizes = useMemo(() => {
+    if (!allProducts) return [];
+    return [...new Set(allProducts.map(p => p.size))].sort();
+  }, [allProducts]);
+
+  const colors = useMemo(() => {
+    if (!allProducts) return [];
+    return [...new Set(allProducts.map(p => p.color))].sort();
+  }, [allProducts]);
+
+  // Filter products locally based on current filters
+  const filteredProducts = useMemo(() => {
+    if (!allProducts) return [];
+
+    let filtered = [...allProducts];
+
+    // Apply category filter
+    if (filters.category) {
+      filtered = filtered.filter(p => p.category === filters.category);
+    }
+
+    // Apply brand filter
+    if (filters.brand) {
+      filtered = filtered.filter(p => p.brand === filters.brand);
+    }
+
+    // Apply size filter
+    if (filters.size) {
+      filtered = filtered.filter(p => p.size === filters.size);
+    }
+
+    // Apply color filter
+    if (filters.color) {
+      filtered = filtered.filter(p => p.color === filters.color);
+    }
+
+    // Apply condition range filter
+    if (filters.minCondition) {
+      filtered = filtered.filter(p => p.condition >= parseInt(filters.minCondition));
+    }
+    if (filters.maxCondition) {
+      filtered = filtered.filter(p => p.condition <= parseInt(filters.maxCondition));
+    }
+
+    // Apply price range filter
+    if (filters.minPrice) {
+      filtered = filtered.filter(p => p.price >= parseFloat(filters.minPrice));
+    }
+    if (filters.maxPrice) {
+      filtered = filtered.filter(p => p.price <= parseFloat(filters.maxPrice));
+    }
+
+    // Apply search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.title.toLowerCase().includes(searchLower) ||
+        p.description.toLowerCase().includes(searchLower) ||
+        p.brand.toLowerCase().includes(searchLower) ||
+        p.category.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply sorting
+    switch (filters.sort) {
+      case 'newest':
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+      case 'price-asc':
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-desc':
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      default:
+        break;
+    }
+
+    return filtered;
+  }, [allProducts, filters]);
 
   // Sync search query from context to filters
   useEffect(() => {
@@ -113,7 +151,7 @@ const Home: React.FC = () => {
     });
   };
 
-  if (isLoading) {
+  if (isLoadingAll) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-bg)', width: '100%', overflowX: 'hidden' }}>
         <Header />
@@ -132,13 +170,13 @@ const Home: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (errorAll) {
     return (
       <div className="min-h-screen bg-bg">
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <div className="text-center text-sm mt-4" style={{ color: 'var(--color-error)' }}>{error}</div>
+            <div className="text-center text-sm mt-4" style={{ color: 'var(--color-error)' }}>{errorAll}</div>
           </div>
         </div>
       </div>
@@ -157,7 +195,7 @@ const Home: React.FC = () => {
         />
 
         {/* Product Grid */}
-        {products.length === 0 ? (
+        {filteredProducts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--color-text-secondary)' }}>
             {filters.category || filters.brand || filters.search
               ? 'Товары по выбранным фильтрам не найдены'
@@ -166,7 +204,7 @@ const Home: React.FC = () => {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', width: '100%' }}>
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}

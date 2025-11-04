@@ -82,11 +82,16 @@ router.post('/items', [
                 }
             }
         });
+        const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+        const newTotalQuantity = currentQuantityInCart + quantity;
+        if (newTotalQuantity > product.quantity) {
+            return responses_1.ApiResponse.businessError(res, responses_1.ErrorCode.PRODUCT_UNAVAILABLE, `В наличии только ${product.quantity} шт. В корзине уже ${currentQuantityInCart} шт.`);
+        }
         let cartItem;
         if (existingItem) {
             cartItem = await prisma_1.prisma.cartItem.update({
                 where: { id: existingItem.id },
-                data: { quantity: existingItem.quantity + quantity },
+                data: { quantity: newTotalQuantity },
                 include: { product: true }
             });
         }
@@ -137,6 +142,9 @@ router.put('/items/:id', [
         }
         if (!cartItem.product.isActive) {
             return responses_1.ApiResponse.businessError(res, responses_1.ErrorCode.PRODUCT_UNAVAILABLE, 'Товар больше недоступен');
+        }
+        if (quantity > cartItem.product.quantity) {
+            return responses_1.ApiResponse.businessError(res, responses_1.ErrorCode.PRODUCT_UNAVAILABLE, `В наличии только ${cartItem.product.quantity} шт.`);
         }
         const updatedItem = await prisma_1.prisma.cartItem.update({
             where: { id: cartItemId },
