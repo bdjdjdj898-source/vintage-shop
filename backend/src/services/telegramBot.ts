@@ -33,23 +33,55 @@ export class TelegramBotService {
   }
 
   /**
-   * Инициализация бота без polling (используем webhook)
+   * Инициализация бота с ручным polling
    */
   private initializeBot(): void {
     try {
-      // Инициализируем бота БЕЗ polling - будем использовать webhook
+      // Инициализируем бота БЕЗ auto-polling
       this.bot = new TelegramBot(this.botToken, { polling: false });
 
-      console.log('Telegram Bot инициализирован для работы с webhook');
+      // Запускаем ручной polling
+      this.startManualPolling();
+
+      console.log('Telegram Bot инициализирован с ручным polling');
     } catch (error) {
       console.error('Ошибка инициализации Telegram Bot:', error);
     }
   }
 
   /**
-   * Обработка входящего update от Telegram (вызывается из webhook endpoint)
+   * Ручной polling через getUpdates
    */
-  async processUpdate(update: any): Promise<void> {
+  private async startManualPolling(): Promise<void> {
+    let offset = 0;
+
+    const poll = async () => {
+      try {
+        const url = `https://api.telegram.org/bot${this.botToken}/getUpdates?offset=${offset}&timeout=30`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.ok && data.result.length > 0) {
+          for (const update of data.result) {
+            offset = update.update_id + 1;
+            await this.processUpdate(update);
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка polling:', error);
+      }
+
+      // Продолжаем polling
+      setTimeout(poll, 1000);
+    };
+
+    poll();
+  }
+
+  /**
+   * Обработка входящего update от Telegram
+   */
+  private async processUpdate(update: any): Promise<void> {
     try {
       // Обработка текстовых сообщений
       if (update.message && update.message.text) {
