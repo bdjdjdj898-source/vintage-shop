@@ -43,6 +43,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/vintage_shop?schema=public
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - WEBAPP_URL=${WEBAPP_URL}
       - ADMIN_TELEGRAM_IDS=${ADMIN_TELEGRAM_IDS}
       - PORT=3000
       - NODE_ENV=production
