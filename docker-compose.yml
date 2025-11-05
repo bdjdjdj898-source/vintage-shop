@@ -75,6 +75,7 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - WEBAPP_URL=${WEBAPP_URL}
       - ADMIN_TELEGRAM_IDS=${ADMIN_TELEGRAM_IDS}
+      - WEBHOOK_DOMAIN=${WEBHOOK_DOMAIN}
       - BOT_PORT=3001
     networks:
       - app-network

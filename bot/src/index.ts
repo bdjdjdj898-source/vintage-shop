@@ -86,36 +86,26 @@ async function handleStartCommand(chatId: number, firstName: string) {
   }
 }
 
-// Long polling
-let offset = 0;
-async function poll() {
+// Webhook endpoint для получения обновлений от Telegram
+app.post('/webhook', async (req, res) => {
   try {
-    const response = await fetch(`${BOT_API}/getUpdates?offset=${offset}&timeout=30`);
-    const data: any = await response.json();
+    const update = req.body;
 
-    if (data.ok && data.result.length > 0) {
-      for (const update of data.result) {
-        offset = update.update_id + 1;
+    console.log('📩 Получено обновление от Telegram:', JSON.stringify(update));
 
-        // Обработка команды /start
-        if (update.message?.text === '/start') {
-          const chatId = update.message.chat.id;
-          const firstName = update.message.from.first_name || 'друг';
-          await handleStartCommand(chatId, firstName);
-        }
-      }
+    // Обработка команды /start
+    if (update.message?.text === '/start') {
+      const chatId = update.message.chat.id;
+      const firstName = update.message.from.first_name || 'друг';
+      await handleStartCommand(chatId, firstName);
     }
+
+    res.sendStatus(200);
   } catch (error) {
-    console.error('❌ Polling error:', error);
+    console.error('❌ Ошибка обработки webhook:', error);
+    res.sendStatus(500);
   }
-
-  // Продолжаем polling
-  setImmediate(poll);
-}
-
-// Запускаем polling
-console.log('✅ Запуск long polling...');
-poll();
+});
 
 // API endpoint для отправки уведомлений админам
 app.post('/api/notify-admin', async (req, res) => {
@@ -176,12 +166,46 @@ app.get('/health', (req, res) => {
   });
 });
 
-console.log('✅ Telegram Bot запущен с auto-polling');
+// Функция установки webhook
+async function setupWebhook() {
+  const WEBHOOK_DOMAIN = process.env.WEBHOOK_DOMAIN || '';
 
-app.listen(PORT, () => {
+  if (!WEBHOOK_DOMAIN) {
+    console.error('❌ WEBHOOK_DOMAIN не задан!');
+    return;
+  }
+
+  const webhookUrl = `${WEBHOOK_DOMAIN}/webhook`;
+
+  try {
+    console.log(`🔗 Устанавливаем webhook: ${webhookUrl}`);
+
+    const response = await fetch(`${BOT_API}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: webhookUrl })
+    });
+
+    const result: any = await response.json();
+
+    if (result.ok) {
+      console.log('✅ Webhook успешно установлен!');
+    } else {
+      console.error('❌ Ошибка установки webhook:', result);
+    }
+  } catch (error) {
+    console.error('❌ Не удалось установить webhook:', error);
+  }
+}
+
+app.listen(PORT, async () => {
   console.log(`🚀 Bot API server запущен на порту ${PORT}`);
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
   console.log(`📮 Notify endpoint: http://localhost:${PORT}/api/notify-admin`);
+  console.log(`🪝 Webhook endpoint: http://localhost:${PORT}/webhook`);
+
+  // Устанавливаем webhook после запуска сервера
+  await setupWebhook();
 });
 
 // Graceful shutdown
