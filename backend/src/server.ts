@@ -173,8 +173,7 @@ app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
   logger.info(`Health check: http://localhost:${PORT}/health`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  // Bot инициализируется автоматически при импорте telegramBot
-  logger.info(`Telegram Bot: ${process.env.TELEGRAM_BOT_TOKEN ? 'Активен' : 'Отключен'}`);
+  logger.info(`Bot API URL: ${process.env.BOT_API_URL || 'http://localhost:3001'}`);
 });
 
 export default app;

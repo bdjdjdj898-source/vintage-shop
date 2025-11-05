@@ -1,157 +1,41 @@
-import TelegramBot from 'node-telegram-bot-api';
 import { TelegramUser } from '../utils/telegram';
 
 /**
- * Сервис для отправки уведомлений через Telegram Bot
+ * Сервис для отправки уведомлений через Bot API
  */
 export class TelegramBotService {
-  private readonly botToken: string;
-  private readonly adminIds: string[];
-  private bot: TelegramBot | null = null;
-  private readonly webAppUrl: string;
+  private readonly botApiUrl: string;
 
   constructor() {
-    this.botToken = process.env.TELEGRAM_BOT_TOKEN || '';
-    this.adminIds = (process.env.ADMIN_TELEGRAM_IDS || '')
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-    this.webAppUrl = process.env.WEBAPP_URL || 'https://t.me/myvintageshop_bot/shop';
+    this.botApiUrl = process.env.BOT_API_URL || 'http://localhost:3001';
 
-    if (!this.botToken) {
-      console.warn('TELEGRAM_BOT_TOKEN не задан, уведомления отключены');
-    }
-
-    if (this.adminIds.length === 0) {
-      console.warn('ADMIN_TELEGRAM_IDS не заданы, уведомления админам недоступны');
-    }
-
-    // Инициализируем бота для обработки команд
-    if (this.botToken) {
-      this.initializeBot();
+    if (!process.env.BOT_API_URL) {
+      console.warn('BOT_API_URL не задан, используется localhost:3001');
     }
   }
 
   /**
-   * Инициализация бота с auto-polling
-   */
-  private initializeBot(): void {
-    try {
-      // Включаем auto-polling из библиотеки
-      this.bot = new TelegramBot(this.botToken, {
-        polling: {
-          interval: 1000,
-          autoStart: true,
-          params: {
-            timeout: 10
-          }
-        }
-      });
-
-      // Обработчик ошибок polling
-      this.bot.on('polling_error', (error) => {
-        console.error('❌ Telegram Bot polling error:', error);
-      });
-
-      // Обработчик команды /start
-      this.bot.onText(/\/start/, async (msg) => {
-        console.log('✅ Получена команда /start от:', msg.from?.username || msg.from?.first_name);
-        const chatId = msg.chat.id;
-        const firstName = msg.from?.first_name || 'друг';
-
-        const welcomeMessage = `
-Привет, ${firstName}! 👋
-
-Добро пожаловать в наш винтажный магазин! 🛍️
-
-Здесь вы найдете уникальные винтажные вещи:
-• Куртки и толстовки
-• Джинсы и брюки
-• Свитеры
-• Аксессуары
-• Обувь
-
-Все товары тщательно отобраны и находятся в отличном состоянии!
-
-Нажмите кнопку ниже, чтобы открыть магазин 👇
-        `.trim();
-
-        const options = {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: '🛍️ Открыть магазин',
-                  web_app: { url: this.webAppUrl }
-                }
-              ]
-            ]
-          }
-        };
-
-        try {
-          await this.bot?.sendMessage(chatId, welcomeMessage, options);
-          console.log('✅ Приветственное сообщение отправлено успешно');
-        } catch (err) {
-          console.error('❌ Ошибка отправки сообщения:', err);
-        }
-      });
-
-      console.log('✅ Telegram Bot запущен с auto-polling');
-    } catch (error) {
-      console.error('❌ Ошибка инициализации Telegram Bot:', error);
-    }
-  }
-
-  /**
-   * Отправка сообщения всем админам
+   * Отправка сообщения админам через Bot API
    */
   async notifyAdmins(message: string): Promise<void> {
-    if (!this.botToken || this.adminIds.length === 0) {
-      console.log('Уведомления админам отключены');
-      return;
-    }
-
-    const promises = this.adminIds.map(adminId =>
-      this.sendMessage(adminId, message)
-    );
-
     try {
-      await Promise.allSettled(promises);
-    } catch (error) {
-      console.error('Ошибка при отправке уведомлений админам:', error);
-    }
-  }
-
-  /**
-   * Отправка сообщения конкретному пользователю
-   */
-  async sendMessage(chatId: string, message: string): Promise<void> {
-    if (!this.botToken) {
-      return;
-    }
-
-    const url = `https://api.telegram.org/bot${this.botToken}/sendMessage`;
-
-    try {
-      const response = await fetch(url, {
+      const response = await fetch(`${this.botApiUrl}/api/notify-admin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: message,
-          parse_mode: 'HTML',
-        }),
+        body: JSON.stringify({ message }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error(`Ошибка отправки сообщения в Telegram (${chatId}):`, errorData);
+        console.error('Ошибка отправки уведомления через Bot API:', errorData);
+      } else {
+        const result = await response.json();
+        console.log(`✅ Уведомление отправлено ${result.sent}/${result.total} админам`);
       }
     } catch (error) {
-      console.error(`Ошибка отправки сообщения в Telegram (${chatId}):`, error);
+      console.error('Ошибка при вызове Bot API:', error);
     }
   }
 
