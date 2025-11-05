@@ -274,7 +274,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onFavoriteC
 
     try {
       setIsFavoriteLoading(true);
-      addDebugLog(`🔄 ${isFavorite ? 'Удаляем' : 'Добавляем'} из избранного...`, 'info');
 
       await toggleFavorite(id);
 

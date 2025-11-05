@@ -28,6 +28,15 @@ export const addDebugLog = (message: string, type: 'info' | 'error' | 'success' 
 
   // Notify all listeners
   listeners.forEach(listener => listener([...logs]));
+
+  // Auto-remove after 2 seconds
+  setTimeout(() => {
+    const index = logs.findIndex(log => log.id === entry.id);
+    if (index > -1) {
+      logs.splice(index, 1);
+      listeners.forEach(listener => listener([...logs]));
+    }
+  }, 2000);
 };
 
 const DebugLog: React.FC = () => {

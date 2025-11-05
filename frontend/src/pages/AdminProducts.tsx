@@ -119,6 +119,11 @@ const AdminProducts: React.FC = () => {
     }
   };
 
+  const editProduct = (productId: number) => {
+    // TODO: Implement edit modal
+    alert(`Редактирование товара ${productId} будет добавлено в следующем обновлении`);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNewProduct(prev => ({
@@ -420,7 +425,7 @@ const AdminProducts: React.FC = () => {
       background: 'var(--bg)',
       paddingBottom: '80px'
     }}>
-      <Header />
+      <Header hideSearch={true} />
       <div style={{
         maxWidth: '640px',
         margin: '0 auto',
@@ -461,7 +466,7 @@ const AdminProducts: React.FC = () => {
         <div style={{ marginBottom: '1rem' }}>
           <input
             type="text"
-            placeholder="Поиск по товарам (локальный поиск)"
+            placeholder="Поиск по товарам"
             value={localSearchQuery}
             onChange={(e) => setLocalSearchQuery(e.target.value)}
             style={{
@@ -662,6 +667,23 @@ const AdminProducts: React.FC = () => {
                       fontWeight: '500'
                     }}>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => editProduct(product.id)}
+                          style={{
+                            padding: '0.25rem 0.75rem',
+                            background: '#dbeafe',
+                            color: '#1e40af',
+                            borderRadius: '0.25rem',
+                            fontSize: '0.75rem',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#bfdbfe'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = '#dbeafe'}
+                        >
+                          Редактировать
+                        </button>
                         <button
                           onClick={() => toggleProductStatus(product.id, product.isActive)}
                           style={{
