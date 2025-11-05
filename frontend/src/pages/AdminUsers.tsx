@@ -20,7 +20,10 @@ const AdminUsers: React.FC = () => {
   const usersPerPage = 10;
 
   // Telegram Back Button
-  useTelegramBackButton(() => navigate(-1));
+  useTelegramBackButton(() => {
+    localStorage.removeItem('lastAdminTab');
+    navigate(-1);
+  });
 
   useEffect(() => {
     fetchUsers();

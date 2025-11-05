@@ -31,7 +31,10 @@ const AdminAnalytics: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Telegram Back Button
-  useTelegramBackButton(() => navigate(-1));
+  useTelegramBackButton(() => {
+    localStorage.removeItem('lastAdminTab');
+    navigate(-1);
+  });
 
   useEffect(() => {
     fetchAnalytics();

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
@@ -11,6 +11,14 @@ const Admin: React.FC = () => {
 
   // Telegram Back Button
   useTelegramBackButton(() => navigate('/profile'));
+
+  // Restore last admin tab if exists
+  useEffect(() => {
+    const lastAdminTab = localStorage.getItem('lastAdminTab');
+    if (lastAdminTab && lastAdminTab.startsWith('/admin/')) {
+      navigate(lastAdminTab, { replace: true });
+    }
+  }, [navigate]);
 
   if (user?.role !== 'admin') {
     return (
@@ -57,6 +65,11 @@ const Admin: React.FC = () => {
       </div>
     );
   }
+
+  const handleNavigate = (path: string) => {
+    localStorage.setItem('lastAdminTab', path);
+    navigate(path);
+  };
 
   const menuItems = [
     {
@@ -122,7 +135,7 @@ const Admin: React.FC = () => {
           {menuItems.map((item, index) => (
             <button
               key={index}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigate(item.path)}
               style={{
                 width: '100%',
                 backgroundColor: 'var(--card)',

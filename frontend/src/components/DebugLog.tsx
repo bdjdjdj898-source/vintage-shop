@@ -41,6 +41,7 @@ export const addDebugLog = (message: string, type: 'info' | 'error' | 'success' 
 
 const DebugLog: React.FC = () => {
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
+  const [, forceUpdate] = useState(0);
 
   useEffect(() => {
     const listener = (newLogs: LogEntry[]) => {
@@ -49,11 +50,17 @@ const DebugLog: React.FC = () => {
 
     listeners.push(listener);
 
+    // Force re-render every 50ms for smooth fade animation
+    const intervalId = setInterval(() => {
+      forceUpdate(prev => prev + 1);
+    }, 50);
+
     return () => {
       const index = listeners.indexOf(listener);
       if (index > -1) {
         listeners.splice(index, 1);
       }
+      clearInterval(intervalId);
     };
   }, []);
 
@@ -71,7 +78,13 @@ const DebugLog: React.FC = () => {
       {logEntries.map((entry) => {
         const now = Date.now();
         const age = now - entry.timestamp;
-        const opacity = Math.max(0.3, 1 - (age / 5000)); // Fade out over 5 seconds
+
+        // 2000ms total: 1200ms static (opacity 1), then 800ms fade out
+        let opacity = 1;
+        if (age > 1200) {
+          const fadeAge = age - 1200;
+          opacity = Math.max(0, 1 - (fadeAge / 800));
+        }
 
         let bgColor = 'rgba(0, 0, 0, 0.85)';
         let textColor = '#fff';
@@ -96,7 +109,7 @@ const DebugLog: React.FC = () => {
               fontFamily: 'monospace',
               wordBreak: 'break-word',
               opacity: opacity,
-              transition: 'opacity 0.3s',
+              transition: 'opacity 0.3s ease-out',
               boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
             }}
           >

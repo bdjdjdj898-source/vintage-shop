@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,11 +7,14 @@ import Header from '../components/Header';
 import BottomNavigation from '../components/BottomNavigation';
 import { useTelegramBackButton } from '../hooks/useTelegramUI';
 
+// Cache outside component to persist across unmounts
+let productsCache: Product[] | null = null;
+
 const AdminProducts: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(productsCache || []);
+  const [isLoading, setIsLoading] = useState(!productsCache);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -21,7 +24,10 @@ const AdminProducts: React.FC = () => {
   const [localSearchQuery, setLocalSearchQuery] = useState('');
 
   // Telegram Back Button
-  useTelegramBackButton(() => navigate(-1));
+  useTelegramBackButton(() => {
+    localStorage.removeItem('lastAdminTab');
+    navigate(-1);
+  });
 
   const [newProduct, setNewProduct] = useState<CreateProductData>({
     title: '',
@@ -55,7 +61,10 @@ const AdminProducts: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchProducts();
+    // Only fetch if cache is empty
+    if (!productsCache) {
+      fetchProducts();
+    }
   }, []);
 
   const fetchProducts = async () => {
@@ -64,6 +73,7 @@ const AdminProducts: React.FC = () => {
       setError(null);
       const response = await apiFetch('/api/admin/products?limit=50');
       if (response.success) {
+        productsCache = response.data; // Update cache
         setProducts(response.data);
       }
     } catch (err) {
@@ -82,12 +92,14 @@ const AdminProducts: React.FC = () => {
       });
 
       if (response.success) {
-        // Update local state
-        setProducts(prev => prev.map(product =>
+        // Update local state and cache
+        const updatedProducts = products.map(product =>
           product.id === productId
             ? { ...product, isActive: !isActive }
             : product
-        ));
+        );
+        setProducts(updatedProducts);
+        productsCache = updatedProducts;
       }
     } catch (err) {
       console.error('Error updating product:', err);
@@ -106,12 +118,14 @@ const AdminProducts: React.FC = () => {
       });
 
       if (response.success) {
-        // Update local state
-        setProducts(prev => prev.map(product =>
+        // Update local state and cache
+        const updatedProducts = products.map(product =>
           product.id === productId
             ? { ...product, isActive: false }
             : product
-        ));
+        );
+        setProducts(updatedProducts);
+        productsCache = updatedProducts;
       }
     } catch (err) {
       console.error('Error deleting product:', err);
@@ -357,11 +371,90 @@ const AdminProducts: React.FC = () => {
     );
   }
 
-  if (isLoading) {
+  // Skeleton loader component
+  const ProductSkeleton = () => (
+    <div style={{
+      background: 'var(--card)',
+      borderRadius: '0.75rem',
+      padding: '1rem',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      border: '1px solid var(--border)'
+    }}>
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem' }}>
+        <div style={{
+          width: '80px',
+          height: '80px',
+          borderRadius: '0.5rem',
+          background: 'linear-gradient(90deg, var(--border) 25%, #e0e0e0 50%, var(--border) 75%)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 1.5s infinite'
+        }} />
+        <div style={{ flex: 1 }}>
+          <div style={{
+            height: '1rem',
+            width: '70%',
+            marginBottom: '0.5rem',
+            borderRadius: '0.25rem',
+            background: 'linear-gradient(90deg, var(--border) 25%, #e0e0e0 50%, var(--border) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.5s infinite'
+          }} />
+          <div style={{
+            height: '0.75rem',
+            width: '50%',
+            marginBottom: '0.5rem',
+            borderRadius: '0.25rem',
+            background: 'linear-gradient(90deg, var(--border) 25%, #e0e0e0 50%, var(--border) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.5s infinite'
+          }} />
+          <div style={{
+            height: '0.75rem',
+            width: '60%',
+            marginBottom: '0.5rem',
+            borderRadius: '0.25rem',
+            background: 'linear-gradient(90deg, var(--border) 25%, #e0e0e0 50%, var(--border) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.5s infinite'
+          }} />
+        </div>
+      </div>
+      <div style={{
+        height: '1.5rem',
+        width: '30%',
+        marginBottom: '0.75rem',
+        borderRadius: '9999px',
+        background: 'linear-gradient(90deg, var(--border) 25%, #e0e0e0 50%, var(--border) 75%)',
+        backgroundSize: '200% 100%',
+        animation: 'shimmer 1.5s infinite'
+      }} />
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        {[1, 2, 3].map(i => (
+          <div key={i} style={{
+            flex: 1,
+            height: '2.5rem',
+            borderRadius: '0.5rem',
+            background: 'linear-gradient(90deg, var(--border) 25%, #e0e0e0 50%, var(--border) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.5s infinite'
+          }} />
+        ))}
+      </div>
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+    </div>
+  );
+
+  if (isLoading && products.length === 0) {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'var(--bg)'
+        background: 'var(--bg)',
+        paddingBottom: '80px'
       }}>
         <Header hideSearch={true} />
         <div style={{
@@ -371,16 +464,31 @@ const AdminProducts: React.FC = () => {
         }}>
           <div style={{
             display: 'flex',
-            justifyContent: 'center',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            height: '16rem'
+            marginBottom: '1.5rem'
           }}>
-            <div style={{
-              fontSize: '1.125rem',
+            <h1 style={{
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
               color: 'var(--text)'
             }}>
-              Загрузка товаров...
-            </div>
+              Управление товарами
+            </h1>
+            <button
+              style={{
+                background: '#3b82f6',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '0.5rem',
+                border: 'none'
+              }}
+            >
+              Добавить товар
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {[1, 2, 3, 4, 5].map(i => <ProductSkeleton key={i} />)}
           </div>
         </div>
         <BottomNavigation />
@@ -494,241 +602,144 @@ const AdminProducts: React.FC = () => {
           )}
         </div>
 
-        <div style={{
-          background: 'var(--card)',
-          borderRadius: '0.5rem',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          overflow: 'hidden'
-        }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{
-              minWidth: '100%',
-              borderCollapse: 'collapse'
-            }}>
-              <thead style={{ background: 'var(--bg)' }}>
-                <tr>
-                  <th style={{
-                    padding: '0.75rem 1.5rem',
-                    textAlign: 'left',
+        {/* Mobile card layout */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {filteredProducts.map((product) => (
+            <div
+              key={product.id}
+              style={{
+                background: 'var(--card)',
+                borderRadius: '0.75rem',
+                padding: '1rem',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                border: '1px solid var(--border)'
+              }}
+            >
+              {/* Product info */}
+              <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                {product.images.length > 0 && (
+                  <img
+                    src={product.images[0]}
+                    alt={product.title}
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '0.5rem',
+                      objectFit: 'cover',
+                      flexShrink: 0
+                    }}
+                  />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    color: 'var(--text)',
+                    marginBottom: '0.25rem',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {product.title}
+                  </div>
+                  <div style={{
                     fontSize: '0.75rem',
-                    fontWeight: '500',
                     color: 'var(--text-secondary)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
+                    marginBottom: '0.25rem'
                   }}>
-                    Товар
-                  </th>
-                  <th style={{
-                    padding: '0.75rem 1.5rem',
-                    textAlign: 'left',
+                    {product.brand} • {product.size} • {product.color}
+                  </div>
+                  <div style={{
                     fontSize: '0.75rem',
-                    fontWeight: '500',
                     color: 'var(--text-secondary)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
+                    marginBottom: '0.25rem'
                   }}>
-                    Категория
-                  </th>
-                  <th style={{
-                    padding: '0.75rem 1.5rem',
-                    textAlign: 'left',
-                    fontSize: '0.75rem',
+                    {product.category} • Состояние: {product.condition}/10
+                  </div>
+                  <div style={{
+                    fontSize: '1rem',
+                    fontWeight: '700',
+                    color: 'var(--text)'
+                  }}>
+                    {product.price.toLocaleString('ru-RU')} ₽
+                  </div>
+                </div>
+              </div>
+
+              {/* Status badge */}
+              <div style={{ marginBottom: '0.75rem' }}>
+                <span style={{
+                  display: 'inline-flex',
+                  padding: '0.25rem 0.75rem',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  borderRadius: '9999px',
+                  background: product.isActive ? '#d1fae5' : '#fee2e2',
+                  color: product.isActive ? '#065f46' : '#991b1b'
+                }}>
+                  {product.isActive ? 'Активен' : 'Неактивен'}
+                </span>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => editProduct(product.id)}
+                  style={{
+                    flex: 1,
+                    minWidth: '100px',
+                    padding: '0.5rem 1rem',
+                    background: '#dbeafe',
+                    color: '#1e40af',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
                     fontWeight: '500',
-                    color: 'var(--text-secondary)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
-                    Цена
-                  </th>
-                  <th style={{
-                    padding: '0.75rem 1.5rem',
-                    textAlign: 'left',
-                    fontSize: '0.75rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s'
+                  }}
+                >
+                  Редактировать
+                </button>
+                <button
+                  onClick={() => toggleProductStatus(product.id, product.isActive)}
+                  style={{
+                    flex: 1,
+                    minWidth: '100px',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
                     fontWeight: '500',
-                    color: 'var(--text-secondary)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
-                    Состояние
-                  </th>
-                  <th style={{
-                    padding: '0.75rem 1.5rem',
-                    textAlign: 'left',
-                    fontSize: '0.75rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: product.isActive ? '#fef3c7' : '#d1fae5',
+                    color: product.isActive ? '#92400e' : '#065f46',
+                    transition: 'background 0.2s'
+                  }}
+                >
+                  {product.isActive ? 'Скрыть' : 'Показать'}
+                </button>
+                <button
+                  onClick={() => deleteProduct(product.id)}
+                  style={{
+                    flex: 1,
+                    minWidth: '100px',
+                    padding: '0.5rem 1rem',
+                    background: '#fee2e2',
+                    color: '#991b1b',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
                     fontWeight: '500',
-                    color: 'var(--text-secondary)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
-                    Статус
-                  </th>
-                  <th style={{
-                    padding: '0.75rem 1.5rem',
-                    textAlign: 'left',
-                    fontSize: '0.75rem',
-                    fontWeight: '500',
-                    color: 'var(--text-secondary)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
-                    Действия
-                  </th>
-                </tr>
-              </thead>
-              <tbody style={{
-                background: 'var(--card)'
-              }}>
-                {filteredProducts.map((product) => (
-                  <tr key={product.id} style={{
-                    borderTop: '1px solid var(--border)'
-                  }}>
-                    <td style={{
-                      padding: '1rem 1.5rem',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        {product.images.length > 0 && (
-                          <img
-                            src={product.images[0]}
-                            alt={product.title}
-                            style={{
-                              height: '2.5rem',
-                              width: '2.5rem',
-                              borderRadius: '0.5rem',
-                              objectFit: 'cover',
-                              marginRight: '0.75rem'
-                            }}
-                          />
-                        )}
-                        <div>
-                          <div style={{
-                            fontSize: '0.875rem',
-                            fontWeight: '500',
-                            color: 'var(--text)'
-                          }}>
-                            {product.title}
-                          </div>
-                          <div style={{
-                            fontSize: '0.875rem',
-                            color: 'var(--text-secondary)'
-                          }}>
-                            {product.brand} • {product.size} • {product.color}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{
-                      padding: '1rem 1.5rem',
-                      whiteSpace: 'nowrap',
-                      fontSize: '0.875rem',
-                      color: 'var(--text)'
-                    }}>
-                      {product.category}
-                    </td>
-                    <td style={{
-                      padding: '1rem 1.5rem',
-                      whiteSpace: 'nowrap',
-                      fontSize: '0.875rem',
-                      color: 'var(--text)'
-                    }}>
-                      {product.price.toLocaleString('ru-RU')} ₽
-                    </td>
-                    <td style={{
-                      padding: '1rem 1.5rem',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      <div style={{
-                        fontSize: '0.875rem',
-                        color: 'var(--text)'
-                      }}>
-                        {product.condition}/10
-                      </div>
-                    </td>
-                    <td style={{
-                      padding: '1rem 1.5rem',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      <span style={{
-                        display: 'inline-flex',
-                        padding: '0.125rem 0.5rem',
-                        fontSize: '0.75rem',
-                        fontWeight: '600',
-                        borderRadius: '9999px',
-                        background: product.isActive ? '#d1fae5' : '#fee2e2',
-                        color: product.isActive ? '#065f46' : '#991b1b'
-                      }}>
-                        {product.isActive ? 'Активен' : 'Неактивен'}
-                      </span>
-                    </td>
-                    <td style={{
-                      padding: '1rem 1.5rem',
-                      whiteSpace: 'nowrap',
-                      fontSize: '0.875rem',
-                      fontWeight: '500'
-                    }}>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button
-                          onClick={() => editProduct(product.id)}
-                          style={{
-                            padding: '0.25rem 0.75rem',
-                            background: '#dbeafe',
-                            color: '#1e40af',
-                            borderRadius: '0.25rem',
-                            fontSize: '0.75rem',
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'background 0.2s'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = '#bfdbfe'}
-                          onMouseLeave={(e) => e.currentTarget.style.background = '#dbeafe'}
-                        >
-                          Редактировать
-                        </button>
-                        <button
-                          onClick={() => toggleProductStatus(product.id, product.isActive)}
-                          style={{
-                            padding: '0.25rem 0.75rem',
-                            borderRadius: '0.25rem',
-                            fontSize: '0.75rem',
-                            border: 'none',
-                            cursor: 'pointer',
-                            background: product.isActive ? '#fef3c7' : '#d1fae5',
-                            color: product.isActive ? '#92400e' : '#065f46',
-                            transition: 'background 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = product.isActive ? '#fde68a' : '#a7f3d0';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = product.isActive ? '#fef3c7' : '#d1fae5';
-                          }}
-                        >
-                          {product.isActive ? 'Скрыть' : 'Показать'}
-                        </button>
-                        <button
-                          onClick={() => deleteProduct(product.id)}
-                          style={{
-                            padding: '0.25rem 0.75rem',
-                            background: '#fee2e2',
-                            color: '#991b1b',
-                            borderRadius: '0.25rem',
-                            fontSize: '0.75rem',
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'background 0.2s'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
-                          onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
-                        >
-                          Удалить
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s'
+                  }}
+                >
+                  Удалить
+                </button>
+              </div>
+            </div>
+          ))}
 
           {products.length === 0 && (
             <div style={{

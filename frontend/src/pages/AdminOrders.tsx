@@ -20,7 +20,10 @@ const AdminOrders: React.FC = () => {
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
 
   // Telegram Back Button
-  useTelegramBackButton(() => navigate(-1));
+  useTelegramBackButton(() => {
+    localStorage.removeItem('lastAdminTab');
+    navigate(-1);
+  });
 
   useEffect(() => {
     fetchOrders();
