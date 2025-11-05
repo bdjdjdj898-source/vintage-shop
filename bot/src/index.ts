@@ -74,7 +74,7 @@ async function handleStartCommand(chatId: number, firstName: string) {
           [
             {
               text: '🛍️ Открыть магазин',
-              web_app: { url: WEBAPP_URL }
+              url: 'https://egorloh.duckdns.org'
             }
           ]
         ]
