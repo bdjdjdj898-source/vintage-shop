@@ -59,9 +59,9 @@ export class TelegramBotService {
       try {
         const url = `https://api.telegram.org/bot${this.botToken}/getUpdates?offset=${offset}&timeout=30`;
         const response = await fetch(url);
-        const data = await response.json();
+        const data: any = await response.json();
 
-        if (data.ok && data.result.length > 0) {
+        if (data.ok && data.result && data.result.length > 0) {
           for (const update of data.result) {
             offset = update.update_id + 1;
             await this.processUpdate(update);
