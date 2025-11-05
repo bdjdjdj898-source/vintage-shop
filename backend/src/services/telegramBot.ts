@@ -56,10 +56,14 @@ export class TelegramBotService {
     let offset = 0;
 
     const poll = async () => {
+      console.log(`[Polling] Запрос обновлений, offset=${offset}`);
       try {
         const url = `https://api.telegram.org/bot${this.botToken}/getUpdates?offset=${offset}&timeout=30`;
+        console.log(`[Polling] URL: ${url.substring(0, 60)}...`);
         const response = await fetch(url);
+        console.log(`[Polling] Ответ получен, status=${response.status}`);
         const data: any = await response.json();
+        console.log(`[Polling] JSON распарсен, ok=${data.ok}, results=${data.result?.length || 0}`);
 
         if (data.ok && data.result && data.result.length > 0) {
           console.log(`Получено ${data.result.length} обновлений от Telegram`);
