@@ -1,5 +1,4 @@
 import express from 'express';
-import TelegramBot from 'node-telegram-bot-api';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -24,27 +23,32 @@ console.log('🤖 Инициализация Telegram бота...');
 console.log(`📱 Админы: ${ADMIN_TELEGRAM_IDS.join(', ')}`);
 console.log(`🌐 WebApp URL: ${WEBAPP_URL}`);
 
-// Инициализация бота с auto-polling
-const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
-  polling: {
-    interval: 1000,
-    autoStart: true,
-    params: {
-      timeout: 10
-    }
+const BOT_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
+
+// Функция отправки сообщения
+async function sendMessage(chatId: number | string, text: string, options?: any) {
+  const response = await fetch(`${BOT_API}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: options?.parse_mode || undefined,
+      reply_markup: options?.reply_markup || undefined
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Telegram API error: ${JSON.stringify(error)}`);
   }
-});
 
-// Обработчик ошибок polling
-bot.on('polling_error', (error) => {
-  console.error('❌ Telegram Bot polling error:', error);
-});
+  return response.json();
+}
 
-// Обработчик команды /start
-bot.onText(/\/start/, async (msg) => {
-  console.log('✅ Получена команда /start от:', msg.from?.username || msg.from?.first_name);
-  const chatId = msg.chat.id;
-  const firstName = msg.from?.first_name || 'друг';
+// Обработчик /start команды
+async function handleStartCommand(chatId: number, firstName: string) {
+  console.log(`✅ Получена команда /start от пользователя ${chatId}`);
 
   const welcomeMessage = `
 Привет, ${firstName}! 👋
@@ -63,26 +67,55 @@ bot.onText(/\/start/, async (msg) => {
 Нажмите кнопку ниже, чтобы открыть магазин 👇
   `.trim();
 
-  const options = {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: '🛍️ Открыть магазин',
-            web_app: { url: WEBAPP_URL }
-          }
-        ]
-      ]
-    }
-  };
-
   try {
-    await bot.sendMessage(chatId, welcomeMessage, options);
+    await sendMessage(chatId, welcomeMessage, {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '🛍️ Открыть магазин',
+              web_app: { url: WEBAPP_URL }
+            }
+          ]
+        ]
+      }
+    });
     console.log('✅ Приветственное сообщение отправлено успешно');
   } catch (err) {
     console.error('❌ Ошибка отправки сообщения:', err);
   }
-});
+}
+
+// Long polling
+let offset = 0;
+async function poll() {
+  try {
+    const response = await fetch(`${BOT_API}/getUpdates?offset=${offset}&timeout=30`);
+    const data: any = await response.json();
+
+    if (data.ok && data.result.length > 0) {
+      for (const update of data.result) {
+        offset = update.update_id + 1;
+
+        // Обработка команды /start
+        if (update.message?.text === '/start') {
+          const chatId = update.message.chat.id;
+          const firstName = update.message.from.first_name || 'друг';
+          await handleStartCommand(chatId, firstName);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Polling error:', error);
+  }
+
+  // Продолжаем polling
+  setImmediate(poll);
+}
+
+// Запускаем polling
+console.log('✅ Запуск long polling...');
+poll();
 
 // API endpoint для отправки уведомлений админам
 app.post('/api/notify-admin', async (req, res) => {
@@ -107,7 +140,7 @@ app.post('/api/notify-admin', async (req, res) => {
     // Отправляем сообщение всем админам
     const promises = ADMIN_TELEGRAM_IDS.map(async (adminId) => {
       try {
-        await bot.sendMessage(adminId, message, { parse_mode: 'HTML' });
+        await sendMessage(adminId, message, { parse_mode: 'HTML' });
         console.log(`✅ Уведомление отправлено админу ${adminId}`);
         return { success: true, adminId };
       } catch (error) {
@@ -154,12 +187,10 @@ app.listen(PORT, () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM получен, завершение работы...');
-  bot.stopPolling();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('👋 SIGINT получен, завершение работы...');
-  bot.stopPolling();
   process.exit(0);
 });

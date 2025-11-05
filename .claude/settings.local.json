@@ -30,7 +30,8 @@
       "Bash(node:*)",
       "Bash(npx tsc:*)",
       "Bash(ping:*)",
-      "Bash(python -m json.tool:*)"
+      "Bash(python -m json.tool:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
