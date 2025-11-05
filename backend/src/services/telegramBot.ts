@@ -31,7 +31,7 @@ export class TelegramBotService {
         const errorData = await response.json();
         console.error('Ошибка отправки уведомления через Bot API:', errorData);
       } else {
-        const result = await response.json();
+        const result: any = await response.json();
         console.log(`✅ Уведомление отправлено ${result.sent}/${result.total} админам`);
       }
     } catch (error) {
