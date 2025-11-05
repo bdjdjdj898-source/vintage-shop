@@ -28,7 +28,9 @@
       "Bash(npx tsc)",
       "Bash(npx typescript:*)",
       "Bash(node:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(ping:*)",
+      "Bash(python -m json.tool:*)"
     ],
     "deny": [],
     "ask": []

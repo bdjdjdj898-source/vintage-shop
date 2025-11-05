@@ -62,6 +62,7 @@ export class TelegramBotService {
         const data: any = await response.json();
 
         if (data.ok && data.result && data.result.length > 0) {
+          console.log(`Получено ${data.result.length} обновлений от Telegram`);
           for (const update of data.result) {
             offset = update.update_id + 1;
             await this.processUpdate(update);
@@ -75,6 +76,7 @@ export class TelegramBotService {
       setTimeout(poll, 1000);
     };
 
+    console.log('Запуск ручного polling...');
     poll();
   }
 
