@@ -33,74 +33,33 @@ export class TelegramBotService {
   }
 
   /**
-   * Инициализация бота с ручным polling
+   * Инициализация бота с auto-polling
    */
   private initializeBot(): void {
     try {
-      // Инициализируем бота БЕЗ auto-polling
-      this.bot = new TelegramBot(this.botToken, { polling: false });
-
-      // Запускаем ручной polling
-      this.startManualPolling();
-
-      console.log('Telegram Bot инициализирован с ручным polling');
-    } catch (error) {
-      console.error('Ошибка инициализации Telegram Bot:', error);
-    }
-  }
-
-  /**
-   * Ручной polling через getUpdates
-   */
-  private startManualPolling(): void {
-    let offset = 0;
-
-    console.log('Запуск ручного polling...');
-
-    // Используем setInterval для простоты
-    setInterval(async () => {
-      try {
-        console.log(`[Polling] Запрос обновлений, offset=${offset}`);
-        const url = `https://api.telegram.org/bot${this.botToken}/getUpdates?offset=${offset}&timeout=5`;
-
-        const response = await fetch(url);
-        console.log(`[Polling] Ответ получен, status=${response.status}`);
-
-        const data: any = await response.json();
-        console.log(`[Polling] JSON распарсен, ok=${data.ok}, results=${data.result?.length || 0}`);
-
-        if (data.ok && data.result && data.result.length > 0) {
-          console.log(`✅ Получено ${data.result.length} обновлений от Telegram`);
-          for (const update of data.result) {
-            offset = update.update_id + 1;
-            console.log(`[Polling] Обрабатываю update_id=${update.update_id}`);
-            await this.processUpdate(update);
+      // Включаем auto-polling из библиотеки
+      this.bot = new TelegramBot(this.botToken, {
+        polling: {
+          interval: 1000,
+          autoStart: true,
+          params: {
+            timeout: 10
           }
         }
-      } catch (error) {
-        console.error('❌ Ошибка polling:', error);
-      }
-    }, 2000); // Каждые 2 секунды
-  }
+      });
 
-  /**
-   * Обработка входящего update от Telegram
-   */
-  private async processUpdate(update: any): Promise<void> {
-    try {
-      // Обработка текстовых сообщений
-      if (update.message && update.message.text) {
-        const msg = update.message;
+      // Обработчик ошибок polling
+      this.bot.on('polling_error', (error) => {
+        console.error('❌ Telegram Bot polling error:', error);
+      });
+
+      // Обработчик команды /start
+      this.bot.onText(/\/start/, async (msg) => {
+        console.log('✅ Получена команда /start от:', msg.from?.username || msg.from?.first_name);
         const chatId = msg.chat.id;
-        const text = msg.text;
+        const firstName = msg.from?.first_name || 'друг';
 
-        console.log('Получено сообщение:', text, 'от:', msg.from?.username || msg.from?.first_name);
-
-        // Обработка команды /start
-        if (text === '/start') {
-          const firstName = msg.from?.first_name || 'друг';
-
-          const welcomeMessage = `
+        const welcomeMessage = `
 Привет, ${firstName}! 👋
 
 Добро пожаловать в наш винтажный магазин! 🛍️
@@ -115,27 +74,32 @@ export class TelegramBotService {
 Все товары тщательно отобраны и находятся в отличном состоянии!
 
 Нажмите кнопку ниже, чтобы открыть магазин 👇
-          `.trim();
+        `.trim();
 
-          const options = {
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  {
-                    text: '🛍️ Открыть магазин',
-                    web_app: { url: this.webAppUrl }
-                  }
-                ]
+        const options = {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: '🛍️ Открыть магазин',
+                  web_app: { url: this.webAppUrl }
+                }
               ]
-            }
-          };
+            ]
+          }
+        };
 
+        try {
           await this.bot?.sendMessage(chatId, welcomeMessage, options);
-          console.log('Приветственное сообщение отправлено успешно');
+          console.log('✅ Приветственное сообщение отправлено успешно');
+        } catch (err) {
+          console.error('❌ Ошибка отправки сообщения:', err);
         }
-      }
+      });
+
+      console.log('✅ Telegram Bot запущен с auto-polling');
     } catch (error) {
-      console.error('Ошибка обработки update:', error);
+      console.error('❌ Ошибка инициализации Telegram Bot:', error);
     }
   }
 
