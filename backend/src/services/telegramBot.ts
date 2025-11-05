@@ -52,36 +52,35 @@ export class TelegramBotService {
   /**
    * Ручной polling через getUpdates
    */
-  private async startManualPolling(): Promise<void> {
+  private startManualPolling(): void {
     let offset = 0;
 
-    const poll = async () => {
-      console.log(`[Polling] Запрос обновлений, offset=${offset}`);
+    console.log('Запуск ручного polling...');
+
+    // Используем setInterval для простоты
+    setInterval(async () => {
       try {
-        const url = `https://api.telegram.org/bot${this.botToken}/getUpdates?offset=${offset}&timeout=30`;
-        console.log(`[Polling] URL: ${url.substring(0, 60)}...`);
+        console.log(`[Polling] Запрос обновлений, offset=${offset}`);
+        const url = `https://api.telegram.org/bot${this.botToken}/getUpdates?offset=${offset}&timeout=5`;
+
         const response = await fetch(url);
         console.log(`[Polling] Ответ получен, status=${response.status}`);
+
         const data: any = await response.json();
         console.log(`[Polling] JSON распарсен, ok=${data.ok}, results=${data.result?.length || 0}`);
 
         if (data.ok && data.result && data.result.length > 0) {
-          console.log(`Получено ${data.result.length} обновлений от Telegram`);
+          console.log(`✅ Получено ${data.result.length} обновлений от Telegram`);
           for (const update of data.result) {
             offset = update.update_id + 1;
+            console.log(`[Polling] Обрабатываю update_id=${update.update_id}`);
             await this.processUpdate(update);
           }
         }
       } catch (error) {
-        console.error('Ошибка polling:', error);
+        console.error('❌ Ошибка polling:', error);
       }
-
-      // Продолжаем polling
-      setTimeout(poll, 1000);
-    };
-
-    console.log('Запуск ручного polling...');
-    poll();
+    }, 2000); // Каждые 2 секунды
   }
 
   /**
